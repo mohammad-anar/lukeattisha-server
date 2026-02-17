@@ -81,7 +81,7 @@ model Job {
     preferred_time DateTime?
     budget_min     Float?
     budget_max     Float?
-    status         JobStatus                @default(PENDING)
+    status         JobStatus                @default(OPEN)
     created_at     DateTime                 @default(now())
     updated_at     DateTime                 @updatedAt
 
@@ -119,7 +119,7 @@ model Booking {
     workshop_id     String
     scheduled_start DateTime
     scheduled_end   DateTime
-    status          BookingStatus @default(PENDING)
+    status          BookingStatus @default(SCHEDULED)
     payment_status  PaymentStatus @default(PENDING)
     created_at      DateTime      @default(now())
     updated_at      DateTime      @updatedAt
@@ -178,7 +178,7 @@ model Invoice {
     billing_month String
     total_jobs    Int
     total_amount  Float
-    status        InvoiceStatus @default(PENDING)
+    status        InvoiceStatus @default(DRAFT)
     due_date      DateTime
     created_at    DateTime      @default(now())
 
