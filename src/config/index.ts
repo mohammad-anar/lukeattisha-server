@@ -7,7 +7,7 @@ export default {
   node_env: process.env.NODE_ENV,
   port: process.env.PORT,
   database_url: process.env.DATABASE_URL,
-  bcrypt_solt_round: Number(process.env.BCRYPT_SOLT_ROUND),
+  bcrypt_salt_round: Number(process.env.BCRYPT_SALT_ROUND),
   cors_origin: process.env.CORS_ORIGIN,
   email: {
     from: process.env.EMAIL_FROM,

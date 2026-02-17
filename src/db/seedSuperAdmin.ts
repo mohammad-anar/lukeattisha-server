@@ -11,11 +11,10 @@ export const seedSuperAdmin = async () => {
     },
   });
 
-
   if (!isExist) {
     const hashedPassword = await bcrypt.hash(
       config.admin.password as string,
-      10,
+      config.bcrypt_salt_round,
     );
 
     await prisma.user.create({
@@ -29,7 +28,7 @@ export const seedSuperAdmin = async () => {
         isVerified: true,
       },
     });
-  }else {
-    console.log("Super admin already exist.")
+  } else {
+    console.log("Super admin already exist.");
   }
 };
