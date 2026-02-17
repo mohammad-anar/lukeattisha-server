@@ -7,6 +7,8 @@ const validateRequest =
     try {
       let parsedBody: any = {};
 
+      console.log("first", req.body);
+
       if (req.body) {
         if (typeof req.body === "string") {
           parsedBody = JSON.parse(req.body);

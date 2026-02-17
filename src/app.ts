@@ -18,6 +18,8 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+app.use(express.static("uploads"));
+
 app.use("/api/v1", router);
 
 app.post("/send-job", (req, res) => {

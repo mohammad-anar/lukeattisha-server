@@ -1,0 +1,31 @@
+import { Role } from "@prisma/client";
+import express from "express";
+import auth from "src/app/middlewares/auth.js";
+import { UserController } from "./user.controller.js";
+import validateRequest from "src/app/middlewares/validateRequest.js";
+import fileUploadHandler from "src/app/middlewares/fileUploadHandler.js";
+import { UserValidation } from "./user.validation.js";
+
+const router = express.Router();
+
+router.get("/users", UserController.getAllUsers);
+router.post(
+  "/register",
+  validateRequest(UserValidation.createUserZodSchema),
+  UserController.createUser,
+);
+router.post(
+  "/login",
+  UserController.login,
+);
+router.get("/user/:id", auth(Role.ADMIN), UserController.getUserById);
+router.patch(
+  "/user/:id",
+  auth(Role.ADMIN, Role.USER, Role.WORKSHOP),
+  fileUploadHandler(),
+  validateRequest(UserValidation.updateUserZodSchema),
+  UserController.updateUser,
+);
+router.delete("/user:id", UserController.deleteUser);
+
+export const UserRouter = router;
