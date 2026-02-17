@@ -1,196 +1,202 @@
 model User {
-    id            String   @id @default(uuid())
-    name          String
-    email         String   @unique
-    phone         String
-    password_hash String
-    role          UserRole @default(USER)
-    is_banned     Boolean  @default(false)
-    created_at    DateTime @default(now())
-    updated_at    DateTime @updatedAt
+    id         String     @id @default(uuid())
+    name       String
+    email      String     @unique
+    phone      String?
+    password   String
+    role       Role       @default(USER)
+    status     UserStatus @default(ACTIVE)
+    avatar     String?
+    isVerified Boolean    @default(false)
+    createdAt  DateTime   @default(now())
+    updatedAt  DateTime   @updatedAt
 
     jobs          Job[]
-    reviews       Review[]
     bookings      Booking[]
+    messages      Message[]
     notifications Notification[]
-    categories    Category[]     @relation("UserCategories")
+    reviews       Review[]
+    workshop      Workshop?
+    rooms         Room[]
 }
 
 model Workshop {
-    id             String                   @id @default(uuid())
-    owner_name     String
-    workshop_name  String
-    email          String                   @unique
-    phone          String
-    description    String
-    address_line   String
+    id             String                 @id @default(uuid())
+    userId         String                 @unique
+    owner          User                   @relation(fields: [userId], references: [id])
+    description    String?
+    address        String
     city           String
-    postal_code    String
-    country        String
-    location       Unsupported("geography") // PostgreSQL geography
-    photos         String[]                 @default([])
-    logo_url       String?
-    status         WorkshopStatus           @default(PENDING)
-    average_rating Float?
-    reviews_count  Int                      @default(0)
-    created_at     DateTime                 @default(now())
-    updated_at     DateTime                 @updatedAt
+    postalCode     String
+    latitude       Float?
+    longitude      Float?
+    approvalStatus WorkshopApprovalStatus @default(PENDING)
+    avgRating      Float                  @default(0)
+    reviewsCount   Int                    @default(0)
+    createdAt      DateTime               @default(now())
+    updatedAt      DateTime               @updatedAt
 
     categories    WorkshopCategory[]
-    offers        Offer[]
     bookings      Booking[]
-    reviews       Review[]
+    jobs          JobOffer[]
     invoices      Invoice[]
-    hours         WorkshopHour[]
     notifications Notification[]
+    rooms         Room[]
 }
 
 model Category {
-    id         String   @id @default(uuid())
-    name       String   @unique
-    slug       String   @unique
-    created_by String
-    createdAt  DateTime @default(now())
+    id        String   @id @default(uuid())
+    name      String   @unique
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 
-    creator   User               @relation("UserCategories", fields: [created_by], references: [id])
-    workshops WorkshopCategory[]
     jobs      Job[]
+    workshops WorkshopCategory[]
 }
 
 model WorkshopCategory {
-    id          String @id @default(uuid())
-    workshop_id String
-    category_id String
+    id         String   @id @default(uuid())
+    workshopId String
+    categoryId String
+    workshop   Workshop @relation(fields: [workshopId], references: [id])
+    category   Category @relation(fields: [categoryId], references: [id])
 
-    workshop Workshop @relation(fields: [workshop_id], references: [id])
-    category Category @relation(fields: [category_id], references: [id])
-
-    @@unique([workshop_id, category_id])
+    @@unique([workshopId, categoryId])
 }
 
 model Job {
-    id             String                   @id @default(uuid())
-    user_id        String
-    category_id    String
-    description    String
-    address_line   String
-    city           String
-    postal_code    String
-    location       Unsupported("geography")
-    photos         String[]                 @default([])
-    preferred_time DateTime?
-    budget_min     Float?
-    budget_max     Float?
-    status         JobStatus                @default(OPEN)
-    created_at     DateTime                 @default(now())
-    updated_at     DateTime                 @updatedAt
+    id            String    @id @default(uuid())
+    userId        String
+    user          User      @relation(fields: [userId], references: [id])
+    categoryId    String
+    category      Category  @relation(fields: [categoryId], references: [id])
+    description   String
+    address       String
+    city          String
+    postalCode    String
+    latitude      Float?
+    longitude     Float?
+    photos        String[] // Array of photo URLs
+    preferredTime DateTime?
+    budgetMin     Float?
+    budgetMax     Float?
+    status        JobStatus @default(PENDING)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
 
-    user     User      @relation(fields: [user_id], references: [id])
-    category Category  @relation(fields: [category_id], references: [id])
-    offers   Offer[]
-    booking  Booking?
-    messages Message[]
+    offers        JobOffer[]
+    bookings      Booking[]
+    notifications Notification[]
 }
 
-model Offer {
-    id                 String      @id @default(uuid())
-    job_id             String
-    workshop_id        String
-    price_type         PriceType
-    price_fixed        Float?
-    price_min          Float?
-    price_max          Float?
-    estimated_duration String?
-    message            String?
-    status             OfferStatus @default(PENDING)
-    created_at         DateTime    @default(now())
-    updated_at         DateTime    @updatedAt
+model JobOffer {
+    id         String      @id @default(uuid())
+    jobId      String
+    job        Job         @relation(fields: [jobId], references: [id])
+    workshopId String
+    workshop   Workshop    @relation(fields: [workshopId], references: [id])
+    priceType  PriceType   @default(ESTIMATE)
+    priceMin   Float?
+    priceMax   Float?
+    status     OfferStatus @default(PENDING)
+    createdAt  DateTime    @default(now())
+    updatedAt  DateTime    @updatedAt
 
-    job      Job      @relation(fields: [job_id], references: [id])
-    workshop Workshop @relation(fields: [workshop_id], references: [id])
-    booking  Booking?
+    booking Booking?
 }
 
 model Booking {
-    id              String        @id @default(uuid())
-    job_id          String        @unique
-    offer_id        String        @unique
-    user_id         String
-    workshop_id     String
-    scheduled_start DateTime
-    scheduled_end   DateTime
-    status          BookingStatus @default(SCHEDULED)
-    payment_status  PaymentStatus @default(PENDING)
-    created_at      DateTime      @default(now())
-    updated_at      DateTime      @updatedAt
+    id            String        @id @default(uuid())
+    jobId         String
+    job           Job           @relation(fields: [jobId], references: [id])
+    offerId       String        @unique
+    offer         JobOffer      @relation(fields: [offerId], references: [id])
+    userId        String
+    user          User          @relation(fields: [userId], references: [id])
+    workshopId    String
+    workshop      Workshop      @relation(fields: [workshopId], references: [id])
+    scheduleStart DateTime
+    scheduleEnd   DateTime?
+    status        BookingStatus @default(PENDING)
+    paymentStatus PaymentStatus @default(PENDING)
+    createdAt     DateTime      @default(now())
+    updatedAt     DateTime      @updatedAt
 
-    job      Job      @relation(fields: [job_id], references: [id])
-    offer    Offer    @relation(fields: [offer_id], references: [id])
-    user     User     @relation(fields: [user_id], references: [id])
-    workshop Workshop @relation(fields: [workshop_id], references: [id])
-    review   Review?
+    review        Review?
+    room          Room?
+    notifications Notification[]
 }
 
 model Review {
-    id          String   @id @default(uuid())
-    booking_id  String   @unique
-    user_id     String
-    workshop_id String
-    rating      Int
-    comment     String?
-    is_visible  Boolean  @default(true)
-    created_at  DateTime @default(now())
+    id        String   @id @default(uuid())
+    bookingId String   @unique
+    booking   Booking  @relation(fields: [bookingId], references: [id])
+    userId    String
+    user      User     @relation(fields: [userId], references: [id])
+    rating    Int
+    comment   String?
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
 
-    booking  Booking  @relation(fields: [booking_id], references: [id])
-    user     User     @relation(fields: [user_id], references: [id])
-    workshop Workshop @relation(fields: [workshop_id], references: [id])
+model Room {
+    id         String   @id @default(uuid())
+    bookingId  String   @unique
+    booking    Booking  @relation(fields: [bookingId], references: [id])
+    userId     String
+    user       User     @relation(fields: [userId], references: [id])
+    workshopId String
+    workshop   Workshop @relation(fields: [workshopId], references: [id])
+    name       String?
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    messages      Message[]
+    notifications Notification[]
 }
 
 model Message {
-    id                 String   @id @default(uuid())
-    job_id             String
-    sender_user_id     String?
-    sender_workshop_id String?
-    sender_admin_id    String?
-    message_text       String
-    created_at         DateTime @default(now())
-
-    job Job @relation(fields: [job_id], references: [id])
+    id        String   @id @default(uuid())
+    roomId    String
+    room      Room     @relation(fields: [roomId], references: [id])
+    senderId  String
+    sender    User     @relation(fields: [senderId], references: [id])
+    message   String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
 }
 
 model Notification {
-    id          String    @id @default(uuid())
-    user_id     String?
-    workshop_id String?
-    title       String
-    body        String
-    is_read     Boolean   @default(false)
-    created_at  DateTime  @default(now())
-    user        User?     @relation(fields: [userId], references: [id])
-    userId      String?
-    workshop    Workshop? @relation(fields: [workshopId], references: [id])
-    workshopId  String?
+    id            String    @id @default(uuid())
+    userId        String
+    user          User      @relation(fields: [userId], references: [id])
+    workshopId    String?
+    workshop      Workshop? @relation(fields: [workshopId], references: [id])
+    triggeredById String?
+    bookingId     String?
+    booking       Booking?  @relation(fields: [bookingId], references: [id])
+    jobId         String?
+    job           Job?      @relation(fields: [jobId], references: [id])
+    roomId        String?
+    room          Room?     @relation(fields: [roomId], references: [id])
+    title         String
+    body          String
+    isRead        Boolean   @default(false)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
 }
 
 model Invoice {
-    id            String        @id @default(uuid())
-    workshop_id   String
-    billing_month String
-    total_jobs    Int
-    total_amount  Float
-    status        InvoiceStatus @default(DRAFT)
-    due_date      DateTime
-    created_at    DateTime      @default(now())
+    id           String        @id @default(uuid())
+    workshopId   String
+    workshop     Workshop      @relation(fields: [workshopId], references: [id])
+    billingMonth DateTime
+    totalJobs    Int
+    totalAmount  Float
+    status       InvoiceStatus @default(DRAFT)
+    dueDate      DateTime
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime      @updatedAt
 
-    workshop Workshop @relation(fields: [workshop_id], references: [id])
-}
-
-model WorkshopHour {
-    id          String   @id @default(uuid())
-    workshop_id String
-    weekday     Int // 0=Sunday .. 6=Saturday
-    opens_at    DateTime
-    closes_at   DateTime
-
-    workshop Workshop @relation(fields: [workshop_id], references: [id])
+    @@unique([workshopId, billingMonth])
 }

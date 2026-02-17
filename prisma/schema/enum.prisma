@@ -1,39 +1,39 @@
-enum UserRole {
+enum Role {
   USER
-  WORKSHOP
+  WORKSHOP_OWNER
   ADMIN
 }
 
-enum WorkshopStatus {
-  PENDING
-  APPROVED
-  REJECTED
+enum UserStatus {
+  ACTIVE
+  INACTIVE
   SUSPENDED
 }
 
 enum JobStatus {
+  PENDING
   OPEN
   IN_PROGRESS
   COMPLETED
   CANCELLED
+  EXPIRED
 }
 
 enum OfferStatus {
   PENDING
   ACCEPTED
   REJECTED
+  CANCELLED
+  EXPIRED
 }
 
 enum BookingStatus {
-  SCHEDULED
+  PENDING
+  CONFIRMED
   IN_PROGRESS
   COMPLETED
   CANCELLED
-}
-
-enum PriceType {
-  FIXED      
-  RANGE      
+  NO_SHOW
 }
 
 enum PaymentStatus {
@@ -41,6 +41,21 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+  PARTIALLY_PAID
+}
+
+enum WorkshopApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum PriceType {
+  FIXED
+  HOURLY
+  ESTIMATE
+  NEGOTIABLE
 }
 
 enum InvoiceStatus {
@@ -48,9 +63,10 @@ enum InvoiceStatus {
   SENT
   PAID
   OVERDUE
+  CANCELLED
 }
 
-enum RoomType {
-  GENERAL
-  BOOKING
+enum ReadStatus {
+  READ
+  UNREAD
 }
