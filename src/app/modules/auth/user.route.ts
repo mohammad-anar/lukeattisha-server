@@ -14,10 +14,9 @@ router.post(
   validateRequest(UserValidation.createUserZodSchema),
   UserController.createUser,
 );
-router.post(
-  "/login",
-  UserController.login,
-);
+router.post("/login", UserController.login);
+router.post("/verify-user", UserController.verifyUser);
+router.post("/resend-top", UserController.resendOTP);
 router.get("/user/:id", auth(Role.ADMIN), UserController.getUserById);
 router.patch(
   "/user/:id",

@@ -9,7 +9,7 @@ export interface IUser {
 
 export interface IVerifyEmail {
   email: string;
-  oneTimeCode: number;
+  otp: number | string;
 }
 
 export interface ILogin {

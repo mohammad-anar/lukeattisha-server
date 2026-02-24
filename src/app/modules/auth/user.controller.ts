@@ -85,6 +85,28 @@ const login = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const verifyUser = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const result = await UserService.verifyUser(payload);
+
+  sendResponse(res, {
+    success: true,
+    message: "User verification successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
+const resendOTP = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const result = await UserService.resendOTP(email);
+
+  sendResponse(res, {
+    success: true,
+    message: "User verification successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
 
 export const UserController = {
   createUser,
@@ -93,4 +115,6 @@ export const UserController = {
   updateUser,
   deleteUser,
   login,
+  verifyUser,
+  resendOTP,
 };
