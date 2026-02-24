@@ -70,3 +70,20 @@ enum ReadStatus {
   READ
   UNREAD
 }
+
+enum Urgency {
+  LOW
+  MEDIUM
+  HEIGH
+}
+
+enum BikeType {
+  ROAD
+  MOUNTAIN
+  HYBRID
+  ELECTRIC
+  BMX
+  GRAVEL
+  CRUISER
+  OTHER
+}

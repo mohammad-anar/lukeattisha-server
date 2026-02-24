@@ -19,6 +19,7 @@ model User {
     reviews       Review[]
     workshop      Workshop?
     rooms         Room[]
+    bikes         Bike[]
 
     @@index([role])
     @@index([status])
@@ -68,22 +69,46 @@ model WorkshopCategory {
     @@unique([workshopId, categoryId])
 }
 
+model Bike {
+    id String @id @default(uuid())
+
+    ownerId String
+    owner   User   @relation(fields: [ownerId], references: [id])
+
+    name  String
+    type  BikeType
+    brand String?
+    model String?
+    year  Int?
+    color String?
+
+    isPrimary Boolean @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    jobs Job[]
+}
+
 model Job {
     id            String    @id @default(uuid())
     userId        String
     user          User      @relation(fields: [userId], references: [id])
     categoryId    String
     category      Category  @relation(fields: [categoryId], references: [id])
+    title         String
     description   String
     address       String
     city          String
     postalCode    String
-    latitude      Float?
-    longitude     Float?
-    photos        String[] // Array of photo URLs
-    preferredTime DateTime?
-    budgetMin     Float?
-    budgetMax     Float?
+    latitude      Float
+    longitude     Float
+    bikeName      String
+    bikeType      BikeType
+    bikeBrand     String?
+    photos        String[]
+    preferredTime DateTime
+    urgency       Urgency   @default(MEDIUM)
     status        JobStatus @default(PENDING)
     createdAt     DateTime  @default(now())
     updatedAt     DateTime  @updatedAt
@@ -91,6 +116,8 @@ model Job {
     offers        JobOffer[]
     bookings      Booking[]
     notifications Notification[]
+    bike          Bike?          @relation(fields: [bikeId], references: [id])
+    bikeId        String?
 }
 
 model JobOffer {
@@ -99,9 +126,7 @@ model JobOffer {
     job        Job         @relation(fields: [jobId], references: [id])
     workshopId String
     workshop   Workshop    @relation(fields: [workshopId], references: [id])
-    priceType  PriceType   @default(ESTIMATE)
-    priceMin   Float?
-    priceMax   Float?
+    price      Float
     status     OfferStatus @default(PENDING)
     createdAt  DateTime    @default(now())
     updatedAt  DateTime    @updatedAt
@@ -120,7 +145,7 @@ model Booking {
     workshopId    String
     workshop      Workshop      @relation(fields: [workshopId], references: [id])
     scheduleStart DateTime
-    scheduleEnd   DateTime?
+    scheduleEnd   DateTime
     status        BookingStatus @default(PENDING)
     paymentStatus PaymentStatus @default(PENDING)
     createdAt     DateTime      @default(now())
