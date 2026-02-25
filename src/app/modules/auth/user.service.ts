@@ -13,7 +13,7 @@ import redisClient from "src/helpers.ts/redis.js";
 const createUser = async (payload: IUser) => {
   const result = await prisma.user.create({
     data: payload,
-    select: { id: true, name: true, email: true, role: true },
+    select: { id: true, name: true, email: true, phone: true, role: true },
   });
 
   //send email
