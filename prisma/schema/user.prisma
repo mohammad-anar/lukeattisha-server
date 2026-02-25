@@ -103,6 +103,7 @@ model Job {
     postalCode    String
     latitude      Float
     longitude     Float
+    radius        Int
     bikeName      String
     bikeType      BikeType
     bikeBrand     String?
