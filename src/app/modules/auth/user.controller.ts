@@ -8,10 +8,16 @@ import bcrypt from "bcryptjs";
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
+  const image = getSingleFilePath(req.files, "image") as string;
+  const url = `http://${config.ip_address}:${config.port}`.concat(image);
   const hashedPassword = await bcrypt.hash(
     payload.password,
     config.bcrypt_salt_round,
   );
+
+  if (image) {
+    payload.avatar = url;
+  }
 
   const result = await UserService.createUser({
     ...payload,
@@ -54,7 +60,7 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
   if (image) {
     payload.profilePhoto = url;
   }
-  const result = await UserService.updateUser();
+  const result = await UserService.updateUser(id, payload);
 
   sendResponse(res, {
     success: true,

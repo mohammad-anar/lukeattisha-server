@@ -18,7 +18,15 @@ const createUser = async (payload: IUser) => {
   );
   const result = await prisma.user.create({
     data: { ...payload, password: hashedPassword },
-    select: { id: true, name: true, email: true, phone: true, role: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      avatar: true,
+      address: true,
+      role: true,
+    },
   });
 
   //send email
@@ -65,7 +73,7 @@ const deleteUser = async (id: string) => {
 
 const login = async (payload: ILogin) => {
   const isExist = await prisma.user.findFirstOrThrow({
-    where: { email: payload.email, status: "ACTIVE", isVerified: true },
+    where: { email: payload.email, status: "ACTIVE" },
     select: {
       id: true,
       name: true,
