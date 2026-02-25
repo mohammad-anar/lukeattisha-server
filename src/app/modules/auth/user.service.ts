@@ -8,11 +8,16 @@ import config from "src/config/index.js";
 import { Secret, SignOptions } from "jsonwebtoken";
 import ApiError from "src/errors/ApiError.js";
 import redisClient from "src/helpers.ts/redis.js";
+import bcrypt from "bcryptjs";
 
 // create users
 const createUser = async (payload: IUser) => {
+  const hashedPassword = await bcrypt.hash(
+    payload.password,
+    config.bcrypt_salt_round,
+  );
   const result = await prisma.user.create({
-    data: payload,
+    data: { ...payload, password: hashedPassword },
     select: { id: true, name: true, email: true, phone: true, role: true },
   });
 
@@ -42,28 +47,32 @@ const getAllUsers = async () => {
 
 // get user by id
 const getUserById = async (id: string) => {
-  console.log("user by id");
+  const result = prisma.user.findUniqueOrThrow({ where: { id } });
+  return result;
 };
 
 // update user
-const updateUser = async () => {
-  console.log("updated user");
+const updateUser = async (id: string, payload: Partial<IUser>) => {
+  const result = await prisma.user.update({ where: { id }, data: payload });
+  return result;
 };
 
 // delete user
 const deleteUser = async (id: string) => {
-  "delete user";
+  const result = await prisma.user.delete({ where: { id } });
+  return result;
 };
 
 const login = async (payload: ILogin) => {
   const isExist = await prisma.user.findFirstOrThrow({
-    where: { email: payload.email, status: "ACTIVE" },
+    where: { email: payload.email, status: "ACTIVE", isVerified: true },
     select: {
+      id: true,
       name: true,
       email: true,
+      phone: true,
       role: true,
       isVerified: true,
-      id: true,
       status: true,
     },
   });
