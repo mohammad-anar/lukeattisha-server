@@ -10,7 +10,7 @@ import ApiError from "src/errors/ApiError.js";
 import redisClient from "src/helpers.ts/redis.js";
 import bcrypt from "bcryptjs";
 
-// create users
+// create users ================================
 const createUser = async (payload: IUser) => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
@@ -47,30 +47,33 @@ const createUser = async (payload: IUser) => {
 
   return result;
 };
-// get all users
+// get all users ===============================================
 const getAllUsers = async () => {
   const result = await prisma.user.findMany({ where: { role: "USER" } });
   return result;
 };
 
-// get user by id
+// get user by id ================================================
 const getUserById = async (id: string) => {
   const result = prisma.user.findUniqueOrThrow({ where: { id } });
   return result;
 };
 
-// update user
+
+
+// update user =====================================================
 const updateUser = async (id: string, payload: Partial<IUser>) => {
   const result = await prisma.user.update({ where: { id }, data: payload });
   return result;
 };
 
-// delete user
+// delete user ========================================
 const deleteUser = async (id: string) => {
   const result = await prisma.user.delete({ where: { id } });
   return result;
 };
 
+// login ===============================================
 const login = async (payload: ILogin) => {
   const isExist = await prisma.user.findFirstOrThrow({
     where: { email: payload.email, status: "ACTIVE" },
@@ -105,7 +108,7 @@ const login = async (payload: ILogin) => {
   return { accessToken, refreshToken, user: isExist };
 };
 
-// verify
+// verify==============================================
 const verifyUser = async ({ email, otp }: IVerifyEmail) => {
   // 1. Get the user's email from the DB
   const user = await prisma.user.findUnique({
@@ -152,6 +155,7 @@ const verifyUser = async ({ email, otp }: IVerifyEmail) => {
   return { accessToken, refreshToken };
 };
 
+// resendOTP =========================================
 const resendOTP = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: { email },
