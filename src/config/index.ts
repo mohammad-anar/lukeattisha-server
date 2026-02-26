@@ -10,6 +10,7 @@ export default {
   database_url: process.env.DATABASE_URL,
   bcrypt_salt_round: Number(process.env.BCRYPT_SALT_ROUND),
   cors_origin: process.env.CORS_ORIGIN,
+  frontend_url: process.env.FRONTEND_URL,
   email: {
     from: process.env.EMAIL_FROM,
     user: process.env.EMAIL_USER,

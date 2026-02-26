@@ -17,7 +17,8 @@ router.post(
 );
 router.post("/login", UserController.login);
 router.post("/verify-user", UserController.verifyUser);
-router.post("/resend-top", UserController.resendOTP);
+router.post("/resend-otp", UserController.resendOTP);
+router.post("/forget-password", UserController.forgetPassword);
 router.get("/user/:id", auth(Role.ADMIN), UserController.getUserById);
 router.patch(
   "/user/:id",

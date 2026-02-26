@@ -194,7 +194,6 @@ const verifyUser = async ({ email, otp }: IVerifyEmail) => {
   });
 
   if (!user) throw new Error("User not found");
-  if (user.isVerified) return { status: "already_verified" };
 
   const redisKey = `otp:${user.email}`;
   const storedOtp = await redisClient.get(redisKey);
@@ -253,7 +252,36 @@ const resendOTP = async (email: string) => {
   // 5. Send OTP email
   await emailHelper.sendEmail(otpTemplate);
 
-  return { status: "otp_sent" };
+  return { status: "Otp resend successfully" };
+};
+
+const forgetPassword = async (email: string) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, name: true, isVerified: true, isDeleted: true },
+  });
+  if (!user) throw new ApiError(404, "User not found");
+  if (!user.isVerified || user.isDeleted) {
+    throw new ApiError(
+      403,
+      "You are not verifies. Please verify your account to reset password",
+    );
+  }
+
+  const token = jwtHelper.createToken(
+    { email },
+    config.jwt.jwt_secret as Secret,
+    "15m",
+  );
+  const resetPasswordTemplate = await emailTemplate.forgetPassword({
+    email,
+    token,
+  });
+
+  // 5. Send OTP email
+  await emailHelper.sendEmail(resetPasswordTemplate);
+
+  return { status: "Reset password email sent" };
 };
 
 export const UserService = {
@@ -265,4 +293,5 @@ export const UserService = {
   login,
   verifyUser,
   resendOTP,
+  forgetPassword,
 };

@@ -112,7 +112,18 @@ const resendOTP = catchAsync(async (req: Request, res: Response) => {
 
   sendResponse(res, {
     success: true,
-    message: "User verification successfully",
+    message: "OTP resent successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
+const forgetPassword = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const result = await UserService.forgetPassword(email);
+
+  sendResponse(res, {
+    success: true,
+    message: "Password reset OTP sent successfully",
     statusCode: 200,
     data: result,
   });
@@ -127,4 +138,5 @@ export const UserController = {
   login,
   verifyUser,
   resendOTP,
+  forgetPassword,
 };

@@ -1,44 +1,193 @@
+import config from "src/config/index.js";
 import { ICreateAccount, IResetPassword } from "src/types/emailTamplate.js";
 
+const PRIMARY_COLOR = "#00C6CF";
+
+const baseTemplate = (content: string) => `
+<body style="margin:0; padding:0; background-color:#f4f6f8; font-family:Arial, Helvetica, sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0"
+          style="max-width:600px; background:#ffffff; border-radius:12px;
+          padding:40px 35px; box-shadow:0 10px 30px rgba(0,0,0,0.05);">
+
+          <!-- Brand Header -->
+          <tr>
+            <td align="center" style="padding-bottom:20px;">
+              <h1 style="margin:0; font-size:22px; color:${PRIMARY_COLOR}; font-weight:700;">
+                FixMinCykel
+              </h1>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td>
+              <hr style="border:none; border-top:1px solid #eeeeee; margin:20px 0;">
+            </td>
+          </tr>
+
+          <!-- Dynamic Content -->
+          <tr>
+            <td>
+              ${content}
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding-top:40px;">
+              <hr style="border:none; border-top:1px solid #eeeeee; margin-bottom:20px;">
+              <p style="font-size:13px; color:#888888; line-height:1.6; margin:0;">
+                If you have any questions, contact our support team.
+              </p>
+              <p style="font-size:12px; color:#bbbbbb; margin-top:10px;">
+                © ${new Date().getFullYear()} FixMinCykel. All rights reserved.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+`;
+
+// ==========================
+// 🔐 CREATE ACCOUNT TEMPLATE
+// ==========================
 const createAccount = (values: ICreateAccount) => {
-  const data = {
-    to: values.email,
-    subject: "Verify your account",
-    html: `<body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 50px; padding: 20px; color: #555;">
-    <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-       
-          <h2 style="color: #C18F18; font-size: 24px; margin-bottom: 20px; text-align: center;">Hey! ${values.name}, Your FixMinCykel's Credentials</h2>
-        <div style="text-align: center;">
-            <p style="color: #555; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">Your otp is:</p>
-            <div style="background-color: #C18F18; width: 80px; padding: 10px; text-align: center; border-radius: 8px; color: #fff; font-size: 25px; letter-spacing: 2px; margin: 20px auto;">${values.otp}</div>
-            <p style="color: #555; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">This code is valid for 5 minutes.</p>
-        </div>
+  const content = `
+    <h2 style="margin:0 0 20px 0; font-size:20px; color:#222;">
+      Welcome ${values.name},
+    </h2>
+
+    <p style="font-size:15px; line-height:1.7; color:#555; margin-bottom:25px;">
+      Thank you for creating an account with FixMinCykel.
+      Please use the verification code below to activate your account.
+    </p>
+
+    <div style="text-align:center; margin:30px 0;">
+      <span style="
+        display:inline-block;
+        background:${PRIMARY_COLOR};
+        color:#ffffff;
+        padding:14px 28px;
+        border-radius:8px;
+        font-size:24px;
+        letter-spacing:4px;
+        font-weight:600;">
+        ${values.otp}
+      </span>
     </div>
-</body>`,
+
+    <p style="font-size:14px; color:#777; margin-top:10px;">
+      This code is valid for <strong>5 minutes</strong>.
+    </p>
+
+    <p style="font-size:13px; color:#999; margin-top:25px;">
+      If you did not request this account, please ignore this email.
+    </p>
+  `;
+
+  return {
+    to: values.email,
+    subject: "Verify your FixMinCykel account",
+    html: baseTemplate(content),
   };
-  return data;
 };
 
+// ==========================
+// 🔁 RESET PASSWORD (OTP)
+// ==========================
 const resetPassword = (values: IResetPassword) => {
-  const data = {
-    to: values.email,
-    subject: "Reset your password",
-    html: `<body style="font-family: Arial, sans-serif; background-color: #f9f9f9; margin: 50px; padding: 20px; color: #555;">
-    <div style="width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #fff; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
-            <h2 style="color: #C18F18; font-size: 24px; margin-bottom: 20px; text-align: center;">Hey! this is your FixMinCykel's Credentials</h2>
-        
-            <p style="color: #555; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">Your single use code is:</p>
-        <div style="background-color: #C18F18; width: 80px; padding: 10px; text-align: center; border-radius: 8px; color: #fff; font-size: 25px; letter-spacing: 2px; margin: 20px auto;">${values.otp}</div>
-            <p style="color: #555; font-size: 16px; line-height: 1.5; margin-bottom: 20px;">This code is valid for 3 minutes.</p>
-                <p style="color: #b9b4b4; font-size: 16px; line-height: 1.5; margin-bottom: 20px;text-align:left">If you didn't request this code, you can safely ignore this email. Someone else might have typed your email address by mistake.</p>
-        </div>
+  const content = `
+    <h2 style="margin:0 0 20px 0; font-size:20px; color:#222;">
+      Password Reset Code
+    </h2>
+
+    <p style="font-size:15px; line-height:1.7; color:#555; margin-bottom:25px;">
+      Use the single-use code below to reset your password.
+    </p>
+
+    <div style="text-align:center; margin:30px 0;">
+      <span style="
+        display:inline-block;
+        background:${PRIMARY_COLOR};
+        color:#ffffff;
+        padding:14px 28px;
+        border-radius:8px;
+        font-size:24px;
+        letter-spacing:4px;
+        font-weight:600;">
+        ${values.otp}
+      </span>
     </div>
-</body>`,
+
+    <p style="font-size:14px; color:#777;">
+      This code expires in <strong>3 minutes</strong>.
+    </p>
+
+    <p style="font-size:13px; color:#999; margin-top:25px;">
+      If you didn’t request this, you can safely ignore this email.
+    </p>
+  `;
+
+  return {
+    to: values.email,
+    subject: "Reset your FixMinCykel password",
+    html: baseTemplate(content),
   };
-  return data;
+};
+
+// ==========================
+// 🔗 FORGET PASSWORD (LINK)
+// ==========================
+const forgetPassword = (values: { email: string; token: string }) => {
+  const content = `
+    <h2 style="margin:0 0 20px 0; font-size:20px; color:#222;">
+      Reset Your Password
+    </h2>
+
+    <p style="font-size:15px; line-height:1.7; color:#555; margin-bottom:25px;">
+      Click the button below to securely reset your password.
+    </p>
+
+    <div style="text-align:center; margin:30px 0;">
+      <a href="${config.frontend_url}/reset-password?token=${values.token}"
+         style="
+           background:${PRIMARY_COLOR};
+           color:#ffffff;
+           text-decoration:none;
+           padding:14px 30px;
+           border-radius:8px;
+           font-size:15px;
+           font-weight:600;
+           display:inline-block;">
+         Reset Password
+      </a>
+    </div>
+
+    <p style="font-size:13px; color:#777;">
+      This link will expire shortly for security reasons.
+    </p>
+
+    <p style="font-size:13px; color:#999; margin-top:15px;">
+      If you didn’t request this password reset, you can ignore this email.
+    </p>
+  `;
+
+  return {
+    to: values.email,
+    subject: "Password Reset Request",
+    html: baseTemplate(content),
+  };
 };
 
 export const emailTemplate = {
   createAccount,
   resetPassword,
+  forgetPassword,
 };
