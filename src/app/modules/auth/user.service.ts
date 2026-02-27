@@ -66,8 +66,6 @@ const getAllUsers = async (
   const { searchTerm, ...filterData } = params;
 
   const andConditions: Prisma.UserWhereInput[] = [];
-
-  //console.log(filterData);
   if (params.searchTerm) {
     andConditions.push({
       OR: ["name", "email", "phone"].map((field) => ({
@@ -323,11 +321,11 @@ const resetPassword = async (
 
   if (!user) throw new ApiError(404, "User not found");
 
-  console.log(oldPassword, user.password);
+
 
   const isPasswordMatched = await bcrypt.compare(oldPassword, user.password);
 
-  console.log(isPasswordMatched);
+
   if (!isPasswordMatched) throw new ApiError(400, "Old password is incorrect");
 
   const hashedPassword = await bcrypt.hash(

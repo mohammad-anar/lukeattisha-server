@@ -31,7 +31,7 @@ const sendEmail = async (values: ISendEmail) => {
       html: values.html,
     });
 
-    console.log("Mail send successfully", info.accepted);
+
   } catch (error) {
     console.error("Email", error);
   }
