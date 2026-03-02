@@ -1,0 +1,47 @@
+
+model Job {
+    id            String    @id @default(uuid())
+    userId        String
+    user          User      @relation(fields: [userId], references: [id])
+    categoryId    String
+    category      Category  @relation(fields: [categoryId], references: [id])
+    title         String
+    description   String
+    address       String
+    city          String
+    postalCode    String
+    latitude      Float
+    longitude     Float
+    radius        Int
+    bikeName      String
+    bikeType      BikeType
+    bikeBrand     String?
+    photos        String[]
+    preferredTime DateTime
+    urgency       Urgency   @default(MEDIUM)
+    status        JobStatus @default(PENDING)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+
+    offers        JobOffer[]
+    bookings      Booking[]
+    notifications Notification[]
+    bike          Bike?          @relation(fields: [bikeId], references: [id])
+    bikeId        String?
+}
+
+model JobOffer {
+    id            String      @id @default(uuid())
+    jobId         String
+    job           Job         @relation(fields: [jobId], references: [id])
+    workshopId    String
+    workshop      Workshop    @relation(fields: [workshopId], references: [id])
+    price         Float
+    estimatedTime DateTime
+    message       String?
+    status        OfferStatus @default(PENDING)
+    createdAt     DateTime    @default(now())
+    updatedAt     DateTime    @updatedAt
+
+    booking Booking?
+}

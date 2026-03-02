@@ -1,0 +1,20 @@
+
+model Notification {
+    id            String    @id @default(uuid())
+    userId        String
+    user          User      @relation(fields: [userId], references: [id])
+    workshopId    String?
+    workshop      Workshop? @relation(fields: [workshopId], references: [id])
+    triggeredById String?
+    bookingId     String?
+    booking       Booking?  @relation(fields: [bookingId], references: [id])
+    jobId         String?
+    job           Job?      @relation(fields: [jobId], references: [id])
+    roomId        String?
+    room          Room?     @relation(fields: [roomId], references: [id])
+    title         String
+    body          String
+    isRead        Boolean   @default(false)
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+}

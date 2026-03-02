@@ -1,0 +1,21 @@
+
+model Bike {
+    id String @id @default(uuid())
+
+    ownerId String
+    owner   User   @relation(fields: [ownerId], references: [id])
+
+    name  String
+    type  BikeType
+    brand String?
+    model String?
+    year  Int?
+    color String?
+
+    isPrimary Boolean @default(false)
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    jobs Job[]
+}

@@ -1,0 +1,27 @@
+
+model Room {
+    id         String   @id @default(uuid())
+    bookingId  String   @unique
+    booking    Booking  @relation(fields: [bookingId], references: [id])
+    userId     String
+    user       User     @relation(fields: [userId], references: [id])
+    workshopId String
+    workshop   Workshop @relation(fields: [workshopId], references: [id])
+    name       String?
+    createdAt  DateTime @default(now())
+    updatedAt  DateTime @updatedAt
+
+    messages      Message[]
+    notifications Notification[]
+}
+
+model Message {
+    id        String   @id @default(uuid())
+    roomId    String
+    room      Room     @relation(fields: [roomId], references: [id])
+    senderId  String
+    sender    User     @relation(fields: [senderId], references: [id])
+    message   String
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+}
