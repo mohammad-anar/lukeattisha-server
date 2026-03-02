@@ -24,6 +24,11 @@ router.post(
   auth(Role.USER, Role.ADMIN, Role.WORKSHOP),
   UserController.resetPassword,
 );
+router.post(
+  "/change-password",
+  auth(Role.USER, Role.ADMIN, Role.WORKSHOP),
+  UserController.changePassword,
+);
 router.get("/user/:id", auth(Role.ADMIN), UserController.getUserById);
 router.patch(
   "/user/:id",

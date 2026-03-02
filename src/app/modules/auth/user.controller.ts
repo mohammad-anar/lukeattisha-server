@@ -123,16 +123,24 @@ const forgetPassword = catchAsync(async (req: Request, res: Response) => {
 });
 const resetPassword = catchAsync(async (req: Request, res: Response) => {
   const { email } = req.user;
-  const { newPassword, oldPassword } = req.body;
-  const result = await UserService.resetPassword(
-    email,
-    newPassword,
-    oldPassword,
-  );
+  const { password } = req.body;
+  const result = await UserService.resetPassword(email, password);
 
   sendResponse(res, {
     success: true,
     message: "Your password reset successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
+const changePassword = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.user;
+  const { oldPassword, newPassword } = req.body;
+  const result = await UserService.changePassword(email, oldPassword, newPassword);
+
+  sendResponse(res, {
+    success: true,
+    message: "Your password changed successfully",
     statusCode: 200,
     data: result,
   });
@@ -149,4 +157,5 @@ export const UserController = {
   resendOTP,
   forgetPassword,
   resetPassword,
+  changePassword
 };

@@ -310,7 +310,26 @@ const forgetPassword = async (email: string) => {
 };
 
 // reset password =================================================
-const resetPassword = async (
+const resetPassword = async (email: string, password: string) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) throw new ApiError(404, "User not found");
+
+  const hashedPassword = await bcrypt.hash(
+    password,
+    Number(config.bcrypt_salt_round),
+  );
+
+  await prisma.user.update({
+    where: { email },
+    data: { password: hashedPassword },
+  });
+
+  return null;
+};
+const changePassword = async (
   email: string,
   newPassword: string,
   oldPassword: string,
@@ -321,10 +340,7 @@ const resetPassword = async (
 
   if (!user) throw new ApiError(404, "User not found");
 
-
-
   const isPasswordMatched = await bcrypt.compare(oldPassword, user.password);
-
 
   if (!isPasswordMatched) throw new ApiError(400, "Old password is incorrect");
 
@@ -338,7 +354,7 @@ const resetPassword = async (
     data: { password: hashedPassword },
   });
 
-  return { status: "Password reset successfully" };
+  return null;
 };
 
 export const UserService = {
@@ -352,4 +368,5 @@ export const UserService = {
   resendOTP,
   forgetPassword,
   resetPassword,
+  changePassword,
 };
