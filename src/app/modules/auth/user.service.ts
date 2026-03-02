@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { Secret, SignOptions } from "jsonwebtoken";
 import { emailTemplate } from "src/app/shared/emailTemplate.js";
-import { prisma } from "src/app/shared/prisma.js";
+import { prisma } from "src/helpers.ts/prisma.js";
 import config from "src/config/index.js";
 import ApiError from "src/errors/ApiError.js";
 import { emailHelper } from "src/helpers.ts/emailHelper.js";
@@ -18,7 +18,7 @@ import { Prisma } from "@prisma/client";
 import { isMainThread } from "worker_threads";
 
 // create users ================================
-const createUser = async (payload: IUser) => {
+const createUser = async (payload: Prisma.UserCreateInput) => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
     config.bcrypt_salt_round,

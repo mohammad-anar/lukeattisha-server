@@ -5,9 +5,10 @@ import config from "src/config/index.js";
 import { UserService } from "./user.service.js";
 import sendResponse from "src/app/shared/sendResponse.js";
 import pick from "src/helpers.ts/pick.js";
+import { Prisma } from "@prisma/client";
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
-  const payload = req.body;
+  const payload: Prisma.UserCreateInput = req.body;
   const image = getSingleFilePath(req.files, "image") as string;
   const url = `http://${config.ip_address}:${config.port}`.concat(image);
 
@@ -26,7 +27,7 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ["role"]);
+  const filters = pick(req.query, ["role", "searchTerm"]);
   const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
 
   const result = await UserService.getAllUsers(filters, options);
@@ -136,7 +137,11 @@ const resetPassword = catchAsync(async (req: Request, res: Response) => {
 const changePassword = catchAsync(async (req: Request, res: Response) => {
   const { email } = req.user;
   const { oldPassword, newPassword } = req.body;
-  const result = await UserService.changePassword(email, oldPassword, newPassword);
+  const result = await UserService.changePassword(
+    email,
+    oldPassword,
+    newPassword,
+  );
 
   sendResponse(res, {
     success: true,
@@ -157,5 +162,5 @@ export const UserController = {
   resendOTP,
   forgetPassword,
   resetPassword,
-  changePassword
+  changePassword,
 };

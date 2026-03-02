@@ -1,6 +1,6 @@
 import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
-import { prisma } from "src/app/shared/prisma.js";
+import { prisma } from "src/helpers.ts/prisma.js";
 import config from "src/config/index.js";
 
 export const seedSuperAdmin = async () => {

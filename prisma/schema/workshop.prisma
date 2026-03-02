@@ -17,12 +17,12 @@ model Workshop {
     createdAt      DateTime               @default(now())
     updatedAt      DateTime               @updatedAt
 
-    categories           WorkshopCategory[]
-    bookings             Booking[]
-    jobs                 JobOffer[]
-    invoices             Invoice[]
-    notifications        Notification[]
-    rooms                Room[]
+    categories    WorkshopCategory[]
+    bookings      Booking[]
+    jobs          JobOffer[]
+    invoices      Invoice[]
+    notifications Notification[]
+    rooms         Room[]
     workshopOpeningHours WorkshopOpeningHour[]
 }
 
