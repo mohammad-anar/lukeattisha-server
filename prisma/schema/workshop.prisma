@@ -1,29 +1,36 @@
 model Workshop {
-    id             String                 @id @default(uuid())
-    userId         String                 @unique
-    user           User                   @relation(fields: [userId], references: [id])
-    workshopName   String
-    ownerName      String
-    cvrNumber      String
-    description    String?
-    address        String
-    city           String
-    postalCode     String
-    latitude       Float?
-    longitude      Float?
+    id           String  @id @default(uuid())
+    email        String  @unique
+    password     String
+    phone        String? @unique
+    avatar       String?
+    workshopName String
+    ownerName    String
+    cvrNumber    String
+    description  String?
+    address      String
+    city         String
+    postalCode   String
+    latitude     Float?
+    longitude    Float?
+    isVerified   Boolean @default(false)
+
     approvalStatus WorkshopApprovalStatus @default(PENDING)
     avgRating      Float                  @default(0)
     reviewsCount   Int                    @default(0)
-    createdAt      DateTime               @default(now())
-    updatedAt      DateTime               @updatedAt
 
-    categories    WorkshopCategory[]
-    bookings      Booking[]
-    jobs          JobOffer[]
-    invoices      Invoice[]
-    notifications Notification[]
-    rooms         Room[]
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    categories           WorkshopCategory[]
+    bookings             Booking[]
+    jobs                 JobOffer[]
+    invoices             Invoice[]
+    notifications        Notification[]
+    rooms                Room[]
     workshopOpeningHours WorkshopOpeningHour[]
+
+    @@index([approvalStatus])
 }
 
 model WorkshopOpeningHour {

@@ -1,4 +1,4 @@
-import { Prisma, Role } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { paginationHelper } from "src/helpers.ts/paginationHelper.js";
 import { prisma } from "src/helpers.ts/prisma.js";
 import {
@@ -8,33 +8,15 @@ import {
 import { ICreateWorkshop } from "./workshop.interfaces.js";
 
 // create workshop ================================
-const createWorkshop = async (payload: ICreateWorkshop) => {
-  const { workshopName, email, phone, password, address, avatar, ...rest } =
-    payload;
-  await prisma.$transaction(async (tx) => {
-    const user = await tx.user.create({
-      data: {
-        name: workshopName,
-        email,
-        phone,
-        address,
-        avatar,
-        role: Role.WORKSHOP,
-        password,
-        isVerified: true,
-      },
-    });
-    const workshop = await tx.workshop.create({
-      data: {
-        ...rest,
-        workshopName,
-        address,
-        userId: user.id,
-      },
-    });
-
-    return workshop;
+const createWorkshop = async (payload: Prisma.WorkshopCreateInput) => {
+  const workshop = await prisma.workshop.create({
+    data: {
+      ...payload,
+      isVerified: true,
+    },
   });
+
+  return workshop;
 };
 
 // get all workshops ===============================================
@@ -43,15 +25,17 @@ const getAllWorkshops = async (
   options: IPaginationOptions,
 ) => {
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
+
   const { searchTerm, ...filterData } = params;
 
   const andConditions: Prisma.WorkshopWhereInput[] = [];
-  if (params.searchTerm) {
+
+  if (searchTerm) {
     andConditions.push({
       OR: ["workshopName", "ownerName", "address", "description"].map(
         (field) => ({
           [field]: {
-            contains: params.searchTerm,
+            contains: searchTerm,
             mode: "insensitive",
           },
         }),
@@ -69,7 +53,8 @@ const getAllWorkshops = async (
     });
   }
 
-  const whereConditions: Prisma.WorkshopWhereInput = { AND: andConditions };
+  const whereConditions: Prisma.WorkshopWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
 
   const result = await prisma.workshop.findMany({
     where: whereConditions,
@@ -85,7 +70,6 @@ const getAllWorkshops = async (
           },
 
     include: {
-      user: true,
       bookings: true,
       categories: true,
       invoices: true,
@@ -108,4 +92,7 @@ const getAllWorkshops = async (
   };
 };
 
-export const WorkshopService = { createWorkshop, getAllWorkshops };
+export const WorkshopService = {
+  createWorkshop,
+  getAllWorkshops,
+};

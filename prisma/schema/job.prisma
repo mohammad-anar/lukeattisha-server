@@ -1,4 +1,3 @@
-
 model Job {
     id            String    @id @default(uuid())
     userId        String

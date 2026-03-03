@@ -13,21 +13,15 @@ model User {
     createdAt  DateTime   @default(now())
     updatedAt  DateTime   @updatedAt
 
-    jobs          Job[]
     bookings      Booking[]
     messages      Message[]
     notifications Notification[]
     reviews       Review[]
-    workshop      Workshop?
-    rooms         Room[]
     bikes         Bike[]
     blogs         Blog[]
+    jobs          Job[]
+    rooms         Room[]
 
     @@index([role])
     @@index([status])
 }
-
-
-
-
-
