@@ -9,7 +9,7 @@ import { CreateJobSchema } from "./job.validation.js";
 const router = express.Router();
 
 router.post(
-  "/register",
+  "/",
   auth(Role.USER),
   validateRequest(CreateJobSchema),
   JobController.createJob,
