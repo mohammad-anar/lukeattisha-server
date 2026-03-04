@@ -9,6 +9,11 @@ import { UserValidation } from "./user.validation.js";
 const router = express.Router();
 
 router.get("/users", UserController.getAllUsers);
+router.get(
+  "/user/me",
+  auth(Role.USER, Role.ADMIN, Role.WORKSHOP),
+  UserController.getMe,
+);
 router.post(
   "/register",
   fileUploadHandler(),
@@ -30,6 +35,7 @@ router.post(
   UserController.changePassword,
 );
 router.get("/user/:id", auth(Role.ADMIN), UserController.getUserById);
+
 router.patch(
   "/user/:id",
   auth(Role.ADMIN, Role.USER, Role.WORKSHOP),

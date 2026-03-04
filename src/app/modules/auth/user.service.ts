@@ -104,6 +104,29 @@ const getAllUsers = async (
         : {
             createdAt: "desc",
           },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      avatar: true,
+      address: true,
+      role: true,
+      bikes: true,
+      country: true,
+      city: true,
+      state: true,
+      isDeleted: true,
+      isVerified: true,
+      status: true,
+      jobs: true,
+      bookings: true,
+      postalCode: true,
+      notifications: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: true,
+    },
   });
 
   const total = await prisma.user.count({
@@ -122,7 +145,67 @@ const getAllUsers = async (
 
 // get user by id ================================================
 const getUserById = async (id: string) => {
-  const result = prisma.user.findUniqueOrThrow({ where: { id } });
+  const result = prisma.user.findUniqueOrThrow({
+    where: { id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      avatar: true,
+      address: true,
+      role: true,
+      bikes: true,
+      country: true,
+      city: true,
+      state: true,
+      isDeleted: true,
+      isVerified: true,
+      status: true,
+      jobs: true,
+      bookings: true,
+      postalCode: true,
+      notifications: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: true,
+    },
+  });
+  return result;
+};
+// getMe ================================================
+const getMe = async (email: string) => {
+  console.log(email, "email");
+  const result = prisma.user.findUniqueOrThrow({
+    where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      avatar: true,
+      address: true,
+      role: true,
+      bikes: true,
+      country: true,
+      city: true,
+      state: true,
+      isDeleted: true,
+      isVerified: true,
+      status: true,
+      jobs: true,
+      bookings: true,
+      postalCode: true,
+      notifications: true,
+      blogs: true,
+      messages: true,
+      reviews: true,
+      rooms: true,
+      createdAt: true,
+      updatedAt: true,
+      _count: true,
+    },
+  });
   return result;
 };
 
@@ -363,6 +446,7 @@ export const UserService = {
   createUser,
   getAllUsers,
   getUserById,
+  getMe,
   updateUser,
   deleteUser,
   login,

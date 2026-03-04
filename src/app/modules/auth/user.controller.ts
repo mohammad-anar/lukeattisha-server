@@ -45,7 +45,20 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
 
   sendResponse(res, {
     success: true,
-    message: "User retrieve successfully",
+    message: "User retrieved successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
+
+// -==============
+const getMe = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.user;
+  const result = await UserService.getMe(email as string);
+
+  sendResponse(res, {
+    success: true,
+    message: "User data retrieved successfully",
     statusCode: 200,
     data: result,
   });
@@ -155,6 +168,7 @@ export const UserController = {
   createUser,
   getAllUsers,
   getUserById,
+  getMe,
   updateUser,
   deleteUser,
   login,
