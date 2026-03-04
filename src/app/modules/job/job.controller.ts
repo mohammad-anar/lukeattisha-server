@@ -4,9 +4,16 @@ import sendResponse from "src/app/shared/sendResponse.js";
 import { JobService } from "./job.services.js";
 import { getMultipleFilesPath } from "src/app/shared/getFilePath.js";
 import config from "src/config/index.js";
+import ApiError from "src/errors/ApiError.js";
 
 const createJob = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user;
   const payload = req.body;
+
+  if (!id) {
+    throw new ApiError(401, "User not found");
+  }
+  payload.userId = id;
 
   const image = getMultipleFilesPath(req.files, "image") as string[];
   const photos = image.map((img) =>

@@ -5,11 +5,13 @@ import { Role } from "@prisma/client";
 import auth from "src/app/middlewares/auth.js";
 import { JobController } from "./job.controller.js";
 import { CreateJobSchema } from "./job.validation.js";
+import fileUploadHandler from "src/app/middlewares/fileUploadHandler.js";
 
 const router = express.Router();
 
 router.post(
   "/",
+  fileUploadHandler(),
   auth(Role.USER),
   validateRequest(CreateJobSchema),
   JobController.createJob,

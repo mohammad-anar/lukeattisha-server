@@ -19,7 +19,6 @@ model User {
 
     bookings      Booking[]
     messages      Message[]
-    notifications Notification[]
     reviews       Review[]
     bikes         Bike[]
     blogs         Blog[]
