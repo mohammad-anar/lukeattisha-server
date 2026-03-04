@@ -9,11 +9,7 @@ import { UserValidation } from "./user.validation.js";
 const router = express.Router();
 
 router.get("/users", UserController.getAllUsers);
-router.get(
-  "/user/me",
-  auth(Role.USER, Role.ADMIN, Role.WORKSHOP),
-  UserController.getMe,
-);
+router.get("/user/me", auth(Role.USER, Role.ADMIN), UserController.getMe);
 router.post(
   "/register",
   fileUploadHandler(),

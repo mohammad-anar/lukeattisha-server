@@ -12,6 +12,7 @@ import { Role } from "@prisma/client";
 const router = express.Router();
 
 router.get("/", WorkshopController.getAllWorkshops);
+router.get("/me", auth(Role.WORKSHOP), WorkshopController.getMe);
 
 router.post(
   "/register",

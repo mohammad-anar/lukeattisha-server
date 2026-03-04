@@ -51,7 +51,7 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// -==============
+// me ==============
 const getMe = catchAsync(async (req: Request, res: Response) => {
   const { email } = req.user;
   const result = await UserService.getMe(email as string);

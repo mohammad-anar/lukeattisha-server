@@ -54,6 +54,19 @@ const getWorkshopById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// me ==============
+const getMe = catchAsync(async (req: Request, res: Response) => {
+  const { email } = req.user;
+  const result = await WorkshopService.getMe(email as string);
+
+  sendResponse(res, {
+    success: true,
+    message: "Workshop data retrieved successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
+
 const updateWorkshop = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const payload = req.body;
@@ -191,6 +204,7 @@ export const WorkshopController = {
   createWorkshop,
   getAllWorkshops,
   getWorkshopById,
+  getMe,
   updateWorkshop,
   deleteWorkshop,
   loginWorkshop,
