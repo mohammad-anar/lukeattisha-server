@@ -74,7 +74,7 @@ enum ReadStatus {
 enum Urgency {
   LOW
   MEDIUM
-  HEIGH
+  HIGH
 }
 
 enum BikeType {
