@@ -25,7 +25,7 @@ const createJob = catchAsync(async (req: Request, res: Response) => {
     payload.photos = photos;
   }
 
-  const result = await JobService.createJob(payload);
+  const result = await JobService.createJob(id, payload);
 
   sendResponse(res, {
     success: true,
@@ -62,6 +62,7 @@ const getJobById = catchAsync(async (req: Request, res: Response) => {
 const updateJobById = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
   const payload = req.body;
+  console.log(payload);
   const result = await JobService.updateJobById(id, payload);
 
   sendResponse(res, {

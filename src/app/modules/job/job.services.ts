@@ -4,20 +4,36 @@ import { prisma } from "src/helpers.ts/prisma.js";
 import { createAndEmitNotification } from "src/helpers.ts/socketHelper.js";
 import { IPaginationOptions } from "src/types/pagination.js";
 
-const createJob = async (payload: any) => {
+const createJob = async (userId: string, payload: any) => {
+  const { categories, ...jobData } = payload;
+  console.log({ categories });
+
+  // 1️⃣ Create Job
   const job = await prisma.job.create({
     data: {
-      ...payload,
+      ...jobData,
+      userId,
       status: JobStatus.OPEN,
     },
   });
 
-  // Geo matching using PostGIS
+  // 2️⃣ Create Job Categories
+  if (categories && categories.length > 0) {
+    await prisma.jobCategory.createMany({
+      data: categories.map((cat: any) => ({
+        jobId: job.id,
+        categoryId: cat.categoryId,
+        description: cat.description,
+      })),
+    });
+  }
+
+  // 3️⃣ Find Nearby Workshops (PostGIS)
   const nearbyWorkshops = await prisma.$queryRaw<{ id: string }[]>`
     SELECT id FROM "Workshop"
     WHERE "approvalStatus" = 'APPROVED'
     AND ST_DWithin(
-      location,
+      ST_SetSRID(ST_MakePoint(longitude, latitude), 4326)::geography,
       ST_SetSRID(ST_MakePoint(${job.longitude}, ${job.latitude}), 4326)::geography,
       ${job.radius * 1000}
     )
@@ -25,13 +41,15 @@ const createJob = async (payload: any) => {
 
   const workshopIds = nearbyWorkshops.map((w) => w.id);
 
-  // Create a single notification for all workshops
-  await createAndEmitNotification({
-    workshopIds, // pass array instead of single workshopId
-    jobId: job.id,
-    title: "New Job Nearby",
-    body: "A new job is available in your area.",
-  });
+  // 4️⃣ Send Notifications via Socket
+  if (workshopIds.length > 0) {
+    await createAndEmitNotification({
+      workshopIds,
+      jobId: job.id,
+      title: "New Job Nearby",
+      body: "A new bike service job is available in your area.",
+    });
+  }
 
   return job;
 };
@@ -85,17 +103,42 @@ const getAllJobs = async (
           },
     select: {
       id: true,
-      title:true,
-      description:true,
-      address:true,
-      bikeName:true,
+      title: true,
+      description: true,
+      address: true,
+      bikeName: true,
       bikeType: true,
-      bikeBrand:true,
-      bikeId:true,
-      bike:true,
-      city:true,
-      photos:true,
-      category:true,
+      bikeBrand: true,
+      bikeId: true,
+      bike: true,
+      city: true,
+      categories: {
+        select: {
+          description: true,
+          category: true,
+        },
+      },
+      latitude: true,
+      bookings: true,
+      createdAt: true,
+      longitude: true,
+      offers: true,
+      photos: true,
+      postalCode: true,
+      radius: true,
+      status: true,
+      urgency: true,
+      preferredTime: true,
+      updatedAt: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          avatar: true,
+        },
+      },
     },
   });
 
