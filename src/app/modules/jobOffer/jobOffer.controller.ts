@@ -15,5 +15,47 @@ const createJobOffer = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getOfferById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
 
-export const JobOfferController = { createJobOffer };
+  const result = await JobOfferServices.getOfferById(id);
+
+  sendResponse(res, {
+    success: true,
+    message: "Job offer retrieved successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
+const updateOfferById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const payload = req.body;
+
+  const result = await JobOfferServices.updateOfferById(id, payload);
+
+  sendResponse(res, {
+    success: true,
+    message: "Job offer updated successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
+const deleteOfferById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const result = await JobOfferServices.deleteOffer(id);
+
+  sendResponse(res, {
+    success: true,
+    message: "Job offer deleted successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
+
+export const JobOfferController = {
+  createJobOffer,
+  getOfferById,
+  updateOfferById,
+  deleteOfferById,
+};
