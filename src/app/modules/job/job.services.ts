@@ -6,7 +6,6 @@ import { IPaginationOptions } from "src/types/pagination.js";
 
 const createJob = async (userId: string, payload: any) => {
   const { categories, ...jobData } = payload;
-  console.log({ categories });
 
   // 1️⃣ Create Job
   const job = await prisma.job.create({
