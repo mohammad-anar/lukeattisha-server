@@ -9,7 +9,7 @@ import fileUploadHandler from "src/app/middlewares/fileUploadHandler.js";
 
 const router = express.Router();
 
-router.get("/", auth(Role.ADMIN), JobController.createJob);
+router.get("/", auth(Role.ADMIN), JobController.getAllJobs);
 router.post(
   "/",
   fileUploadHandler(),
@@ -17,5 +17,12 @@ router.post(
   validateRequest(CreateJobSchema),
   JobController.createJob,
 );
+router.get(
+  "/:id",
+  auth(Role.ADMIN, Role.USER, Role.WORKSHOP),
+  JobController.getJobById,
+);
+router.patch("/:id", auth(Role.ADMIN, Role.USER), JobController.updateJobById);
+router.delete("/:id", auth(Role.ADMIN, Role.USER), JobController.deleteJobById);
 
 export const JobRouter = router;
