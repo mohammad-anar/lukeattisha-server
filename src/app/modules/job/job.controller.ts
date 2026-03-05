@@ -5,6 +5,7 @@ import { JobService } from "./job.services.js";
 import { getMultipleFilesPath } from "src/app/shared/getFilePath.js";
 import config from "src/config/index.js";
 import ApiError from "src/errors/ApiError.js";
+import pick from "src/helpers.ts/pick.js";
 
 const createJob = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.user;
@@ -33,7 +34,21 @@ const createJob = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getAllJobs = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, ["searchTerm", "status", "urgency"]);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+
+  const result = await JobService.getAllJobs(filters, options);
+
+  sendResponse(res, {
+    success: true,
+    message: "Job created successfully",
+    statusCode: 201,
+    data: result,
+  });
+});
 
 export const JobController = {
   createJob,
+  getAllJobs,
 };

@@ -1,4 +1,4 @@
-import { JobStatus, Prisma } from "@prisma/client";
+import { JobStatus, Prisma, Urgency } from "@prisma/client";
 import { paginationHelper } from "src/helpers.ts/paginationHelper.js";
 import { prisma } from "src/helpers.ts/prisma.js";
 import { createAndEmitNotification } from "src/helpers.ts/socketHelper.js";
@@ -37,7 +37,11 @@ const createJob = async (payload: any) => {
 };
 
 const getAllJobs = async (
-  filter: { searchTerm?: string | undefined; urgency: string; status: string },
+  filter: {
+    searchTerm?: string | undefined;
+    urgency?: Urgency;
+    status?: JobStatus;
+  },
   options: IPaginationOptions,
 ) => {
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
