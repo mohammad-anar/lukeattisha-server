@@ -4,6 +4,7 @@ import { WorkshopRouter } from "../modules/workshop/workshop.routes.js";
 import { JobRouter } from "../modules/job/job.routes.js";
 import { CategoryRouter } from "../modules/category/category.routes.js";
 import { JobOfferRouter } from "../modules/jobOffer/jobOffer.routes.js";
+import { BookingRouter } from "../modules/booking/booking.routes.js";
 
 const router = express.Router();
 
@@ -27,6 +28,10 @@ const moduleRoutes = [
   {
     path: "/offers",
     route: JobOfferRouter,
+  },
+  {
+    path: "/booking",
+    route: BookingRouter,
   },
 ];
 

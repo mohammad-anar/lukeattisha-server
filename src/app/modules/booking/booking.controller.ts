@@ -2,9 +2,16 @@ import { Request, Response } from "express";
 import catchAsync from "src/app/shared/catchAsync.js";
 import { BookingService } from "./booking.services.js";
 import sendResponse from "src/app/shared/sendResponse.js";
+import ApiError from "src/errors/ApiError.js";
 
 const createBooking = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user;
   const payload = req.body;
+
+  if (!id) {
+    throw new ApiError(404, "User not found!");
+  }
+  payload.userId = id;
 
   const result = await BookingService.createBookings(payload);
 
@@ -15,5 +22,55 @@ const createBooking = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getAllBookings = catchAsync(async (req: Request, res: Response) => {
+  const result = await BookingService.getAllBookings();
 
-export const BookingController = { createBooking };
+  sendResponse(res, {
+    success: true,
+    message: "Bookings retrieved successfully",
+    statusCode: 201,
+    data: result,
+  });
+});
+const getBookingById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await BookingService.getBookingsById(id);
+
+  sendResponse(res, {
+    success: true,
+    message: "Booking retrieved successfully",
+    statusCode: 201,
+    data: result,
+  });
+});
+const updateBookings = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const payload = req.body;
+  const result = await BookingService.updateBooking(id, payload);
+
+  sendResponse(res, {
+    success: true,
+    message: "Bookings updated successfully",
+    statusCode: 201,
+    data: result,
+  });
+});
+const deleteBookings = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const result = await BookingService.deleteBooking(id);
+
+  sendResponse(res, {
+    success: true,
+    message: "Bookings deleted successfully",
+    statusCode: 201,
+    data: result,
+  });
+});
+
+export const BookingController = {
+  createBooking,
+  getAllBookings,
+  getBookingById,
+  updateBookings,
+  deleteBookings,
+};
