@@ -4,6 +4,6 @@ model Category {
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    jobs      Job[]
+    jobs      JobCategory[]
     workshops WorkshopCategory[]
 }

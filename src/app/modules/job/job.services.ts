@@ -47,7 +47,7 @@ const getAllJobs = async (
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = filter;
 
-  const andConditions: Prisma.CategoryWhereInput[] = [];
+  const andConditions: Prisma.JobWhereInput[] = [];
   if (filter.searchTerm) {
     andConditions.push({
       OR: ["title", "description"].map((field) => ({
@@ -69,9 +69,9 @@ const getAllJobs = async (
     });
   }
 
-  const whereConditions: Prisma.CategoryWhereInput = { AND: andConditions };
+  const whereConditions: Prisma.JobWhereInput = { AND: andConditions };
 
-  const result = await prisma.category.findMany({
+  const result = await prisma.job.findMany({
     where: whereConditions,
     skip,
     take: limit,
@@ -85,11 +85,21 @@ const getAllJobs = async (
           },
     select: {
       id: true,
-      name: true,
+      title:true,
+      description:true,
+      address:true,
+      bikeName:true,
+      bikeType: true,
+      bikeBrand:true,
+      bikeId:true,
+      bike:true,
+      city:true,
+      photos:true,
+      category:true,
     },
   });
 
-  const total = await prisma.category.count({
+  const total = await prisma.job.count({
     where: whereConditions,
   });
 
