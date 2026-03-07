@@ -28,7 +28,7 @@ const getAllBookings = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     message: "Bookings retrieved successfully",
-    statusCode: 201,
+    statusCode: 200,
     data: result,
   });
 });
@@ -39,7 +39,7 @@ const getBookingById = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     message: "Booking retrieved successfully",
-    statusCode: 201,
+    statusCode: 200,
     data: result,
   });
 });
@@ -51,7 +51,7 @@ const updateBookings = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     message: "Bookings updated successfully",
-    statusCode: 201,
+    statusCode: 200,
     data: result,
   });
 });
@@ -62,7 +62,7 @@ const deleteBookings = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     message: "Bookings deleted successfully",
-    statusCode: 201,
+    statusCode: 200,
     data: result,
   });
 });
