@@ -25,6 +25,8 @@ const deleteBooking = async (id: string) => {
   return result;
 };
 
+// other services here 
+
 export const BookingService = {
   createBookings,
   getAllBookings,
