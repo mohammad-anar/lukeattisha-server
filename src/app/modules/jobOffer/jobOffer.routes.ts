@@ -17,6 +17,11 @@ router.post(
   JobOfferController.createJobOffer,
 );
 router.post("/:id/accept", auth(Role.USER), JobOfferController.acceptJobOffer);
+router.post(
+  "/:id/decline",
+  auth(Role.USER),
+  JobOfferController.declineJobOffer,
+);
 router.get(
   "/:id",
   auth(Role.WORKSHOP, Role.USER, Role.ADMIN),
@@ -24,7 +29,7 @@ router.get(
 );
 router.patch(
   "/:id",
-  auth(Role.WORKSHOP),
+  auth(Role.USER, Role.ADMIN),
   validateRequest(UpdateJobOfferSchema),
   JobOfferController.updateOfferById,
 );

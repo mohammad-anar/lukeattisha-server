@@ -58,7 +58,30 @@ const acceptJobOffer = catchAsync(async (req: Request, res: Response) => {
 
   sendResponse(res, {
     success: true,
-    message: "Job offer updated successfully",
+    message: "Job offer accepted successfully",
+    statusCode: 200,
+    data: result,
+  });
+});
+const declineJobOffer = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+
+  const result = await JobOfferServices.updateOfferById(id, {
+    status: "REJECTED",
+  });
+
+  if (!result) {
+    return sendResponse(res, {
+      success: false,
+      message: "Job offer not found",
+      statusCode: 404,
+      data: null,
+    });
+  }
+
+  sendResponse(res, {
+    success: true,
+    message: "Job offer declined successfully",
     statusCode: 200,
     data: result,
   });
@@ -79,6 +102,7 @@ const deleteOfferById = catchAsync(async (req: Request, res: Response) => {
 export const JobOfferController = {
   createJobOffer,
   acceptJobOffer,
+  declineJobOffer,
   getOfferById,
   updateOfferById,
   deleteOfferById,
