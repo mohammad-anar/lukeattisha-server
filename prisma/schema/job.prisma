@@ -34,7 +34,6 @@ model Job {
 
     offers        JobOffer[]
     bookings      Booking[]
-    notifications Notification[]
 
     categories JobCategory[]
 }

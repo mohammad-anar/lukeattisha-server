@@ -29,7 +29,6 @@ model Workshop {
     bookings             Booking[]
     jobs                 JobOffer[]
     invoices             Invoice[]
-    notifications        Notification[]
     rooms                Room[]
     workshopOpeningHours WorkshopOpeningHour[]
 

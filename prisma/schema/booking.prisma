@@ -17,5 +17,4 @@ model Booking {
 
     review        Review?
     room          Room?
-    notifications Notification[]
 }
