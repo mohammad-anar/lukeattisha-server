@@ -125,26 +125,29 @@ const getBlogBySlug = async (slug: string) => {
 /* ---------------- UPDATE BLOG ---------------- */
 
 const updateBlog = async (id: string, payload: Partial<BlogPayload>) => {
-  let { title, contents, ...rest } = payload;
+  const { title, contents, images, readTime, subTitle, categoryId } = payload;
 
-  const updateData: any = { ...rest };
+  const updateData: any = {};
 
   if (title) {
-    const slugBase = slugify(title, { lower: true, strict: true });
+    let slugBase = slugify(title, { lower: true, strict: true });
     let slug = slugBase;
-
     let counter = 1;
     while (await prisma.blog.findUnique({ where: { slug } })) {
       slug = `${slugBase}-${counter++}`;
     }
-
     updateData.title = title;
     updateData.slug = slug;
   }
 
+  if (subTitle) updateData.subTitle = subTitle;
+  if (readTime) updateData.readTime = readTime;
+  if (images) updateData.images = images;
+  if (categoryId) updateData.categoryId = categoryId;
+
   if (contents) {
     updateData.contents = {
-      deleteMany: {},
+      deleteMany: {}, // remove old contents
       create: contents,
     };
   }
