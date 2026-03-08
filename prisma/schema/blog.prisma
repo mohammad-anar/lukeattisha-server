@@ -1,6 +1,7 @@
 model Blog {
   id         String        @id @default(uuid())
   title      String
+  slug       String        @unique
   subTitle   String
   readTime   DateTime
   images     String[]
