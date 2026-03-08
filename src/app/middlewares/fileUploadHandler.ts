@@ -1,13 +1,13 @@
-import { NextFunction, Request, Response } from 'express';
-import fs from 'fs';
-import { StatusCodes } from 'http-status-codes';
-import multer, { FileFilterCallback } from 'multer';
-import path from 'path';
-import ApiError from 'src/errors/ApiError.js';
+import { NextFunction, Request, Response } from "express";
+import fs from "fs";
+import { StatusCodes } from "http-status-codes";
+import multer, { FileFilterCallback } from "multer";
+import path from "path";
+import ApiError from "src/errors/ApiError.js";
 
 const fileUploadHandler = () => {
   //create upload folder
-  const baseUploadDir = path.join(process.cwd(), 'uploads');
+  const baseUploadDir = path.join(process.cwd(), "uploads");
   if (!fs.existsSync(baseUploadDir)) {
     fs.mkdirSync(baseUploadDir);
   }
@@ -24,17 +24,17 @@ const fileUploadHandler = () => {
     destination: (req, file, cb) => {
       let uploadDir;
       switch (file.fieldname) {
-        case 'image':
-          uploadDir = path.join(baseUploadDir, 'image');
+        case "image":
+          uploadDir = path.join(baseUploadDir, "image");
           break;
-        case 'media':
-          uploadDir = path.join(baseUploadDir, 'media');
+        case "media":
+          uploadDir = path.join(baseUploadDir, "media");
           break;
-        case 'doc':
-          uploadDir = path.join(baseUploadDir, 'doc');
+        case "doc":
+          uploadDir = path.join(baseUploadDir, "doc");
           break;
         default:
-          throw new ApiError(StatusCodes.BAD_REQUEST, 'File is not supported');
+          throw new ApiError(StatusCodes.BAD_REQUEST, "File is not supported");
       }
       createDir(uploadDir);
       cb(null, uploadDir);
@@ -43,11 +43,11 @@ const fileUploadHandler = () => {
       const fileExt = path.extname(file.originalname);
       const fileName =
         file.originalname
-          .replace(fileExt, '')
+          .replace(fileExt, "")
           .toLowerCase()
-          .split(' ')
-          .join('-') +
-        '-' +
+          .split(" ")
+          .join("-") +
+        "-" +
         Date.now();
       cb(null, fileName + fileExt);
     },
@@ -55,40 +55,41 @@ const fileUploadHandler = () => {
 
   //file filter
   const filterFilter = (req: Request, file: any, cb: FileFilterCallback) => {
-    if (file.fieldname === 'image') {
+    if (file.fieldname === "image") {
       if (
-        file.mimetype === 'image/jpeg' ||
-        file.mimetype === 'image/png' ||
-        file.mimetype === 'image/jpg'
+        file.mimetype === "image/jpeg" ||
+        file.mimetype === "image/png" ||
+        file.mimetype === "image/webp" ||
+        file.mimetype === "image/jpg"
       ) {
         cb(null, true);
       } else {
         cb(
           new ApiError(
             StatusCodes.BAD_REQUEST,
-            'Only .jpeg, .png, .jpg file supported',
+            "Only .jpeg, .png, .jpg file supported",
           ),
         );
       }
-    } else if (file.fieldname === 'media') {
-      if (file.mimetype === 'video/mp4' || file.mimetype === 'audio/mpeg') {
+    } else if (file.fieldname === "media") {
+      if (file.mimetype === "video/mp4" || file.mimetype === "audio/mpeg") {
         cb(null, true);
       } else {
         cb(
           new ApiError(
             StatusCodes.BAD_REQUEST,
-            'Only .mp4, .mp3, file supported',
+            "Only .mp4, .mp3, file supported",
           ),
         );
       }
-    } else if (file.fieldname === 'doc') {
-      if (file.mimetype === 'application/pdf') {
+    } else if (file.fieldname === "doc") {
+      if (file.mimetype === "application/pdf") {
         cb(null, true);
       } else {
-        cb(new ApiError(StatusCodes.BAD_REQUEST, 'Only pdf supported'));
+        cb(new ApiError(StatusCodes.BAD_REQUEST, "Only pdf supported"));
       }
     } else {
-      cb(new ApiError(StatusCodes.BAD_REQUEST, 'This file is not supported'));
+      cb(new ApiError(StatusCodes.BAD_REQUEST, "This file is not supported"));
     }
   };
 
@@ -96,9 +97,9 @@ const fileUploadHandler = () => {
     storage: storage,
     fileFilter: filterFilter,
   }).fields([
-    { name: 'image', maxCount: 3 },
-    { name: 'media', maxCount: 3 },
-    { name: 'doc', maxCount: 3 },
+    { name: "image", maxCount: 3 },
+    { name: "media", maxCount: 3 },
+    { name: "doc", maxCount: 3 },
   ]);
   return upload;
 };
