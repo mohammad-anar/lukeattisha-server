@@ -197,6 +197,35 @@ const getNearbyJobs = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getReviewsByWorkshopId = catchAsync(
+  async (req: Request, res: Response) => {
+    const { workshopId } = req.params;
+
+    const result = await WorkshopService.getReviewsByWorkshopId(workshopId);
+
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "Workshop reviews retrieved successfully",
+      data: result,
+    });
+  },
+);
+
+const getBookingsByWorkshopId = catchAsync(
+  async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await WorkshopService.getBookingsByWorkshopId(id);
+
+    sendResponse(res, {
+      success: true,
+      message: "Booking retrieved successfully",
+      statusCode: 200,
+      data: result,
+    });
+  },
+);
+
 export const WorkshopController = {
   createWorkshop,
   getAllWorkshops,
@@ -211,4 +240,6 @@ export const WorkshopController = {
   resetWorkshopPassword,
   changeWorkshopPassword,
   getNearbyJobs,
+  getReviewsByWorkshopId,
+  getBookingsByWorkshopId,
 };

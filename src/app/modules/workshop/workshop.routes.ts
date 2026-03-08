@@ -41,6 +41,12 @@ router.get(
   auth(Role.ADMIN, Role.WORKSHOP, Role.USER),
   WorkshopController.getWorkshopById,
 );
+router.get(
+  "/:id/bookings",
+  auth(Role.ADMIN, Role.WORKSHOP, Role.USER),
+  WorkshopController.getBookingsByWorkshopId,
+);
+router.get("/:workshopId/reviews", WorkshopController.getReviewsByWorkshopId);
 router.patch(
   "/:id",
   auth(Role.ADMIN, Role.WORKSHOP),

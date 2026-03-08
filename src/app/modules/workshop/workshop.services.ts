@@ -110,7 +110,6 @@ const getAllWorkshops = async (
       postalCode: true,
       invoices: true,
       jobs: true,
-      notifications: true,
       reviewsCount: true,
       rooms: true,
       _count: true,
@@ -161,7 +160,6 @@ const getWorkshopById = async (id: string) => {
       postalCode: true,
       invoices: true,
       jobs: true,
-      notifications: true,
       reviewsCount: true,
       rooms: true,
       _count: true,
@@ -200,7 +198,6 @@ const getMe = async (email: string) => {
       postalCode: true,
       invoices: true,
       jobs: true,
-      notifications: true,
       reviewsCount: true,
       rooms: true,
       _count: true,
@@ -434,6 +431,67 @@ const getNearbyJobs = async (workshopId: string) => {
   `;
 };
 
+const getReviewsByWorkshopId = async (workshopId: string) => {
+  const result = await prisma.review.findMany({
+    where: {
+      booking: {
+        workshopId: workshopId,
+      },
+    },
+    select: {
+      booking: {
+        select: {
+          review: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return result;
+};
+
+const getBookingsByWorkshopId = async (workshopId: string) => {
+  const result = await prisma.booking.findMany({
+    where: {
+      workshopId: workshopId,
+    },
+    include: {
+      job: true,
+      offer: true,
+      review: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true,
+          phone: true,
+          role: true,
+        },
+      },
+      workshop: {
+        select: {
+          id: true,
+          ownerName: true,
+          email: true,
+          phone: true,
+          avatar: true,
+          role: true,
+          avgRating: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  return result;
+};
+
 export const WorkshopService = {
   createWorkshop,
   getAllWorkshops,
@@ -448,4 +506,6 @@ export const WorkshopService = {
   resetWorkshopPassword,
   changeWorkshopPassword,
   getNearbyJobs,
+  getReviewsByWorkshopId,
+  getBookingsByWorkshopId,
 };
