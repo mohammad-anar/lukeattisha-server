@@ -6,6 +6,9 @@ import { CategoryRouter } from "../modules/category/category.routes.js";
 import { JobRouter } from "../modules/job/job.routes.js";
 import { JobOfferRouter } from "../modules/jobOffer/jobOffer.routes.js";
 import { WorkshopRouter } from "../modules/workshop/workshop.routes.js";
+import { BlogRouter } from "../modules/blog/blog.routes.js";
+import { BlogCategoryRouter } from "../modules/blogCategory/blogCategory.routes.js";
+import { NotificationRouter } from "../modules/notification/notification.routes.js";
 
 const router = express.Router();
 
@@ -37,6 +40,18 @@ const moduleRoutes = [
   {
     path: "/bike",
     route: BikeRouter,
+  },
+  {
+    path: "/blog",
+    route: BlogRouter,
+  },
+  {
+    path: "/blog-category",
+    route: BlogCategoryRouter,
+  },
+  {
+    path: "/notification",
+    route: NotificationRouter,
   },
 ];
 
