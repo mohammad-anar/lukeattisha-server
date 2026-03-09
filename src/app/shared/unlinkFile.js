@@ -1,0 +1,13 @@
+import fs from 'fs';
+import path from 'path';
+const unlinkFile = (file) => {
+    const filePath = path.join('uploads', file);
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+};
+export default unlinkFile;
+export const extractPathFromUrl = (url) => {
+    const parsedUrl = new URL(url);
+    return parsedUrl.pathname;
+};
