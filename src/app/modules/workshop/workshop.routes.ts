@@ -54,6 +54,21 @@ router.patch(
   validateRequest(updateWorkshopSchema),
   WorkshopController.updateWorkshop,
 );
+router.patch(
+  "/:id/approve",
+  auth(Role.ADMIN),
+  WorkshopController.approveWorkshop,
+);
+router.patch(
+  "/:id/reject",
+  auth(Role.ADMIN),
+  WorkshopController.rejectWorkshop,
+);
+router.patch(
+  "/:id/suspend",
+  auth(Role.ADMIN),
+  WorkshopController.suspendWorkshop,
+);
 router.delete("/:id", WorkshopController.deleteWorkshop);
 
 export const WorkshopRouter = router;
