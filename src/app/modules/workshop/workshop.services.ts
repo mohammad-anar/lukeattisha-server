@@ -428,6 +428,7 @@ const getNearbyJobs = async (workshopId: string) => {
       ST_SetSRID(ST_MakePoint(${workshop.longitude}, ${workshop.latitude}), 4326)::geography,
       "radius" * 1000
     )
+    ORDER BY "createdAt" DESC
   `;
 };
 

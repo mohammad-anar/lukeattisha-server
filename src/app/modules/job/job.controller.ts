@@ -17,14 +17,17 @@ const createJob = catchAsync(async (req: Request, res: Response) => {
   payload.userId = id;
 
   const image = getMultipleFilesPath(req.files, "image") as string[];
-  const photos = image.map((img) =>
-    `http://${config.ip_address}:${config.port}`.concat(img),
-  );
+  if (image?.length > 0) {
+    const photos = image?.map((img) =>
+      `http://${config.ip_address}:${config.port}`.concat(img),
+    );
 
-  if (photos.length > 0) {
-    payload.photos = photos;
+    if (photos.length > 0) {
+      payload.photos = photos;
+    }
   }
 
+  // console.log(payload);
   const result = await JobService.createJob(id, payload);
 
   sendResponse(res, {
