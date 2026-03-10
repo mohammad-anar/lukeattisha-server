@@ -6,7 +6,7 @@ model Invoice {
     billingMonth DateTime
     totalJobs    Int
     totalAmount  Float
-    status       InvoiceStatus @default(DRAFT)
+    status       InvoiceStatus @default(SENT)
     dueDate      DateTime
     createdAt    DateTime      @default(now())
     updatedAt    DateTime      @updatedAt
