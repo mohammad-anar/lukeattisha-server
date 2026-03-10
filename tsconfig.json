@@ -9,7 +9,7 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "types": ["node"],
-    "resolveJsonModule": true, // optional if you import JSON
+    "resolveJsonModule": true,
   },
   "include": ["src/**/*.ts", "generated/prisma", "prisma.config.ts"],
   "exclude": ["dist"]
