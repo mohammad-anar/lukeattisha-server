@@ -1,25 +1,56 @@
 model Room {
-    id         String   @id @default(uuid())
-    bookingId  String   @unique
-    booking    Booking  @relation(fields: [bookingId], references: [id])
-    userId     String
-    user       User     @relation(fields: [userId], references: [id])
-    workshopId String
-    workshop   Workshop @relation(fields: [workshopId], references: [id])
-    name       String?
-    createdAt  DateTime @default(now())
-    updatedAt  DateTime @updatedAt
+  id            String   @id @default(uuid())
 
-    messages Message[]
+  bookingId     String   @unique
+  booking       Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  userId        String
+  user          User     @relation("UserRooms", fields: [userId], references: [id], onDelete: Cascade)
+
+  workshopId    String
+  workshop      Workshop @relation("WorkshopRooms", fields: [workshopId], references: [id], onDelete: Cascade)
+
+  name          String?
+
+  lastMessageId String?
+  lastMessage   Message? @relation("LastMessage", fields: [lastMessageId], references: [id])
+
+  lastMessageAt DateTime?
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages      Message[]
+
+  @@index([userId])
+  @@index([workshopId])
+  @@index([lastMessageAt])
+  @@map("rooms")
 }
 
+
 model Message {
-    id        String   @id @default(uuid())
-    roomId    String
-    room      Room     @relation(fields: [roomId], references: [id])
-    senderId  String
-    sender    User     @relation(fields: [senderId], references: [id])
-    message   String
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+  id        String   @id @default(uuid())
+
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+
+  content   String?
+
+  type      MessageType @default(TEXT)
+
+  isRead    Boolean  @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  roomLastMessage Room[] @relation("LastMessage")
+
+  @@index([roomId])
+  @@index([senderId])
+  @@index([createdAt])
+  @@map("messages")
 }

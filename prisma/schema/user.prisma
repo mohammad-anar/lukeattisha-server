@@ -23,7 +23,7 @@ model User {
     bikes         Bike[]
     blogs         Blog[]
     jobs          Job[]
-    rooms         Room[]
+    rooms         Room[] @relation("UserRooms")
 
     @@index([role])
     @@index([status])

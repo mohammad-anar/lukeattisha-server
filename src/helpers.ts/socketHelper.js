@@ -1,6 +1,7 @@
 import colors from "colors";
 import { Server } from "socket.io";
 import { prisma } from "./prisma.js";
+import { ChatService } from "../app/modules/chat/chat.service.js";
 let io = null;
 // Store multiple sockets per user/workshop
 const socketMap = new Map();
@@ -27,6 +28,41 @@ export const initSocket = (server) => {
                 }
             }
         });
+        // Chat Events
+        socket.on("join_room", (roomId) => {
+            socket.join(roomId);
+            console.log(colors.blue(`Socket ${socket.id} joined room ${roomId}`));
+        });
+        socket.on("leave_room", (roomId) => {
+            socket.leave(roomId);
+            console.log(colors.gray(`Socket ${socket.id} left room ${roomId}`));
+        });
+        socket.on("send_message", async (data) => {
+            try {
+                const message = await ChatService.saveMessage(data);
+                // Broadcast to everyone in the room
+                io.to(data.roomId).emit("receive_message", message);
+                // Broadcast notification to users to update their room lists if they are online
+                // Need to know the participants of the room
+                const room = await ChatService.getRoomById(data.roomId);
+                if (room) {
+                    const receiverId = room.userId === data.senderId ? room.workshopId : room.userId;
+                    const receiverSockets = getSocketIds(receiverId);
+                    receiverSockets.forEach((socketId) => {
+                        io.to(socketId).emit("new_message_notification", {
+                            roomId: room.id,
+                            message,
+                        });
+                    });
+                }
+            }
+            catch (error) {
+                console.error("Error saving message", error);
+            }
+        });
+        socket.on("typing", (data) => {
+            socket.to(data.roomId).emit("user_typing", data);
+        });
     });
     return io;
 };
@@ -44,8 +80,9 @@ export const createAndEmitNotification = async (data) => {
     const prismaData = {
         title: data.title,
         body: data.body,
-        job: data.jobId ? { connect: { id: data.jobId } } : undefined,
+        jobId: data.jobId,
         triggeredById: data.triggeredById,
+        eventType: data.eventType, // mapped eventType
     };
     // 1️⃣ Create notification in database
     const notification = await prisma.notification.create({

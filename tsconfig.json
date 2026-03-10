@@ -1,9 +1,6 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "paths": {
-      "@prisma/client": ["prisma/src/generated"]
-    },
     "target": "ES2020",
     "module": "Node16", // must match moduleResolution
     "moduleResolution": "Node16", // updated
@@ -13,7 +10,6 @@
     "skipLibCheck": true,
     "types": ["node"],
     "resolveJsonModule": true, // optional if you import JSON
-    "ignoreDeprecations": "6.0" // optional
   },
   "include": ["src/**/*.ts", "generated/prisma", "prisma.config.ts"],
   "exclude": ["dist"]

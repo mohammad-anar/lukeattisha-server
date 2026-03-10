@@ -40,6 +40,7 @@ const createJob = async (userId, payload) => {
             jobId: job.id,
             title: "New Job Nearby",
             body: "A new bike service job is available in your area.",
+            eventType: "NEW_JOB_POSTED",
         });
     }
     return job;

@@ -29,7 +29,7 @@ model Workshop {
     bookings             Booking[]
     jobs                 JobOffer[]
     invoices             Invoice[]
-    rooms                Room[]
+    rooms                Room[] @relation("WorkshopRooms")
     workshopOpeningHours WorkshopOpeningHour[]
 
     @@index([approvalStatus])

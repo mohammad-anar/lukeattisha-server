@@ -13,6 +13,7 @@ import { ChatNotificationRouter } from "../modules/chatNotification/chatNotifica
 import { ReviewRouter } from "../modules/review/review.route.js";
 import { InvoiceRouter } from "../modules/invoice/invoice.route.js";
 import { AnalyticsRouter } from "../modules/analytics/analytics.route.js";
+import { ChatRouter } from "../modules/chat/chat.routes.js";
 
 const router = express.Router();
 
@@ -72,6 +73,10 @@ const moduleRoutes = [
   {
     path: "/analytics",
     route: AnalyticsRouter,
+  },
+  {
+    path: "/chat",
+    route: ChatRouter,
   },
 ];
 

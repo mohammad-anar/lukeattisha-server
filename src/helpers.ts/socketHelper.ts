@@ -2,6 +2,7 @@ import colors from "colors";
 import { Server, Socket } from "socket.io";
 import { prisma } from "./prisma.js";
 import { Prisma } from "@prisma/client";
+import { ChatService } from "../app/modules/chat/chat.service.js";
 
 type NotificationData = {
   userId?: string;
@@ -12,6 +13,7 @@ type NotificationData = {
   roomId?: string;
   title: string;
   body: string;
+  eventType: string; // added eventType
 };
 
 let io: Server | null = null;
@@ -43,6 +45,49 @@ export const initSocket = (server: any) => {
         }
       }
     });
+
+    // Chat Events
+    socket.on("join_room", (roomId: string) => {
+      socket.join(roomId);
+      console.log(colors.blue(`Socket ${socket.id} joined room ${roomId}`));
+    });
+
+    socket.on("leave_room", (roomId: string) => {
+      socket.leave(roomId);
+      console.log(colors.gray(`Socket ${socket.id} left room ${roomId}`));
+    });
+
+    socket.on("send_message", async (data: { roomId: string, senderId: string, content: string, type?:any }) => {
+      try {
+        const message = await ChatService.saveMessage(data);
+        
+        // Broadcast to everyone in the room
+        io!.to(data.roomId).emit("receive_message", message);
+        
+        // Broadcast notification to users to update their room lists if they are online
+        // Need to know the participants of the room
+        const room = await ChatService.getRoomById(data.roomId);
+        if (room) {
+          const receiverId = room.userId === data.senderId ? room.workshopId : room.userId;
+          const receiverSockets = getSocketIds(receiverId);
+          
+          receiverSockets.forEach((socketId) => {
+            io!.to(socketId).emit("new_message_notification", {
+              roomId: room.id,
+              message,
+            });
+          });
+        }
+
+      } catch (error) {
+        console.error("Error saving message", error);
+      }
+    });
+
+    socket.on("typing", (data: { roomId: string, senderId: string, isTyping: boolean }) => {
+      socket.to(data.roomId).emit("user_typing", data);
+    });
+
   });
 
   return io;
@@ -63,8 +108,9 @@ export const createAndEmitNotification = async (data: NotificationData) => {
   const prismaData: Prisma.NotificationCreateInput = {
     title: data.title,
     body: data.body,
-    job: data.jobId ? { connect: { id: data.jobId } } : undefined,
+    jobId: data.jobId,
     triggeredById: data.triggeredById,
+    eventType: data.eventType, // mapped eventType
   };
 
   // 1️⃣ Create notification in database

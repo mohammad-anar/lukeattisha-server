@@ -11,6 +11,9 @@ import { BlogCategoryRouter } from "../modules/blogCategory/blogCategory.routes.
 import { NotificationRouter } from "../modules/notification/notification.routes.js";
 import { ChatNotificationRouter } from "../modules/chatNotification/chatNotification.routes.js";
 import { ReviewRouter } from "../modules/review/review.route.js";
+import { InvoiceRouter } from "../modules/invoice/invoice.route.js";
+import { AnalyticsRouter } from "../modules/analytics/analytics.route.js";
+import { ChatRouter } from "../modules/chat/chat.routes.js";
 const router = express.Router();
 const moduleRoutes = [
     {
@@ -60,6 +63,18 @@ const moduleRoutes = [
     {
         path: "/review",
         route: ReviewRouter,
+    },
+    {
+        path: "/invoice",
+        route: InvoiceRouter,
+    },
+    {
+        path: "/analytics",
+        route: AnalyticsRouter,
+    },
+    {
+        path: "/chat",
+        route: ChatRouter,
     },
 ];
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
