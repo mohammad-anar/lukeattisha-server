@@ -9,7 +9,7 @@ import { getIO } from "./helpers.ts/socketHelper.js";
 const app: Application = express();
 app.use(
   cors({
-    origin: config.cors_origin,
+    origin: ["http://localhost:3000"],
     credentials: true,
   }),
 );
