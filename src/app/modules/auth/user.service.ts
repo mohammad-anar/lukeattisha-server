@@ -88,9 +88,21 @@ const getAllUsers = async (
     });
   }
 
+  // andConditions.push({
+  //   isVerified: true,
+  // });
+
+  // Exclude ADMIN users
   andConditions.push({
-    isVerified: true,
+    role: {
+      not: "ADMIN",
+    },
   });
+
+  andConditions.push({
+    isDeleted: false,
+  });
+
   const whereConditions: Prisma.UserWhereInput = { AND: andConditions };
 
   const result = await prisma.user.findMany({
@@ -163,7 +175,23 @@ const getUserById = async (id: string) => {
       isVerified: true,
       status: true,
       jobs: true,
-      bookings: true,
+      reviews: true,
+      bookings: {
+        include: {
+          job: true,
+          offer: true,
+          workshop: {
+            select: {
+              id: true,
+              ownerName: true,
+              workshopName: true,
+              avatar: true,
+              avgRating: true,
+              address: true,
+            },
+          },
+        },
+      },
       postalCode: true,
       createdAt: true,
       updatedAt: true,
