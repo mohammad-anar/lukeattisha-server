@@ -23,6 +23,7 @@ export const createWorkshopSchema = z.object({
   postalCode: z.string().min(1, "Postal code is required"),
   latitude: floatOptional,
   longitude: floatOptional,
+  platformFees: floatOptional,
 });
 
 // Update Workshop Schema (all fields optional)
@@ -43,4 +44,5 @@ export const updateWorkshopSchema = z.object({
   latitude: floatOptional,
   longitude: floatOptional,
   isVerified: z.boolean().optional(),
+  platformFees: floatOptional,
 });

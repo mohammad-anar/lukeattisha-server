@@ -14,6 +14,9 @@ import { ReviewRouter } from "../modules/review/review.route.js";
 import { InvoiceRouter } from "../modules/invoice/invoice.route.js";
 import { AnalyticsRouter } from "../modules/analytics/analytics.route.js";
 import { ChatRouter } from "../modules/chat/chat.routes.js";
+import { NewsletterRouter } from "../modules/newsletter/newsletter.routes.js";
+import { PlatformDataRouter } from "../modules/platformData/platformData.routes.js";
+import { ServiceCategoryRouter } from "../modules/serviceCategory/serviceCategory.routes.js";
 
 const router = express.Router();
 
@@ -77,6 +80,18 @@ const moduleRoutes = [
   {
     path: "/chat",
     route: ChatRouter,
+  },
+  {
+    path: "/newsletter",
+    route: NewsletterRouter,
+  },
+  {
+    path: "/platform-data",
+    route: PlatformDataRouter,
+  },
+  {
+    path: "/service-category",
+    route: ServiceCategoryRouter,
   },
 ];
 

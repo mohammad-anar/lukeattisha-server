@@ -17,6 +17,7 @@ model Workshop {
     latitude     Float?
     longitude    Float?
     isVerified   Boolean @default(false)
+    platformFees Float?
 
     approvalStatus WorkshopApprovalStatus @default(PENDING)
     avgRating      Float                  @default(0)

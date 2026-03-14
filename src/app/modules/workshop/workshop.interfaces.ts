@@ -12,4 +12,5 @@ export type ICreateWorkshop = {
   postalCode: string;
   latitude?: number;
   longitude?: number;
+  platformFees?: number;
 };
