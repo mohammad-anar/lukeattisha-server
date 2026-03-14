@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
 import { ReviewService } from "./review.services.js";
+import pick from "src/helpers.ts/pick.js";
 
 const createReview = catchAsync(async (req: Request, res: Response) => {
   const result = await ReviewService.createReview(req.body);
@@ -15,7 +16,9 @@ const createReview = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllReviews = catchAsync(async (req: Request, res: Response) => {
-  const result = await ReviewService.getAllReviews();
+  const filters = pick(req.query, ["searchTerm"]);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await ReviewService.getAllReviews(filters, options);
 
   sendResponse(res, {
     statusCode: 200,
