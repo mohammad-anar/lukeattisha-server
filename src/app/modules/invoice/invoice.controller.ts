@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
 import { InvoiceService } from "./invoice.service.js";
+import pick from "src/helpers.ts/pick.js";
 
 const createInvoice = catchAsync(async (req: Request, res: Response) => {
   const result = await InvoiceService.createInvoice(req.body);
@@ -15,7 +16,9 @@ const createInvoice = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllInvoices = catchAsync(async (req: Request, res: Response) => {
-  const result = await InvoiceService.getAllInvoices();
+  const filters = pick(req.query, ["status"]);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await InvoiceService.getAllInvoices(filters, options);
 
   sendResponse(res, {
     statusCode: 200,
@@ -64,29 +67,33 @@ const deleteInvoice = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getInvoicesByWorkshopId = catchAsync(async (req: Request, res: Response) => {
-  const { workshopId } = req.params;
+const getInvoicesByWorkshopId = catchAsync(
+  async (req: Request, res: Response) => {
+    const { workshopId } = req.params;
 
-  const result = await InvoiceService.getInvoicesByWorkshopId(workshopId);
+    const result = await InvoiceService.getInvoicesByWorkshopId(workshopId);
 
-  sendResponse(res, {
-    statusCode: 200,
-    success: true,
-    message: "Workshop invoices retrieved successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Workshop invoices retrieved successfully",
+      data: result,
+    });
+  },
+);
 
-const generateMonthlyInvoices = catchAsync(async (req: Request, res: Response) => {
-  const result = await InvoiceService.generateMonthlyInvoices();
+const generateMonthlyInvoices = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await InvoiceService.generateMonthlyInvoices();
 
-  sendResponse(res, {
-    statusCode: 201,
-    success: true,
-    message: "Monthly invoices generated successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: 201,
+      success: true,
+      message: "Monthly invoices generated successfully",
+      data: result,
+    });
+  },
+);
 
 const markInvoiceAsPaid = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;

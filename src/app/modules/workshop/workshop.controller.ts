@@ -28,7 +28,12 @@ const createWorkshop = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllWorkshops = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ["role", "searchTerm"]);
+  const filters = pick(req.query, [
+    "role",
+    "isVerified",
+    "approvalStatus",
+    "searchTerm",
+  ]);
   const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
 
   const result = await WorkshopService.getAllWorkshops(filters, options);

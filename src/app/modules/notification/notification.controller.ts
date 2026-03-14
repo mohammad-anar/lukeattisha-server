@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import catchAsync from "src/app/shared/catchAsync.js";
 import sendResponse from "src/app/shared/sendResponse.js";
 import { NotificationService } from "./notification.services.js";
+import pick from "src/helpers.ts/pick.js";
 
 /* ---------- CREATE ---------- */
 const createNotification = catchAsync(async (req: Request, res: Response) => {
@@ -16,8 +17,13 @@ const createNotification = catchAsync(async (req: Request, res: Response) => {
 });
 
 /* ---------- GET ALL ---------- */
-const getAllNotifications = catchAsync(async (_req: Request, res: Response) => {
-  const result = await NotificationService.getAllNotifications();
+const getAllNotifications = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, ["isRead", "searchTerm"]);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await NotificationService.getAllNotifications(
+    filters,
+    options,
+  );
 
   sendResponse(res, {
     success: true,
