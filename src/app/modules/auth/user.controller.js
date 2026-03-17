@@ -22,7 +22,7 @@ const createUser = catchAsync(async (req, res) => {
     });
 });
 const getAllUsers = catchAsync(async (req, res) => {
-    const filters = pick(req.query, ["role", "searchTerm"]);
+    const filters = pick(req.query, ["role", "status", "isVerified", "isDeleted", "searchTerm"]);
     const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
     const result = await UserService.getAllUsers(filters, options);
     sendResponse(res, {

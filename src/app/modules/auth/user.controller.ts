@@ -64,7 +64,7 @@ const getMe = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const updateUser = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   const payload = req.body;
   const image = getSingleFilePath(req.files, "image") as string;
   const url = `http://${config.ip_address}:${config.port}`.concat(image);
@@ -81,7 +81,7 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const banUser = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   const result = await UserService.updateUser(id, {
     status: UserStatus.BANNED,
   });
@@ -94,7 +94,7 @@ const banUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const unBanUser = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
+  const { id } = req.params as { id: string };
   const result = await UserService.updateUser(id, {
     status: UserStatus.ACTIVE,
   });
@@ -225,32 +225,6 @@ const logout = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getUserJobs = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.user;
-  const filters = pick(req.query, ["urgency", "status", "searchTerm"]);
-  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
-
-  const result = await UserService.getUserJobs(id, options, filters);
-
-  sendResponse(res, {
-    success: true,
-    message: "User jobs retrieved successfully",
-    statusCode: 200,
-    data: result,
-  });
-});
-
-const getBookingsByUserId = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const result = await UserService.getBookingsByUserId(id);
-
-  sendResponse(res, {
-    success: true,
-    message: "Booking retrieved successfully",
-    statusCode: 200,
-    data: result,
-  });
-});
 export const UserController = {
   createUser,
   getAllUsers,
@@ -268,6 +242,4 @@ export const UserController = {
   changePassword,
   refreshToken,
   logout,
-  getUserJobs,
-  getBookingsByUserId,
 };

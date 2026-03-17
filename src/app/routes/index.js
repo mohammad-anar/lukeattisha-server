@@ -14,11 +14,21 @@ import { ReviewRouter } from "../modules/review/review.route.js";
 import { InvoiceRouter } from "../modules/invoice/invoice.route.js";
 import { AnalyticsRouter } from "../modules/analytics/analytics.route.js";
 import { ChatRouter } from "../modules/chat/chat.routes.js";
+import { OperatorRouter } from "../modules/operator/operator.routes.js";
+import { ServiceRouter } from "../modules/service/service.routes.js";
 const router = express.Router();
 const moduleRoutes = [
     {
         path: "/auth",
         route: UserRouter,
+    },
+    {
+        path: "/operator",
+        route: OperatorRouter,
+    },
+    {
+        path: "/service",
+        route: ServiceRouter,
     },
     {
         path: "/workshop",
@@ -75,6 +85,18 @@ const moduleRoutes = [
     {
         path: "/chat",
         route: ChatRouter,
+    },
+    {
+        path: "/newsletter",
+        route: NewsletterRouter,
+    },
+    {
+        path: "/platform-data",
+        route: PlatformDataRouter,
+    },
+    {
+        path: "/service-category",
+        route: ServiceCategoryRouter,
     },
 ];
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

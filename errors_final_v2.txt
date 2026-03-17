@@ -1,0 +1,23 @@
+src/app/modules/category/category.validation.ts(6,7): error TS2769: No overload matches this call.
+  Overload 1 of 2, '(params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; } | undefined): ZodString', gave the following error.
+    Object literal may only specify known properties, and 'required_error' does not exist in type '{ error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; }'.
+  Overload 2 of 2, '(params?: string | { error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; } | undefined): $ZodType<...>', gave the following error.
+    Object literal may only specify known properties, and 'required_error' does not exist in type '{ error?: string | $ZodErrorMap<$ZodIssueInvalidType<unknown>> | undefined; message?: string | undefined; }'.
+src/helpers.ts/socketHelper.ts(5,29): error TS2307: Cannot find module '../app/modules/chat/chat.service.js' or its corresponding type declarations.
+src/helpers.ts/socketHelper.ts(63,13): error TS2353: Object literal may only specify known properties, and 'chatRoomId' does not exist in type 'ChatNotificationData'.
+src/helpers.ts/socketHelper.ts(106,5): error TS2353: Object literal may only specify known properties, and 'body' does not exist in type 'NotificationCreateInput'.
+src/helpers.ts/socketHelper.ts(106,16): error TS2339: Property 'body' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(107,18): error TS2339: Property 'isRead' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(108,26): error TS2339: Property 'receiverUserId' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(109,30): error TS2339: Property 'receiverWorkshopId' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(110,25): error TS2339: Property 'triggeredById' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(111,17): error TS2339: Property 'jobId' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(112,21): error TS2339: Property 'bookingId' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(113,21): error TS2339: Property 'invoiceId' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(114,21): error TS2339: Property 'eventType' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(127,12): error TS2339: Property 'receiverWorkshopId' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(127,57): error TS2339: Property 'receiverWorkshopId' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(131,12): error TS2339: Property 'receiverUserId' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(131,49): error TS2339: Property 'receiverUserId' does not exist on type 'NotificationData'.
+src/helpers.ts/socketHelper.ts(153,54): error TS2724: '"D:/Anar/WEB-STA/lukeattisha/lukeattisha-server/node_modules/.pnpm/@prisma+client@7.1.0_prisma_3991381a5a3b649d38ba5bf382c78fc4/node_modules/.prisma/client/index".Prisma' has no exported member named 'ChatNotificationCreateInput'. Did you mean 'NotificationCreateInput'?
+src/helpers.ts/socketHelper.ts(162,37): error TS2551: Property 'chatNotification' does not exist on type 'PrismaClient<{ adapter: PrismaPg; }, never, DefaultArgs>'. Did you mean 'notification'?

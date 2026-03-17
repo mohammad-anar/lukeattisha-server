@@ -1,0 +1,241 @@
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services         Service[]
+  operatorProfiles OperatorCategory[]
+}
+
+model OperatorProfile {
+  id           String   @id @default(uuid())
+  userId       String   @unique
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeName    String
+  address      String?
+  latitude     Float?
+  longitude    Float?
+  platformFee  Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  categories OperatorCategory[]
+  services   Service[]
+  orders     Order[]
+}
+
+model OperatorCategory {
+  operatorId String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  operator OperatorProfile @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  category Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([operatorId, categoryId])
+}
+
+model Service {
+  id         String   @id @default(uuid())
+  operatorId String
+  operator   OperatorProfile @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  name       String
+  basePrice  Float
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  addons           AddonService[]
+  favoritedBy      FavoriteService[]
+  orderItems       OrderItem[]
+  reviews          ServiceReview[]
+}
+
+model AddonService {
+  id         String   @id @default(uuid())
+  serviceId  String
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name       String
+  price      Float
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  orderItemAddons OrderItemAddon[]
+}
+
+model FavoriteService {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, serviceId])
+}
+
+model Order {
+  id                 String      @id @default(uuid())
+  userId             String
+  user               User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operatorId         String
+  operator           OperatorProfile @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  status             OrderStatus @default(PENDING)
+  totalAmount        Float
+  deliveryFee        Float       @default(0.0)
+  pickupDate         DateTime
+  pickupTimeRange    String
+  pickupAddress      String
+  pickupLat          Float?
+  pickupLng          Float?
+  specialInstruction String?
+  paymentStatus      PaymentStatus @default(PENDING)
+  paymentMethod      PaymentMethodType
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
+
+  items   OrderItem[]
+  reviews ServiceReview[]
+  tickets SupportTicket[]
+}
+
+model OrderItem {
+  id        String   @id @default(uuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  price     Float
+  
+  addons OrderItemAddon[]
+}
+
+model OrderItemAddon {
+  id          String   @id @default(uuid())
+  orderItemId String
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  addonId     String
+  addon       AddonService @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  price       Float
+}
+
+model ServiceReview {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  rating        Int
+  comment       String?
+  operatorReply String?
+  createdAt     DateTime @default(now())
+}
+
+model SupportTicket {
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orderId     String?
+  order       Order?       @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  subject     String
+  description String
+  status      TicketStatus @default(OPEN)
+  type        TicketType   @default(GENERAL)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  messages TicketMessage[]
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  content   String
+  createdAt DateTime @default(now())
+}
+
+model PaymentCard {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeMethodId String   @unique
+  last4          String
+  brand          String
+  isDefault      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}
+
+model SubscriptionPackage {
+  id           String   @id @default(uuid())
+  name         String
+  price        Float
+  durationDays Int
+  freeDelivery Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  subscriptions UserSubscription[]
+}
+
+model UserSubscription {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  packageId String
+  package   SubscriptionPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  startDate DateTime
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AdminSetting {
+  id                      String   @id @default("1")
+  cancellationWindowHours Int      @default(24)
+  bookingLeadTimeHours    Int      @default(2)
+  requirePaymentUpfront   Boolean  @default(true)
+  allowPartialPayments    Boolean  @default(false)
+  platformCommissionRate  Float    @default(10.0)
+  fixedTransactionFee     Float    @default(0.50)
+  pickupDeliveryFee       Float    @default(4.99)
+  payoutSchedule          String   @default("WEEKLY") // WEEKLY | MONTHLY
+  updatedAt               DateTime @updatedAt
+}
+
+model PlatformWallet {
+  id        String   @id @default(uuid())
+  balance   Float    @default(0)
+  updatedAt DateTime @updatedAt
+}
+
+model WalletTransaction {
+  id        String   @id @default(uuid())
+  type      String   // CREDIT | DEBIT
+  amount    Float
+  reason    String   // DELIVERY_FEE | SUBSCRIPTION | COMMISSION | DELIVERY_SUBSIDY | REFUND
+  orderId   String?
+  createdAt DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  message   String
+  type      String   // ORDER | PAYMENT | CHAT | PROMOTION
+  channel   String   // EMAIL | SMS | PUSH | IN_APP
+  isSent    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

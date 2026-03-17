@@ -11,3 +11,38 @@ enum UserStatus {
   BANNED
 }
 
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  IN_PROGRESS
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+  DISPUTED
+  REFUNDED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  PARTIAL
+}
+
+enum PaymentMethodType {
+  CARD
+  APPLE_PAY
+  GOOGLE_PAY
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum TicketType {
+  ORDER_ISSUE
+  GENERAL
+}

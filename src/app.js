@@ -7,7 +7,7 @@ import notFound from "./app/middlewares/notFound.js";
 import { getIO } from "./helpers.ts/socketHelper.js";
 const app = express();
 app.use(cors({
-    origin: config.cors_origin,
+    origin: ["http://localhost:3000"],
     credentials: true,
 }));
 //parser

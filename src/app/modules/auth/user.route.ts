@@ -1,21 +1,16 @@
-import { Role } from "@prisma/client";
+
 import express from "express";
 import auth from "src/app/middlewares/auth.js";
 import { UserController } from "./user.controller.js";
 import validateRequest from "src/app/middlewares/validateRequest.js";
 import fileUploadHandler from "src/app/middlewares/fileUploadHandler.js";
 import { UserValidation } from "./user.validation.js";
+import { Role } from "@prisma/client";
 
 const router = express.Router();
 
 router.get("/users", UserController.getAllUsers);
 router.get("/user/me", auth(Role.USER, Role.ADMIN), UserController.getMe);
-// get jobs for user
-router.get(
-  "/user/me/jobs",
-  auth(Role.USER, Role.ADMIN),
-  UserController.getUserJobs,
-);
 router.post(
   "/register",
   fileUploadHandler(),
@@ -28,30 +23,25 @@ router.post("/resend-otp", UserController.resendOTP);
 router.post("/forget-password", UserController.forgetPassword);
 router.post(
   "/reset-password",
-  auth(Role.USER, Role.ADMIN, Role.WORKSHOP),
+  auth(Role.USER, Role.ADMIN, Role.OPERATOR),
   UserController.resetPassword,
 );
 router.post(
   "/change-password",
-  auth(Role.USER, Role.ADMIN, Role.WORKSHOP),
+  auth(Role.USER, Role.ADMIN, Role.OPERATOR),
   UserController.changePassword,
 );
 router.post(
   "/refresh",
-  auth(Role.USER, Role.ADMIN, Role.WORKSHOP),
+  auth(Role.USER, Role.ADMIN, Role.OPERATOR),
   UserController.refreshToken,
 );
 router.post(
   "/logout",
-  auth(Role.USER, Role.ADMIN, Role.WORKSHOP),
+  auth(Role.USER, Role.ADMIN, Role.OPERATOR),
   UserController.logout,
 );
 router.get("/user/:id", auth(Role.ADMIN), UserController.getUserById);
-router.get(
-  "/user/:id/bookings",
-  auth(Role.USER),
-  UserController.getBookingsByUserId,
-);
 
 router.patch(
   "/user/:id",

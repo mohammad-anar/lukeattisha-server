@@ -1,0 +1,8 @@
+Loaded Prisma config from prisma.config.js.
+
+Prisma schema loaded from prisma\schema
+Datasource "db": PostgreSQL database "mydb", schema "public" at "localhost:5432"
+Error: P1014
+
+The underlying table for model `Order` does not exist.
+

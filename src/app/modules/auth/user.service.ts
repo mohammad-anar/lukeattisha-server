@@ -1,22 +1,23 @@
 import bcrypt from "bcryptjs";
 import { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
 import { emailTemplate } from "src/app/shared/emailTemplate.js";
-import { prisma } from "src/helpers.ts/prisma.js";
 import config from "src/config/index.js";
 import ApiError from "src/errors/ApiError.js";
 import { emailHelper } from "src/helpers.ts/emailHelper.js";
 import generateOTP from "src/helpers.ts/generateOTP.js";
 import { jwtHelper } from "src/helpers.ts/jwtHelper.js";
+import { paginationHelper } from "src/helpers.ts/paginationHelper.js";
+import { prisma } from "src/helpers.ts/prisma.js";
 import redisClient from "src/helpers.ts/redis.js";
 import {
   IPaginationOptions,
   IUserFilterRequest,
 } from "src/types/pagination.js";
-import { ILogin, IUser, IVerifyEmail } from "./user.interface.js";
-import { paginationHelper } from "src/helpers.ts/paginationHelper.js";
-import { Prisma } from "@prisma/client";
-import { isMainThread } from "worker_threads";
+import { ILogin, IVerifyEmail } from "./user.interface.js";
+
+
 import { Response } from "express";
+import { Prisma } from "@prisma/client";
 
 // create users ================================
 const createUser = async (payload: Prisma.UserCreateInput) => {
@@ -125,15 +126,14 @@ const getAllUsers = async (
       avatar: true,
       address: true,
       role: true,
-      bikes: true,
       country: true,
       city: true,
       state: true,
       isDeleted: true,
       isVerified: true,
       status: true,
-      jobs: true,
-      bookings: true,
+      orders: true,
+      reviews: true,
       postalCode: true,
       createdAt: true,
       updatedAt: true,
@@ -170,31 +170,14 @@ const getUserById = async (id: string) => {
       avatar: true,
       address: true,
       role: true,
-      bikes: true,
       country: true,
       city: true,
       state: true,
       isDeleted: true,
       isVerified: true,
       status: true,
-      jobs: true,
       reviews: true,
-      bookings: {
-        include: {
-          job: true,
-          offer: true,
-          workshop: {
-            select: {
-              id: true,
-              ownerName: true,
-              workshopName: true,
-              avatar: true,
-              avgRating: true,
-              address: true,
-            },
-          },
-        },
-      },
+      orders: true,
       postalCode: true,
       createdAt: true,
       updatedAt: true,
@@ -216,20 +199,15 @@ const getMe = async (email: string) => {
       avatar: true,
       address: true,
       role: true,
-      bikes: true,
       country: true,
       city: true,
       state: true,
       isDeleted: true,
       isVerified: true,
       status: true,
-      jobs: true,
-      bookings: true,
+      orders: true,
       postalCode: true,
-      blogs: true,
-      messages: true,
       reviews: true,
-      rooms: true,
       createdAt: true,
       updatedAt: true,
       _count: true,
@@ -485,35 +463,19 @@ const refreshToken = async (email: string) => {
       status: true,
     },
   });
-  const workshop = await prisma.workshop.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      workshopName: true,
-      email: true,
-      phone: true,
-      role: true,
-      isVerified: true,
-      approvalStatus: true,
-    },
-  });
-  if (!user && !workshop) throw new ApiError(404, "User not found");
-  if (user && !user.isVerified) {
+
+  if (!user) throw new ApiError(404, "User not found");
+  if (!user.isVerified) {
     throw new ApiError(403, "User is not verified");
   }
-  if (workshop && !workshop.isVerified) {
-    throw new ApiError(403, "Workshop is not verified");
-  }
-
-  const payload = user || workshop;
 
   const accessToken = jwtHelper.createToken(
-    payload as JwtPayload,
+    user as JwtPayload,
     config.jwt.jwt_secret as Secret,
     config.jwt.jwt_expire_in as SignOptions["expiresIn"],
   );
   const refreshToken = jwtHelper.createToken(
-    payload as JwtPayload,
+    user as JwtPayload,
     config.jwt.jwt_secret as Secret,
     config.jwt.jwt_refresh_expire_in as SignOptions["expiresIn"],
   );
@@ -530,104 +492,6 @@ const logout = async (res: Response) => {
 };
 
 // get all jobs of a user =============================================== add filter and search like get all users
-const getUserJobs = async (
-  userId: string,
-  options: IPaginationOptions,
-  // write custom type for filter
-  filter: { urgency?: string; status?: string; searchTerm?: string },
-) => {
-  const { page, limit, skip } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filter;
-
-  const andConditions: Prisma.JobWhereInput[] = [];
-  if (filter.searchTerm) {
-    andConditions.push({
-      OR: ["title", "description"].map((field) => ({
-        [field]: {
-          contains: filter.searchTerm,
-          mode: "insensitive",
-        },
-      })),
-    });
-  }
-
-  if (Object.keys(filterData).length > 0) {
-    andConditions.push({
-      AND: Object.keys(filterData).map((key) => ({
-        [key]: {
-          equals: (filterData as any)[key],
-        },
-      })),
-    });
-  }
-
-  const whereConditions: Prisma.JobWhereInput = { AND: andConditions };
-
-  const result = await prisma.job.findMany({
-    where: {
-      userId,
-      ...whereConditions,
-    },
-    skip,
-    take: limit,
-    orderBy:
-      options.sortBy && options.sortOrder
-        ? {
-            [options.sortBy]: options.sortOrder,
-          }
-        : {
-            createdAt: "desc",
-          },
-  });
-
-  const total = await prisma.job.count({
-    where: {
-      userId,
-      ...whereConditions,
-    },
-  });
-  const totalPage = Math.ceil(total / limit);
-  return { result, meta: { page, limit, total, totalPage } };
-};
-
-const getBookingsByUserId = async (userId: string) => {
-  const result = await prisma.booking.findMany({
-    where: {
-      userId: userId,
-    },
-    include: {
-      job: true,
-      offer: true,
-      review: true,
-      user: {
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          avatar: true,
-          phone: true,
-          role: true,
-        },
-      },
-      workshop: {
-        select: {
-          id: true,
-          ownerName: true,
-          email: true,
-          phone: true,
-          avatar: true,
-          role: true,
-          avgRating: true,
-        },
-      },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
-
-  return result;
-};
 
 export const UserService = {
   createUser,
@@ -644,6 +508,4 @@ export const UserService = {
   changePassword,
   refreshToken,
   logout,
-  getUserJobs,
-  getBookingsByUserId,
 };

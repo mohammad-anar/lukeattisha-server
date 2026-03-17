@@ -1,0 +1,16 @@
+model NotificationPreference {
+  id       String @id @default(uuid())
+  userId   String @unique
+
+  orderUpdatesEmail Boolean @default(true)
+  orderUpdatesSMS   Boolean @default(false)
+  orderUpdatesPush  Boolean @default(true)
+
+  marketingEmail    Boolean @default(false)
+  marketingSMS      Boolean @default(false)
+  marketingPush     Boolean @default(false)
+
+  chatPush          Boolean @default(true)
+
+  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

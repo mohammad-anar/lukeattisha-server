@@ -16,14 +16,24 @@ model User {
     isDeleted  Boolean    @default(false)
     createdAt  DateTime   @default(now())
     updatedAt  DateTime   @updatedAt
+    stripeCustomerId String?
 
-    bookings      Booking[]
-    messages      Message[]
-    reviews       Review[]
-    bikes         Bike[]
-    blogs         Blog[]
-    jobs          Job[]
-    rooms         Room[] @relation("UserRooms")
+    isTwoFactorEnabled  Boolean    @default(false)
+    twoFactorSecret     String?
+    loginNotification   Boolean    @default(true)
+    sessionTimeoutMins  Int        @default(30)
+
+    // Laundry relations
+    orders               Order[]
+    reviews              ServiceReview[]
+    paymentCards         PaymentCard[]
+    favoriteServices     FavoriteService[]
+    supportTickets       SupportTicket[]
+    ticketMessages       TicketMessage[]
+    userSubscriptions    UserSubscription[]
+    operatorProfile      OperatorProfile?
+    notifications        Notification[]
+    notificationPrefs    NotificationPreference?
 
     @@index([role])
     @@index([status])
