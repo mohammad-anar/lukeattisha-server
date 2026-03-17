@@ -1,6 +1,6 @@
 enum Role {
   USER
-  WORKSHOP
+  OPERATOR
   ADMIN
 }
 
@@ -11,95 +11,3 @@ enum UserStatus {
   BANNED
 }
 
-enum JobStatus {
-  PENDING
-  OPEN
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-  EXPIRED
-}
-
-enum OfferStatus {
-  PENDING
-  ACCEPTED
-  REJECTED
-  CANCELLED
-  EXPIRED
-}
-
-enum BookingStatus {
-  PENDING
-  CONFIRMED
-  IN_PROGRESS
-  COMPLETED
-  CANCELLED
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  REFUNDED
-  PARTIALLY_PAID
-}
-
-enum WorkshopApprovalStatus {
-  PENDING
-  APPROVED
-  REJECTED
-  SUSPENDED
-}
-
-enum PriceType {
-  FIXED
-  HOURLY
-  ESTIMATE
-  NEGOTIABLE
-}
-
-enum InvoiceStatus {
-  DRAFT
-  SENT
-  PAID
-  OVERDUE
-  CANCELLED
-}
-
-enum ReadStatus {
-  READ
-  UNREAD
-}
-
-enum Urgency {
-  LOW
-  MEDIUM
-  HIGH
-}
-
-enum BikeType {
-  ROAD
-  MOUNTAIN
-  HYBRID
-  ELECTRIC
-  BMX
-  GRAVEL
-  CRUISER
-  OTHER
-}
-
-enum WeekDay {
-  MONDAY
-  TUESDAY
-  WEDNESDAY
-  THURSDAY
-  FRIDAY
-  SATURDAY
-  SUNDAY
-}
-
-enum MessageType {
-  TEXT
-  IMAGE
-  FILE
-}
