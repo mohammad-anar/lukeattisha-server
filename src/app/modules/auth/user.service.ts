@@ -100,8 +100,7 @@ const getAllUsers = async (
       status: true,
       isVerified: true,
       createdAt: true,
-
-      addresses: true,
+      userAddresses:true,
       paymentCards: true,
       orders: true,
       reviews: true,
@@ -135,8 +134,7 @@ const getUserById = async (id: string) => {
       role: true,
       status: true,
       isVerified: true,
-
-      addresses: true,
+      userAddresses:true,
       paymentCards: true,
       orders: true,
       reviews: true,
@@ -158,7 +156,7 @@ const getMe = async (email: string) => {
       status: true,
       isVerified: true,
 
-      addresses: true,
+      userAddresses: true,
       orders: true,
       reviews: true,
 
@@ -296,7 +294,7 @@ const forgetPassword = async (email: string) => {
       isDeleted: true,
       role: true,
       phone: true,
-      address: true,
+      userAddresses: true,
       avatar: true,
       createdAt: true,
       updatedAt: true,
