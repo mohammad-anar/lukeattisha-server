@@ -7,40 +7,52 @@ import sendResponse from "src/app/shared/sendResponse.js";
 import pick from "src/helpers.ts/pick.js";
 import { Prisma, UserStatus } from "@prisma/client";
 
+/* ================= CREATE USER ================= */
 const createUser = catchAsync(async (req: Request, res: Response) => {
   const payload: Prisma.UserCreateInput = req.body;
+
   const image = getSingleFilePath(req.files, "image") as string;
-  const url = `http://${config.ip_address}:${config.port}`.concat(image);
 
   if (image) {
-    payload.avatar = url;
+    payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
   }
 
-  // service will handle hashing of the plain password
   const result = await UserService.createUser(payload);
 
   sendResponse(res, {
     success: true,
-    message: "User registered!",
+    message: "User registered successfully",
     statusCode: 201,
     data: result,
   });
 });
+
+/* ================= GET ALL USERS ================= */
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ["role", "status", "isVerified", "isDeleted", "searchTerm"]);
+  const filters = pick(req.query, [
+    "role",
+    "status",
+    "isVerified",
+    "isDeleted",
+    "searchTerm",
+  ]);
+
   const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
 
   const result = await UserService.getAllUsers(filters, options);
 
   sendResponse(res, {
     success: true,
-    message: "Users retrieve successfully",
+    message: "Users retrieved successfully",
     statusCode: 200,
     data: result,
   });
 });
+
+/* ================= GET USER ================= */
 const getUserById = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
+
   const result = await UserService.getUserById(id as string);
 
   sendResponse(res, {
@@ -51,27 +63,32 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// me ==============
-const getMe = catchAsync(async (req: Request, res: Response) => {
-  const { email } = req.user;
-  const result = await UserService.getMe(email as string);
+/* ================= ME ================= */
+const getMe = catchAsync(async (req: any, res: Response) => {
+  const email = req.user?.email;
+
+  const result = await UserService.getMe(email);
 
   sendResponse(res, {
     success: true,
-    message: "User data retrieved successfully",
+    message: "User profile retrieved successfully",
     statusCode: 200,
     data: result,
   });
 });
+
+/* ================= UPDATE USER ================= */
 const updateUser = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params as { id: string };
+  const { id } = req.params;
   const payload = req.body;
+
   const image = getSingleFilePath(req.files, "image") as string;
-  const url = `http://${config.ip_address}:${config.port}`.concat(image);
+
   if (image) {
-    payload.profilePhoto = url;
+    payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
   }
-  const result = await UserService.updateUser(id, payload);
+
+  const result = await UserService.updateUser(id as string, payload);
 
   sendResponse(res, {
     success: true,
@@ -80,9 +97,12 @@ const updateUser = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+/* ================= BAN USER ================= */
 const banUser = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params as { id: string };
-  const result = await UserService.updateUser(id, {
+  const { id } = req.params;
+
+  const result = await UserService.updateUser(id as string, {
     status: UserStatus.BANNED,
   });
 
@@ -93,21 +113,27 @@ const banUser = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+/* ================= UNBAN USER ================= */
 const unBanUser = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params as { id: string };
-  const result = await UserService.updateUser(id, {
+  const { id } = req.params;
+
+  const result = await UserService.updateUser(id as string, {
     status: UserStatus.ACTIVE,
   });
 
   sendResponse(res, {
     success: true,
-    message: "User banned successfully",
+    message: "User unbanned successfully",
     statusCode: 200,
     data: result,
   });
 });
+
+/* ================= DELETE USER ================= */
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params;
+
   const result = await UserService.deleteUser(id as string);
 
   sendResponse(res, {
@@ -117,45 +143,48 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
-const login = catchAsync(async (req: Request, res: Response) => {
-  const payload = req.body;
-  const result = await UserService.login(payload);
 
-  // set cookies on client side
+/* ================= LOGIN ================= */
+const login = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.login(req.body);
+
   res.cookie("accessToken", result.accessToken, {
     httpOnly: true,
     secure: config.node_env === "production",
     sameSite: "strict",
-    maxAge: 24 * 60 * 60 * 1000, // 1 days
+    maxAge: 24 * 60 * 60 * 1000,
   });
+
   res.cookie("refreshToken", result.refreshToken, {
     httpOnly: true,
     secure: config.node_env === "production",
     sameSite: "strict",
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+    maxAge: 30 * 24 * 60 * 60 * 1000,
   });
 
   sendResponse(res, {
     success: true,
-    message: "User logged in successfully",
+    message: "Login successful",
     statusCode: 200,
     data: result,
   });
 });
+
+/* ================= VERIFY USER ================= */
 const verifyUser = catchAsync(async (req: Request, res: Response) => {
-  const payload = req.body;
-  const result = await UserService.verifyUser(payload);
+  const result = await UserService.verifyUser(req.body);
 
   sendResponse(res, {
     success: true,
-    message: "User verification successfully",
+    message: "User verified successfully",
     statusCode: 200,
     data: result,
   });
 });
+
+/* ================= RESEND OTP ================= */
 const resendOTP = catchAsync(async (req: Request, res: Response) => {
-  const { email } = req.body;
-  const result = await UserService.resendOTP(email);
+  const result = await UserService.resendOTP(req.body.email);
 
   sendResponse(res, {
     success: true,
@@ -164,32 +193,38 @@ const resendOTP = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+/* ================= FORGET PASSWORD ================= */
 const forgetPassword = catchAsync(async (req: Request, res: Response) => {
-  const { email } = req.body;
-  const result = await UserService.forgetPassword(email);
+  const result = await UserService.forgetPassword(req.body.email);
 
   sendResponse(res, {
     success: true,
-    message: "Password reset OTP sent successfully",
+    message: "Password reset email sent",
     statusCode: 200,
     data: result,
   });
 });
-const resetPassword = catchAsync(async (req: Request, res: Response) => {
-  const { email } = req.user;
-  const { password } = req.body;
-  const result = await UserService.resetPassword(email, password);
+
+/* ================= RESET PASSWORD ================= */
+const resetPassword = catchAsync(async (req: any, res: Response) => {
+  const email = req.user?.email;
+
+  const result = await UserService.resetPassword(email, req.body.password);
 
   sendResponse(res, {
     success: true,
-    message: "Your password reset successfully",
+    message: "Password reset successful",
     statusCode: 200,
     data: result,
   });
 });
-const changePassword = catchAsync(async (req: Request, res: Response) => {
-  const { email } = req.user;
+
+/* ================= CHANGE PASSWORD ================= */
+const changePassword = catchAsync(async (req: any, res: Response) => {
+  const email = req.user?.email;
   const { oldPassword, newPassword } = req.body;
+
   const result = await UserService.changePassword(
     email,
     oldPassword,
@@ -198,33 +233,40 @@ const changePassword = catchAsync(async (req: Request, res: Response) => {
 
   sendResponse(res, {
     success: true,
-    message: "Your password changed successfully",
+    message: "Password changed successfully",
     statusCode: 200,
     data: result,
   });
 });
-const refreshToken = catchAsync(async (req: Request, res: Response) => {
-  const { email } = req.user;
+
+/* ================= REFRESH TOKEN ================= */
+const refreshToken = catchAsync(async (req: any, res: Response) => {
+  const email = req.user?.email;
+
   const result = await UserService.refreshToken(email);
 
   sendResponse(res, {
     success: true,
-    message: "Your refresh token generated successfully",
+    message: "Token refreshed successfully",
     statusCode: 200,
     data: result,
   });
 });
+
+/* ================= LOGOUT ================= */
 const logout = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserService.logout(res);
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
 
   sendResponse(res, {
     success: true,
-    message: "You have been logged out successfully",
+    message: "Logged out successfully",
     statusCode: 200,
-    data: result,
+    data: null,
   });
 });
 
+/* ================= EXPORT ================= */
 export const UserController = {
   createUser,
   getAllUsers,

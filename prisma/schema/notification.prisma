@@ -1,16 +1,19 @@
 model NotificationPreference {
-  id       String @id @default(uuid())
-  userId   String @unique
+  id     String @id @default(uuid())
+  userId String @unique
 
   orderUpdatesEmail Boolean @default(true)
   orderUpdatesSMS   Boolean @default(false)
   orderUpdatesPush  Boolean @default(true)
 
-  marketingEmail    Boolean @default(false)
-  marketingSMS      Boolean @default(false)
-  marketingPush     Boolean @default(false)
+  marketingEmail Boolean @default(false)
+  marketingSMS   Boolean @default(false)
+  marketingPush  Boolean @default(false)
 
-  chatPush          Boolean @default(true)
+  chatPush Boolean @default(true)
 
-  user     User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

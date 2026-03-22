@@ -23,41 +23,36 @@ import { Prisma } from "@prisma/client";
 const createUser = async (payload: Prisma.UserCreateInput) => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
-    config.bcrypt_salt_round,
+    Number(config.bcrypt_salt_round),
   );
-  const result = await prisma.user.create({
+
+  const user = await prisma.user.create({
     data: { ...payload, password: hashedPassword },
     select: {
       id: true,
       name: true,
       email: true,
       phone: true,
-      avatar: true,
-      address: true,
       role: true,
-      createdAt: true,
-      updatedAt: true,
+      status: true,
       isVerified: true,
+      createdAt: true,
     },
   });
 
-  //send email
+  // OTP
   const otp = generateOTP();
+  await redisClient.set(`otp:${user.email}`, otp, { EX: 300 });
 
-  const redisKey = `otp:${result.email}`;
-  await redisClient.set(redisKey, otp, {
-    EX: 300,
+  const emailData = await emailTemplate.createAccount({
+    name: user.name,
+    otp,
+    email: user.email!,
   });
 
-  const values = {
-    name: result.name,
-    otp: otp,
-    email: result.email!,
-  };
-  const createAccountTemplate = await emailTemplate.createAccount(values);
-  await emailHelper.sendEmail(createAccountTemplate);
+  await emailHelper.sendEmail(emailData);
 
-  return result;
+  return user;
 };
 // get all users ===============================================
 const getAllUsers = async (
@@ -67,257 +62,189 @@ const getAllUsers = async (
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = filter;
 
-  const andConditions: Prisma.UserWhereInput[] = [];
-  if (filter.searchTerm) {
-    andConditions.push({
+  const conditions: Prisma.UserWhereInput[] = [];
+
+  if (searchTerm) {
+    conditions.push({
       OR: ["name", "email", "phone"].map((field) => ({
-        [field]: {
-          contains: filter.searchTerm,
-          mode: "insensitive",
-        },
+        [field]: { contains: searchTerm, mode: "insensitive" },
       })),
     });
   }
 
-  if (Object.keys(filterData).length > 0) {
-    andConditions.push({
+  if (Object.keys(filterData).length) {
+    conditions.push({
       AND: Object.keys(filterData).map((key) => ({
-        [key]: {
-          equals: (filterData as any)[key],
-        },
+        [key]: { equals: (filterData as any)[key] },
       })),
     });
   }
 
-  // andConditions.push({
-  //   isVerified: true,
-  // });
+  conditions.push({ role: { not: "ADMIN" } });
+  conditions.push({ isDeleted: false });
 
-  // Exclude ADMIN users
-  andConditions.push({
-    role: {
-      not: "ADMIN",
-    },
-  });
+  const where = { AND: conditions };
 
-  andConditions.push({
-    isDeleted: false,
-  });
-
-  const whereConditions: Prisma.UserWhereInput = { AND: andConditions };
-
-  const result = await prisma.user.findMany({
-    where: whereConditions,
+  const data = await prisma.user.findMany({
+    where,
     skip,
     take: limit,
-    orderBy:
-      options.sortBy && options.sortOrder
-        ? {
-            [options.sortBy]: options.sortOrder,
-          }
-        : {
-            createdAt: "desc",
-          },
+    orderBy: { createdAt: "desc" },
+
     select: {
       id: true,
       name: true,
       email: true,
       phone: true,
-      avatar: true,
-      address: true,
       role: true,
-      country: true,
-      city: true,
-      state: true,
-      isDeleted: true,
-      isVerified: true,
       status: true,
+      isVerified: true,
+      createdAt: true,
+
+      addresses: true,
+      paymentCards: true,
       orders: true,
       reviews: true,
-      postalCode: true,
-      createdAt: true,
-      updatedAt: true,
+
       _count: true,
     },
   });
 
-  const total = await prisma.user.count({
-    where: whereConditions,
-  });
-
-  const totalPage = Math.ceil(total / limit);
+  const total = await prisma.user.count({ where });
 
   return {
     meta: {
       page,
       limit,
       total,
-      totalPage,
+      totalPage: Math.ceil(total / limit),
     },
-    data: result,
+    data,
   };
 };
 
-// get user by id ================================================
+/* ================= GET USER BY ID ================= */
 const getUserById = async (id: string) => {
-  const result = prisma.user.findUniqueOrThrow({
+  return prisma.user.findUniqueOrThrow({
     where: { id },
     select: {
       id: true,
       name: true,
       email: true,
       phone: true,
-      avatar: true,
-      address: true,
       role: true,
-      country: true,
-      city: true,
-      state: true,
-      isDeleted: true,
-      isVerified: true,
       status: true,
-      reviews: true,
+      isVerified: true,
+
+      addresses: true,
+      paymentCards: true,
       orders: true,
-      postalCode: true,
-      createdAt: true,
-      updatedAt: true,
+      reviews: true,
+
       _count: true,
     },
   });
-  return result;
 };
-// getMe ================================================
+/* ================= ME ================= */
 const getMe = async (email: string) => {
-  console.log(email, "email");
-  const result = prisma.user.findUniqueOrThrow({
+  return prisma.user.findUniqueOrThrow({
     where: { email },
     select: {
       id: true,
       name: true,
       email: true,
       phone: true,
-      avatar: true,
-      address: true,
       role: true,
-      country: true,
-      city: true,
-      state: true,
-      isDeleted: true,
-      isVerified: true,
       status: true,
+      isVerified: true,
+
+      addresses: true,
       orders: true,
-      postalCode: true,
       reviews: true,
-      createdAt: true,
-      updatedAt: true,
+
       _count: true,
     },
   });
-  return result;
+};
+/* ================= UPDATE ================= */
+const updateUser = async (
+  id: string,
+  payload: Prisma.UserUpdateInput,
+) => {
+  return prisma.user.update({
+    where: { id },
+    data: payload,
+  });
 };
 
-// update user =====================================================
-const updateUser = async (id: string, payload: Prisma.UserUpdateInput) => {
-  const result = await prisma.user.update({ where: { id }, data: payload });
-  return result;
-};
-
-// delete user ========================================
+/* ================= DELETE (SOFT) ================= */
 const deleteUser = async (id: string) => {
-  const result = await prisma.user.delete({ where: { id } });
-  return result;
+  return prisma.user.update({
+    where: { id },
+    data: {
+      isDeleted: true,
+      status: "INACTIVE",
+    },
+  });
 };
 
-// login ===============================================
+/* ================= LOGIN ================= */
 const login = async (payload: ILogin) => {
-  const isExist = await prisma.user.findFirstOrThrow({
+  const user = await prisma.user.findFirstOrThrow({
     where: { email: payload.email, status: "ACTIVE" },
     select: {
       id: true,
       name: true,
       email: true,
-      phone: true,
       role: true,
       password: true,
       isVerified: true,
-      status: true,
     },
   });
 
-  const { password, ...userData } = isExist;
+  const isMatch = await bcrypt.compare(payload.password, user.password);
 
-  if (!isExist.isVerified) {
-    throw new ApiError(
-      403,
-      "You are not verifies. Please verify your account to login",
-    );
-  }
+  if (!isMatch) throw new ApiError(400, "Invalid credentials");
+  if (!user.isVerified) throw new ApiError(403, "Verify account first");
 
-  // check bcrypt password
-  const isPasswordMatched = await bcrypt.compare(
-    payload.password,
-    isExist.password,
-  );
-
-  if (!isPasswordMatched) {
-    throw new ApiError(400, "Invalid password");
-  }
+  const { password, ...safeUser } = user;
 
   const accessToken = jwtHelper.createToken(
-    userData,
+    safeUser,
     config.jwt.jwt_secret as Secret,
     config.jwt.jwt_expire_in as SignOptions["expiresIn"],
   );
+
   const refreshToken = jwtHelper.createToken(
-    userData,
+    safeUser,
     config.jwt.jwt_secret as Secret,
     config.jwt.jwt_refresh_expire_in as SignOptions["expiresIn"],
   );
 
-  return { accessToken, refreshToken, user: userData };
+  return { accessToken, refreshToken, user: safeUser };
 };
 
-// verify==============================================
+/* ================= VERIFY ================= */
 const verifyUser = async ({ email, otp }: IVerifyEmail) => {
-  // 1. Get the user's email from the DB
-  const user = await prisma.user.findUnique({
-    where: { email },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      isVerified: true,
-      role: true,
-      address: true,
-      avatar: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  const key = `otp:${email}`;
+  const stored = await redisClient.get(key);
 
-  if (!user) throw new Error("User not found");
+  if (!stored) throw new Error("OTP expired");
+  if (stored !== String(otp)) throw new Error("Invalid OTP");
 
-  const redisKey = `otp:${user.email}`;
-  const storedOtp = await redisClient.get(redisKey);
-
-  if (!storedOtp) throw new Error("OTP expired or not found");
-  if (storedOtp !== String(otp)) throw new Error("Invalid OTP");
-
-  // 2. Mark user as verified
-  await prisma.user.update({
+  const user = await prisma.user.update({
     where: { email },
     data: { isVerified: true },
   });
 
-  // 3. Remove OTP from Redis
-  await redisClient.del(redisKey);
+  await redisClient.del(key);
 
   const accessToken = jwtHelper.createToken(
     user,
     config.jwt.jwt_secret as Secret,
     config.jwt.jwt_expire_in as SignOptions["expiresIn"],
   );
+
   const refreshToken = jwtHelper.createToken(
     user,
     config.jwt.jwt_secret as Secret,
