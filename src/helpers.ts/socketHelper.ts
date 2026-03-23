@@ -1,5 +1,6 @@
 import colors from "colors";
 import { Server, Socket } from "socket.io";
+import config from "src/config/index.js";
 
 let io: Server | null = null;
 
@@ -8,7 +9,7 @@ const socketMap: Map<string, Set<string>> = new Map();
 export const initSocket = (server: any) => {
   io = new Server(server, {
     pingTimeout: 60000,
-    cors: { origin: "*" },
+    cors: { origin: config.cors_origin },
   });
 
   io.on("connection", (socket: Socket) => {
