@@ -1,12 +1,3 @@
-export interface IUser {
-  name: string;
-  email: string;
-  phone?: string;
-  password: string;
-  avatar?: string;
-  address?: string;
-}
-
 export interface IVerifyEmail {
   email: string;
   otp: number | string;
