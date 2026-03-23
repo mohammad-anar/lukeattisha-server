@@ -96,6 +96,9 @@ const fileUploadHandler = () => {
   const upload = multer({
     storage: storage,
     fileFilter: filterFilter,
+    limits: {
+      fileSize: 5 * 1024 * 1024, // 5MB limit
+    },
   }).fields([
     { name: "image", maxCount: 5 },
     { name: "media", maxCount: 5 },

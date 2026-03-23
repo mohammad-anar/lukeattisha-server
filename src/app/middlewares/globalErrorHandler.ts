@@ -1,5 +1,9 @@
+import { Prisma } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
+import config from "src/config/index.js";
+import handlePrismaError from "src/errors/handlePrismaError.js";
+import handleValidationError from "src/errors/handleValidationError.js";
 import handleZodError from "src/errors/handleZodError.js";
 import { ZodError } from "zod";
 
@@ -21,12 +25,30 @@ const globalErrorHandler = (
     statusCode = simplifiedError.statusCode;
     message = simplifiedError.message;
     errorDetails = simplifiedError.errorMessages;
+  } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
+    const simplifiedError = handlePrismaError(err);
+    statusCode = simplifiedError.statusCode;
+    message = simplifiedError.message;
+    errorDetails = simplifiedError.errorMessages;
+  } else if (err instanceof Prisma.PrismaClientValidationError) {
+    const simplifiedError = handleValidationError(err);
+    statusCode = simplifiedError.statusCode;
+    message = simplifiedError.message;
+    errorDetails = simplifiedError.errorMessages;
+  } else if (err?.name === "TokenExpiredError") {
+    statusCode = httpStatus.UNAUTHORIZED;
+    message = "Token has expired";
+    errorDetails = [{ path: "", message }];
+  } else if (err?.name === "JsonWebTokenError") {
+    statusCode = httpStatus.UNAUTHORIZED;
+    message = "Invalid token";
+    errorDetails = [{ path: "", message }];
   }
 
   res.status(statusCode).json({
     success,
     message,
-    error: errorDetails,
+    error: config.node_env === "development" ? errorDetails : undefined,
   });
 };
 

@@ -16,12 +16,19 @@ const validateRequest =
           parsedBody = req.body;
         }
       }
-      await schema.parseAsync(parsedBody);
+      const parsedData = await schema.parseAsync({
+        body: parsedBody,
+        query: req.query,
+        params: req.params,
+        cookies: req.cookies,
+      });
 
-      req.body = parsedBody;
+      req.body = parsedData.body;
+      req.query = parsedData.query as any;
+      req.params = parsedData.params as any;
+
       next();
     } catch (error) {
-      console.log(error);
       next(error);
     }
   };

@@ -4,6 +4,7 @@ import { Secret } from "jsonwebtoken";
 import config from "src/config/index.js";
 import ApiError from "src/errors/ApiError.js";
 import { jwtHelper } from "src/helpers.ts/jwtHelper.js";
+import { prisma } from "src/helpers.ts/prisma.js";
 
 const auth =
   (...roles: string[]) =>
@@ -20,27 +21,43 @@ const auth =
           "Invalid Token format! Token must startsWith Bearer",
         );
       }
-      if (tokenWithBearer && tokenWithBearer.startsWith("Bearer")) {
-        const token = tokenWithBearer.split(" ")[1];
 
-        //verify token
-        const verifyUser = jwtHelper.verifyToken(
-          token,
-          config.jwt.jwt_secret as Secret,
-        );
-        //set user to header
-        req.user = verifyUser;
+      const token = tokenWithBearer.split(" ")[1];
 
-        //guard user
-        if (roles.length && !roles.includes(verifyUser.role)) {
-          throw new ApiError(
-            StatusCodes.FORBIDDEN,
-            "You don't have permission to access this api",
-          );
-        }
+      //verify token
+      const verifyUser = jwtHelper.verifyToken(
+        token,
+        config.jwt.jwt_secret as Secret,
+      );
 
-        next();
+      // EXTRA SECURE: Check if user exists and is active in DB
+      const user = await prisma.user.findUnique({
+        where: { id: verifyUser.id, isDeleted: false },
+      });
+
+      if (!user) {
+        throw new ApiError(StatusCodes.UNAUTHORIZED, "User not found or deleted");
       }
+
+      if (user.status !== "ACTIVE") {
+        throw new ApiError(
+          StatusCodes.FORBIDDEN,
+          `Your account is ${user.status.toLowerCase()}`,
+        );
+      }
+
+      //set user to header
+      req.user = verifyUser;
+
+      //guard user
+      if (roles.length && !roles.includes(verifyUser.role)) {
+        throw new ApiError(
+          StatusCodes.FORBIDDEN,
+          "You don't have permission to access this api",
+        );
+      }
+
+      next();
     } catch (error) {
       next(error);
     }
