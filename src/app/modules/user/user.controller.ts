@@ -1,0 +1,66 @@
+import { Request, Response } from "express";
+import catchAsync from "src/app/shared/catchAsync.js";
+import sendResponse from "src/app/shared/sendResponse.js";
+import config from "src/config/index.js";
+import { UserService } from "./user.service.js";
+import pick from "src/helpers.ts/pick.js";
+import { UserStatus } from "@prisma/client";
+
+/* ================= GET ME ================= */
+const getMe = catchAsync(async (req: any, res: Response) => {
+  const result = await UserService.getMe(req.user?.email);
+  sendResponse(res, { success: true, statusCode: 200, message: "User profile retrieved successfully", data: result });
+});
+
+/* ================= GET ALL USERS ================= */
+const getAllUsers = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, ["role", "status", "isVerified", "isDeleted", "searchTerm"]);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await UserService.getAllUsers(filters, options);
+  sendResponse(res, { success: true, statusCode: 200, message: "Users retrieved successfully", data: result });
+});
+
+/* ================= GET USER BY ID ================= */
+const getUserById = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.getUserById(req.params.id as string);
+  sendResponse(res, { success: true, statusCode: 200, message: "User retrieved successfully", data: result });
+});
+
+/* ================= UPDATE USER ================= */
+const updateUser = catchAsync(async (req: Request, res: Response) => {  
+  const { getSingleFilePath } = await import("src/app/shared/getFilePath.js");
+  const payload = req.body;
+  const image = getSingleFilePath(req.files, "image") as string;
+  if (image) payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
+
+  const result = await UserService.updateUser(req.params.id as string, payload);
+  sendResponse(res, { success: true, statusCode: 200, message: "User updated successfully", data: result });
+}); 
+
+/* ================= BAN USER ================= */
+const banUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.updateUser(req.params.id as string, { status: UserStatus.BANNED });
+  sendResponse(res, { success: true, statusCode: 200, message: "User banned successfully", data: result });
+});
+
+/* ================= UNBAN USER ================= */
+const unBanUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.updateUser(req.params.id as string, { status: UserStatus.ACTIVE });
+  sendResponse(res, { success: true, statusCode: 200, message: "User unbanned successfully", data: result });
+});
+
+/* ================= DELETE USER ================= */
+const deleteUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.deleteUser(req.params.id as string);
+  sendResponse(res, { success: true, statusCode: 200, message: "User deleted successfully", data: result });
+});
+
+export const UserController = {
+  getMe,
+  getAllUsers,
+  getUserById,
+  updateUser,
+  banUser,
+  unBanUser,
+  deleteUser,
+};
