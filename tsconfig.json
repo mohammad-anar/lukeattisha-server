@@ -10,7 +10,9 @@
     "skipLibCheck": true,
     "types": ["node"],
     "resolveJsonModule": true,
+    "outDir": "./dist",
+    "rootDir": "./src"
   },
-  "include": ["src/**/*.ts", "generated/prisma", "prisma.config.ts"],
+  "include": ["src/**/*.ts", "generated/prisma"],
   "exclude": ["dist"]
 }

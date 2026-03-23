@@ -1,16 +1,16 @@
 import bcrypt from "bcryptjs";
 import { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
-import { emailTemplate } from "src/app/shared/emailTemplate.js";
-import config from "src/config/index.js";
-import ApiError from "src/errors/ApiError.js";
-import { emailHelper } from "src/helpers.ts/emailHelper.js";
-import generateOTP from "src/helpers.ts/generateOTP.js";
-import { jwtHelper } from "src/helpers.ts/jwtHelper.js";
-import { prisma } from "src/helpers.ts/prisma.js";
-import redisClient from "src/helpers.ts/redis.js";
 import { Prisma } from "@prisma/client";
 import { Response } from "express";
 import { ILogin, IVerifyEmail } from "./auth.interface.js";
+import config from "../../../config/index.js";
+import { prisma } from "../../../helpers.ts/prisma.js";
+import generateOTP from "../../../helpers.ts/generateOTP.js";
+import redisClient from "../../../helpers.ts/redis.js";
+import { emailTemplate } from "../../shared/emailTemplate.js";
+import { emailHelper } from "../../../helpers.ts/emailHelper.js";
+import ApiError from "../../../errors/ApiError.js";
+import { jwtHelper } from "../../../helpers.ts/jwtHelper.js";
 
 /* ================= REGISTER ================= */
 const register = async (payload: Prisma.UserCreateInput) => {

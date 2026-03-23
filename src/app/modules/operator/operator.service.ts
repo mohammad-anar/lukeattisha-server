@@ -1,10 +1,11 @@
-import { prisma } from "src/helpers.ts/prisma.js";
+
+import ApiError from "../../../errors/ApiError.js";
+import { prisma } from "../../../helpers.ts/prisma.js";
 import {
   IOperatorProfileCreatePayload,
   IOperatorProfileUpdatePayload,
   IOperatorCategoryAssignPayload,
 } from "./operator.interface.js";
-import ApiError from "src/errors/ApiError.js";
 import httpStatus from "http-status";
 
 const createOperatorProfile = async (

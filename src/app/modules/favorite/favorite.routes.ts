@@ -1,9 +1,9 @@
 import express from "express";
-import auth from "src/app/middlewares/auth.js";
-import validateRequest from "src/app/middlewares/validateRequest.js";
 import { FavoriteController } from "./favorite.controller.js";
 import { FavoriteValidation } from "./favorite.validation.js";
 import { Role } from "@prisma/client";
+import auth from "../../middlewares/auth.js";
+import validateRequest from "../../middlewares/validateRequest.js";
 
 const router = express.Router();
 

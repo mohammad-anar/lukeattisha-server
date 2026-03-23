@@ -1,0 +1,56 @@
+model Service {
+  id         String @id @default(uuid())
+  operatorId String
+  categoryId String
+
+  operator OperatorProfile @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  category Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  name      String
+  basePrice Decimal @db.Decimal(10, 2)
+  isActive  Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  addons      AddonService[]
+  favoritedBy FavoriteService[]
+  orderItems  OrderItem[]
+  reviews     ServiceReview[]
+
+  @@index([operatorId])
+  @@index([categoryId])
+}
+
+model AddonService {
+  id        String @id @default(uuid())
+  serviceId String
+
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  name  String
+  price Decimal @db.Decimal(10, 2)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orderItemAddons OrderItemAddon[]
+
+  @@index([serviceId])
+}
+
+model FavoriteService {
+  id        String @id @default(uuid())
+  userId    String
+  serviceId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, serviceId])
+  @@index([userId])
+  @@index([serviceId])
+}

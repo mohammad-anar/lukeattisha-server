@@ -1,4 +1,5 @@
-import { prisma } from "src/helpers.ts/prisma.js";
+import { prisma } from "../../../helpers.ts/prisma.js";
+
 
 /* ================= GET MY NOTIFICATIONS ================= */
 const getMyNotifications = async (userId: string) => {

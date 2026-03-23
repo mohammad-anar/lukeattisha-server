@@ -1,7 +1,8 @@
-import { prisma } from "src/helpers.ts/prisma.js";
-import ApiError from "src/errors/ApiError.js";
+
 import httpStatus from "http-status";
 import { ITicketCreatePayload, ITicketMessageCreatePayload } from "./chat.interface.js";
+import { prisma } from "../../../helpers.ts/prisma.js";
+import ApiError from "../../../errors/ApiError.js";
 
 /* ================= CREATE TICKET ================= */
 const createTicket = async (userId: string, payload: ITicketCreatePayload) => {

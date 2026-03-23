@@ -9,11 +9,14 @@ export type IOrderItemPayload = {
 export type IOrderCreatePayload = {
   operatorId: string;
   items: IOrderItemPayload[];
-  pickupDate: string;
-  pickupTimeRange: string;
+  pickupAt: string; // ISO string for pickup date/time
+  dropoffAt: string; // ISO string for dropoff date/time
   pickupAddress: string;
-  pickupLat?: number;
-  pickupLng?: number;
+  dropoffAddress: string;
+  pickupLatitude?: number;
+  pickupLongitude?: number;
+  dropoffLatitude?: number;
+  dropoffLongitude?: number;
   specialInstruction?: string;
   paymentMethod: PaymentMethodType;
 };

@@ -1,7 +1,7 @@
 import { prisma } from "src/helpers.ts/prisma.js";
 import ApiError from "src/errors/ApiError.js";
 import httpStatus from "http-status";
-import { PaymentMethodType, PaymentStatus } from "@prisma/client";
+import { OrderStatus, PaymentMethodType, PaymentStatus } from "@prisma/client";
 
 /* ================= CREATE PAYMENT ================= */
 const createPayment = async (orderId: string, method: PaymentMethodType, transactionId?: string) => {
@@ -11,7 +11,7 @@ const createPayment = async (orderId: string, method: PaymentMethodType, transac
   const payment = await prisma.payment.create({
     data: {
       orderId,
-      amount: order.totalAmount,
+      amount: order.total,
       method,
       status: PaymentStatus.PAID,
       transactionId,
@@ -21,7 +21,7 @@ const createPayment = async (orderId: string, method: PaymentMethodType, transac
   // Update order payment status
   await prisma.order.update({
     where: { id: orderId },
-    data: { paymentStatus: PaymentStatus.PAID },
+    data: { status: OrderStatus.ACCEPTED },
   });
 
   return payment;

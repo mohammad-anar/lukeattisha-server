@@ -1,10 +1,10 @@
 import { NextFunction, Request, Response } from "express";
 import { StatusCodes } from "http-status-codes";
 import { Secret } from "jsonwebtoken";
-import config from "src/config/index.js";
-import ApiError from "src/errors/ApiError.js";
-import { jwtHelper } from "src/helpers.ts/jwtHelper.js";
-import { prisma } from "src/helpers.ts/prisma.js";
+import ApiError from "../../errors/ApiError.js";
+import { jwtHelper } from "../../helpers.ts/jwtHelper.js";
+import config from "../../config/index.js";
+import { prisma } from "../../helpers.ts/prisma.js";
 
 const auth =
   (...roles: string[]) =>

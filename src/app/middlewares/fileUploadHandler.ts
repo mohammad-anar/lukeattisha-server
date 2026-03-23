@@ -3,7 +3,7 @@ import fs from "fs";
 import { StatusCodes } from "http-status-codes";
 import multer, { FileFilterCallback } from "multer";
 import path from "path";
-import ApiError from "src/errors/ApiError.js";
+import ApiError from "../../errors/ApiError.js";
 
 const fileUploadHandler = () => {
   //create upload folder

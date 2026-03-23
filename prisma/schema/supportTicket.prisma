@@ -1,0 +1,36 @@
+model SupportTicket {
+  id      String  @id @default(uuid())
+  userId  String
+  orderId String?
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order Order? @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  subject     String
+  description String
+  status      TicketStatus @default(OPEN)
+  type        TicketType   @default(GENERAL)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  messages TicketMessage[]
+
+  @@index([userId])
+  @@index([orderId])
+}
+
+model TicketMessage {
+  id       String @id @default(uuid())
+  ticketId String
+  senderId String
+
+  ticket SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User          @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ticketId])
+}

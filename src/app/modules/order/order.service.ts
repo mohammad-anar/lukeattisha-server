@@ -1,61 +1,141 @@
-import { prisma } from "src/helpers.ts/prisma.js";
-import ApiError from "src/errors/ApiError.js";
 import httpStatus from "http-status";
-import { IOrderCreatePayload, IOrderUpdateStatusPayload } from "./order.interface.js";
+import {
+  IOrderCreatePayload,
+  IOrderUpdateStatusPayload,
+} from "./order.interface.js";
+import { prisma } from "../../../helpers.ts/prisma.js";
+import ApiError from "../../../errors/ApiError.js";
 
 /* ================= CREATE ORDER ================= */
 const createOrder = async (userId: string, payload: IOrderCreatePayload) => {
-  const { items, operatorId, paymentMethod, ...rest } = payload;
+  const {
+    items,
+    operatorId,
+    paymentMethod,
+    pickupAt,
+    dropoffAt,
+    pickupLatitude,
+    pickupLongitude,
+    dropoffLatitude,
+    dropoffLongitude,
+    pickupAddress,
+    dropoffAddress,
+    ...rest
+  } = payload;
 
-  // Fetch prices for all services
-  const serviceIds = items.map((i) => i.serviceId);
-  const services = await prisma.service.findMany({
-    where: { id: { in: serviceIds } },
-    include: { addons: true },
-  });
+  return await prisma.$transaction(async (tx) => {
+    // 1. Fetch all services with addons
+    const serviceIds = items.map((i) => i.serviceId);
 
-  let totalAmount = 0;
-
-  const orderItems = items.map((item) => {
-    const svc = services.find((s) => s.id === item.serviceId);
-    if (!svc) throw new ApiError(httpStatus.NOT_FOUND, `Service ${item.serviceId} not found`);
-
-    const basePrice = Number(svc.basePrice) * item.quantity;
-    let addonTotal = 0;
-
-    const addonData = (item.addonIds ?? []).map((addonId) => {
-      const addon = svc.addons.find((a) => a.id === addonId);
-      if (!addon) throw new ApiError(httpStatus.NOT_FOUND, `Addon ${addonId} not found`);
-      addonTotal += Number(addon.price);
-      return { addonId, price: addon.price };
+    const services = await tx.service.findMany({
+      where: { id: { in: serviceIds } },
+      include: { addons: true },
     });
 
-    totalAmount += basePrice + addonTotal;
+    let totalAmount = 0;
 
-    return {
-      serviceId: item.serviceId,
-      quantity: item.quantity,
-      price: svc.basePrice,
-      addons: { create: addonData },
-    };
+    // 2. Prepare OrderItems CREATE INPUT
+    const orderItemsCreateInput: any[] = [];
+
+    for (const item of items) {
+      const svc = services.find((s) => s.id === item.serviceId);
+
+      if (!svc) {
+        throw new ApiError(
+          httpStatus.NOT_FOUND,
+          `Service ${item.serviceId} not found`,
+        );
+      }
+
+      const basePrice = Number(svc.basePrice) * item.quantity;
+      let addonTotal = 0;
+
+      const addonCreateInput: any[] = [];
+
+      for (const addonId of item.addonIds ?? []) {
+        const addon = svc.addons.find((a) => a.id === addonId);
+
+        if (!addon) {
+          throw new ApiError(
+            httpStatus.NOT_FOUND,
+            `Addon ${addonId} not found`,
+          );
+        }
+
+        addonTotal += Number(addon.price);
+
+        addonCreateInput.push({
+          addonId,
+          price: addon.price,
+        });
+      }
+
+      totalAmount += basePrice + addonTotal;
+
+      orderItemsCreateInput.push({
+        serviceId: item.serviceId,
+        quantity: item.quantity,
+        price: svc.basePrice,
+        addons: {
+          create: addonCreateInput,
+        },
+      });
+    }
+
+    // 3. Create Order
+    const order = await tx.order.create({
+      data: {
+        userId,
+        operatorId,
+        total: totalAmount,
+
+        pickupAt: new Date(pickupAt),
+        dropoffAt: new Date(dropoffAt),
+
+        pickupLatitude,
+        pickupLongitude,
+        dropoffLatitude,
+        dropoffLongitude,
+
+        pickupAddress,
+        dropoffAddress,
+
+        ...rest,
+
+        orderItems: {
+          create: orderItemsCreateInput,
+        },
+
+        orderStatusLogs: {
+          create: {
+            status: "PENDING",
+            note: "Order created",
+          },
+        },
+      },
+      include: {
+        orderItems: {
+          include: {
+            addons: true,
+            service: true,
+          },
+        },
+        orderStatusLogs: true,
+      },
+    });
+
+    // 4. Optional: create Payment record (recommended)
+    await tx.payment.create({
+      data: {
+        orderId: order.id,
+        amount: totalAmount,
+        method: paymentMethod,
+        status: "PENDING",
+      },
+    });
+
+    return order;
   });
-
-  const order = await prisma.order.create({
-    data: {
-      userId,
-      operatorId,
-      paymentMethod,
-      totalAmount,
-      ...rest,
-      pickupDate: new Date(rest.pickupDate),
-      items: { create: orderItems },
-    },
-    include: {
-      items: { include: { addons: true, service: true } },
-    },
-  });
-
-  return order;
 };
 
 /* ================= GET MY ORDERS (user) ================= */
@@ -63,8 +143,21 @@ const getMyOrders = async (userId: string) => {
   return await prisma.order.findMany({
     where: { userId },
     include: {
-      items: { include: { service: true, addons: { include: { addon: true } } } },
-      orderStatusLogs: { orderBy: { createdAt: "desc" } },
+      operator: true,
+      orderItems: true,
+      orderStatusLogs: true,
+      payments: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          avatar: true,
+          phone: true,
+          userAddresses: true,
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
@@ -72,15 +165,19 @@ const getMyOrders = async (userId: string) => {
 
 /* ================= GET OPERATOR ORDERS ================= */
 const getOperatorOrders = async (userId: string) => {
-  const profile = await prisma.operatorProfile.findUnique({ where: { userId } });
-  if (!profile) throw new ApiError(httpStatus.NOT_FOUND, "Operator profile not found");
+  const profile = await prisma.operatorProfile.findUnique({
+    where: { userId },
+  });
+  if (!profile)
+    throw new ApiError(httpStatus.NOT_FOUND, "Operator profile not found");
 
   return await prisma.order.findMany({
     where: { operatorId: profile.id },
     include: {
       user: { select: { id: true, name: true, email: true, phone: true } },
-      items: { include: { service: true, addons: { include: { addon: true } } } },
-      orderStatusLogs: { orderBy: { createdAt: "desc" } },
+      operator: true,
+      orderItems: true,
+      payments: true,
     },
     orderBy: { createdAt: "desc" },
   });
@@ -93,7 +190,7 @@ const getOrderById = async (id: string) => {
     include: {
       user: { select: { id: true, name: true, email: true, phone: true } },
       operator: true,
-      items: { include: { service: true, addons: { include: { addon: true } } } },
+      orderItems: true,
       orderStatusLogs: { orderBy: { createdAt: "desc" } },
       payments: true,
     },
@@ -103,12 +200,17 @@ const getOrderById = async (id: string) => {
 };
 
 /* ================= UPDATE ORDER STATUS ================= */
-const updateOrderStatus = async (id: string, payload: IOrderUpdateStatusPayload) => {
+const updateOrderStatus = async (
+  id: string,
+  payload: IOrderUpdateStatusPayload,
+) => {
   await getOrderById(id);
 
   const [order] = await prisma.$transaction([
     prisma.order.update({ where: { id }, data: { status: payload.status } }),
-    prisma.orderStatusLog.create({ data: { orderId: id, status: payload.status, note: payload.note } }),
+    prisma.orderStatusLog.create({
+      data: { orderId: id, status: payload.status, note: payload.note },
+    }),
   ]);
 
   return order;
@@ -117,10 +219,18 @@ const updateOrderStatus = async (id: string, payload: IOrderUpdateStatusPayload)
 /* ================= CANCEL ORDER ================= */
 const cancelOrder = async (userId: string, id: string) => {
   const order = await getOrderById(id);
-  if (order.userId !== userId) throw new ApiError(httpStatus.FORBIDDEN, "Forbidden");
-  if (order.status !== "PENDING") throw new ApiError(httpStatus.BAD_REQUEST, "Only pending orders can be cancelled");
+  if (order.userId !== userId)
+    throw new ApiError(httpStatus.FORBIDDEN, "Forbidden");
+  if (order.status !== "PENDING")
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Only pending orders can be cancelled",
+    );
 
-  return await prisma.order.update({ where: { id }, data: { status: "CANCELLED" } });
+  return await prisma.order.update({
+    where: { id },
+    data: { status: "CANCELLED" },
+  });
 };
 
 /* ================= GET ALL ORDERS (admin) ================= */
@@ -129,7 +239,7 @@ const getAllOrders = async () => {
     include: {
       user: { select: { id: true, name: true, email: true } },
       operator: { select: { id: true, storeName: true } },
-      items: true,
+      orderItems: true,
     },
     orderBy: { createdAt: "desc" },
   });

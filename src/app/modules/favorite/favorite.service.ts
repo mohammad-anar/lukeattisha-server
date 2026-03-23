@@ -1,8 +1,9 @@
 
-import ApiError from "src/errors/ApiError.js";
+
+import ApiError from "../../../errors/ApiError.js";
+import { prisma } from "../../../helpers.ts/prisma.js";
 import { IFavoriteCreatePayload } from "./favorite.interface.js";
 import httpStatus from "http-status";
-import { prisma } from "src/helpers.ts/prisma.js";
 
 const addFavorite = async (userId: string, payload: IFavoriteCreatePayload) => {
   const existing = await prisma.favoriteService.findUnique({

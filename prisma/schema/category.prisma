@@ -1,0 +1,21 @@
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  services         Service[]
+  operatorProfiles OperatorCategory[]
+}
+
+
+model OperatorCategory {
+  operatorId String
+  categoryId String
+  createdAt  DateTime @default(now())
+
+  operator OperatorProfile @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  category Category        @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@id([operatorId, categoryId])
+}

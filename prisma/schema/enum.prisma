@@ -1,9 +1,11 @@
+// ================= USER ROLES =================
 enum Role {
   USER
   OPERATOR
   ADMIN
 }
 
+// ================= USER STATUS =================
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -11,10 +13,12 @@ enum UserStatus {
   BANNED
 }
 
+// ================= ORDER STATUS =================
 enum OrderStatus {
   PENDING
   ACCEPTED
-  IN_PROGRESS
+  PROCESSING
+  READY_FOR_DELIVERY
   OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
@@ -22,6 +26,7 @@ enum OrderStatus {
   REFUNDED
 }
 
+// ================= PAYMENT STATUS =================
 enum PaymentStatus {
   PENDING
   PAID
@@ -30,12 +35,14 @@ enum PaymentStatus {
   PARTIAL
 }
 
+// ================= PAYMENT METHOD =================
 enum PaymentMethodType {
   CARD
   APPLE_PAY
   GOOGLE_PAY
 }
 
+// ================= SUPPORT TICKETS =================
 enum TicketStatus {
   OPEN
   IN_PROGRESS
@@ -45,4 +52,38 @@ enum TicketStatus {
 enum TicketType {
   ORDER_ISSUE
   GENERAL
+}
+
+// ================= TRANSACTIONS =================
+enum TransactionType {
+  CREDIT
+  DEBIT
+  COMMISSION
+  REFUND
+  PAYOUT
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+// ================= PAYOUTS =================
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+// ================= DELIVERY =================
+enum DeliveryCostBearer {
+  USER
+  ADMIN
+}
+
+// ================= SUBSCRIPTIONS =================
+enum SubscriptionType {
+  PREMIUM
 }

@@ -23,6 +23,11 @@ export default {
     jwt_expire_in: process.env.JWT_EXPIRE_IN,
     jwt_refresh_expire_in: process.env.JWT_REFRESH_EXPIRE_IN,
   },
+  stripe: {
+    stripe_pk: process.env.STRIPE_PUBLISHABLE_KEY,
+    stripe_sk: process.env.STRIPE_SECRET_KEY,
+    stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
+  },
   admin: {
     name: process.env.NAME,
     email: process.env.EMAIL,

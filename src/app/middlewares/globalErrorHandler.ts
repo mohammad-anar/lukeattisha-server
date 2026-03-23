@@ -1,11 +1,11 @@
 import { Prisma } from "@prisma/client";
 import { NextFunction, Request, Response } from "express";
 import httpStatus from "http-status";
-import config from "src/config/index.js";
-import handlePrismaError from "src/errors/handlePrismaError.js";
-import handleValidationError from "src/errors/handleValidationError.js";
-import handleZodError from "src/errors/handleZodError.js";
 import { ZodError } from "zod";
+import handleZodError from "../../errors/handleZodError.js";
+import handlePrismaError from "../../errors/handlePrismaError.js";
+import handleValidationError from "../../errors/handleValidationError.js";
+import config from "../../config/index.js";
 
 const globalErrorHandler = (
   err: any,

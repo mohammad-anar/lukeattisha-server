@@ -1,3 +1,20 @@
+model Notification {
+  id     String @id @default(uuid())
+  userId String
+
+  title   String
+  message String
+  type    String
+  channel String
+
+  isSent    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model NotificationPreference {
   id     String @id @default(uuid())
   userId String @unique

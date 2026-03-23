@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import catchAsync from "src/app/shared/catchAsync.js";
-import sendResponse from "src/app/shared/sendResponse.js";
 import { AdminService } from "./admin.service.js";
+import catchAsync from "../../shared/catchAsync.js";
+import sendResponse from "../../shared/sendResponse.js";
 
 const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
   const result = await AdminService.getDashboardStats();
