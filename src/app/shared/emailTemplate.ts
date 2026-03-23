@@ -1,5 +1,6 @@
-import config from "src/config/index.js";
-import { ICreateAccount, IResetPassword } from "src/types/emailTamplate.js";
+import { config } from "config/index.js";
+import { ICreateAccount, IResetPassword } from "types/emailTamplate.js";
+
 
 const PRIMARY_COLOR = "#00C6CF";
 

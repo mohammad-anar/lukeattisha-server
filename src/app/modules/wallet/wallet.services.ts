@@ -1,5 +1,6 @@
-import { prisma } from "src/helpers.ts/prisma.js";
+
 import { TransactionType, TransactionStatus } from "@prisma/client";
+import { prisma } from "helpers.ts/prisma.js";
 
 const getWalletByUser = async (userId: string) => {
   return await prisma.wallet.findUnique({ where: { userId } });

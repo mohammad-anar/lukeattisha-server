@@ -1,5 +1,6 @@
-import { prisma } from "src/helpers.ts/prisma.js";
+
 import { PayoutStatus } from "@prisma/client";
+import { prisma } from "helpers.ts/prisma.js";
 
 const createPayout = async (
   operatorId: string,

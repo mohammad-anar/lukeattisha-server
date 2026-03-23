@@ -1,8 +1,8 @@
 // src/app/modules/stripe/stripe.service.ts
 import Stripe from "stripe";
-import { prisma } from "src/helpers.ts/prisma.js";
-import { stripe } from "src/helpers.ts/stripeHelpers.js";
 import { PayoutStatus } from "@prisma/client";
+import { stripe } from "helpers.ts/stripeHelpers.js";
+import { prisma } from "helpers.ts/prisma.js";
 
 const createCheckoutSession = async (userId: string) => {
   const session = await stripe.checkout.sessions.create({

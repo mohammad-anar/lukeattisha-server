@@ -1,5 +1,5 @@
+import { config } from "config/index.js";
 import app from "./app.js";
-import config from "./config/index.js";
 import { seedSuperAdmin } from "./db/seedSuperAdmin.js";
 import { initSocket } from "./helpers.ts/socketHelper.js";
 

@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
-import catchAsync from "src/app/shared/catchAsync.js";
-import sendResponse from "src/app/shared/sendResponse.js";
-import config from "src/config/index.js";
 import { UserService } from "./user.service.js";
-import pick from "src/helpers.ts/pick.js";
 import { UserStatus } from "@prisma/client";
+import catchAsync from "app/shared/catchAsync.js";
+import sendResponse from "app/shared/sendResponse.js";
+import { getSingleFilePath } from "app/shared/getFilePath.js";
+import pick from "helpers.ts/pick.js";
+import { config } from "config/index.js";
 
 /* ================= GET ME ================= */
 const getMe = catchAsync(async (req: any, res: Response) => {
@@ -28,7 +29,6 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
 
 /* ================= UPDATE USER ================= */
 const updateUser = catchAsync(async (req: Request, res: Response) => {  
-  const { getSingleFilePath } = await import("src/app/shared/getFilePath.js");
   const payload = req.body;
   const image = getSingleFilePath(req.files, "image") as string;
   if (image) payload.avatar = `http://${config.ip_address}:${config.port}${image}`;

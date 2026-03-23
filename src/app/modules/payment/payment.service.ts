@@ -1,7 +1,8 @@
-import { prisma } from "src/helpers.ts/prisma.js";
-import ApiError from "src/errors/ApiError.js";
+
 import httpStatus from "http-status";
 import { OrderStatus, PaymentMethodType, PaymentStatus } from "@prisma/client";
+import { prisma } from "helpers.ts/prisma.js";
+import ApiError from "errors/ApiError.js";
 
 /* ================= CREATE PAYMENT ================= */
 const createPayment = async (orderId: string, method: PaymentMethodType, transactionId?: string) => {

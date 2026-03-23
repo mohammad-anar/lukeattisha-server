@@ -1,8 +1,8 @@
 // src/app/modules/stripe/stripe.routes.ts
 import express from "express";
 import { StripeController } from "./stripe.controller.js";
-import auth from "src/app/middlewares/auth.js";
 import { Role } from "@prisma/client";
+import auth from "app/middlewares/auth.js";
 
 const router = express.Router();
 

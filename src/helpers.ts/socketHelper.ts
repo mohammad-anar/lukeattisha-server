@@ -1,6 +1,6 @@
 import colors from "colors";
+import { config } from "config/index.js";
 import { Server, Socket } from "socket.io";
-import config from "src/config/index.js";
 
 let io: Server | null = null;
 

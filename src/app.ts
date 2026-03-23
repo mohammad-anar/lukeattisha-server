@@ -1,6 +1,5 @@
 import cors from "cors";
 import express, { Application, Request, Response } from "express";
-import config from "./config/index.js";
 import router from "./app/routes/index.js";
 import globalErrorHandler from "./app/middlewares/globalErrorHandler.js";
 import notFound from "./app/middlewares/notFound.js";
@@ -9,6 +8,7 @@ import { getIO } from "./helpers.ts/socketHelper.js";
 import Stripe from "stripe";
 import { prisma } from "./helpers.ts/prisma.js";
 import { stripe } from "./helpers.ts/stripeHelpers.js";
+import { config } from "config/index.js";
 
 const endpointSecret = config.stripe.stripe_webhook_secret as string;
 

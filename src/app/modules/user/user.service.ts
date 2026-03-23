@@ -1,7 +1,8 @@
-import { prisma } from "src/helpers.ts/prisma.js";
-import { paginationHelper } from "src/helpers.ts/paginationHelper.js";
-import { IPaginationOptions, IUserFilterRequest } from "src/types/pagination.js";
+
 import { Prisma } from "@prisma/client";
+import { paginationHelper } from "helpers.ts/paginationHelper.js";
+import { prisma } from "helpers.ts/prisma.js";
+import { IPaginationOptions, IUserFilterRequest } from "types/pagination.js";
 
 /* ================= GET ME ================= */
 const getMe = async (email: string) => {

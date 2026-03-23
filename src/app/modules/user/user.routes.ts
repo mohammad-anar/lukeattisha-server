@@ -1,10 +1,10 @@
 import express from "express";
-import auth from "src/app/middlewares/auth.js";
-import validateRequest from "src/app/middlewares/validateRequest.js";
-import fileUploadHandler from "src/app/middlewares/fileUploadHandler.js";
 import { Role } from "@prisma/client";
 import { UserController } from "./user.controller.js";
 import { UserValidation } from "./user.validation.js";
+import auth from "app/middlewares/auth.js";
+import fileUploadHandler from "app/middlewares/fileUploadHandler.js";
+import validateRequest from "app/middlewares/validateRequest.js";
 
 const router = express.Router();
 

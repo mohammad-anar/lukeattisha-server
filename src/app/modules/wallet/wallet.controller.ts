@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import catchAsync from "src/app/shared/catchAsync.js";
-import sendResponse from "src/app/shared/sendResponse.js";
 import { WalletService } from "./wallet.services.js";
+import catchAsync from "app/shared/catchAsync.js";
+import sendResponse from "app/shared/sendResponse.js";
 
 /* ================= GET WALLET ================= */
 const getWallet = catchAsync(async (req: Request, res: Response) => {

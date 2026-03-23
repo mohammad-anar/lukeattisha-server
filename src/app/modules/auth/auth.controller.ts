@@ -2,8 +2,8 @@ import { Request, Response } from "express";
 import { AuthService } from "./auth.service.js";
 import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
-import config from "../../../config/index.js";
 import { getSingleFilePath } from "../../shared/getFilePath.js";
+import { config } from "config/index.js";
 
 /* ================= REGISTER ================= */
 const register = catchAsync(async (req: Request, res: Response) => {

@@ -1,5 +1,5 @@
+import { config } from "config/index.js";
 import Stripe from "stripe";
-import config from "../config/index.js";
 
 export const stripe = new Stripe(config.stripe.stripe_sk as string, {
   apiVersion: "2026-02-25.clover",

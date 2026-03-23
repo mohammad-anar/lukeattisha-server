@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import catchAsync from "src/app/shared/catchAsync.js";
-import sendResponse from "src/app/shared/sendResponse.js";
 import { ServiceModule } from "./service.service.js";
+import catchAsync from "app/shared/catchAsync.js";
+import sendResponse from "app/shared/sendResponse.js";
 
 const createService = catchAsync(async (req: Request, res: Response) => {
   const { id: userId } = req.user;

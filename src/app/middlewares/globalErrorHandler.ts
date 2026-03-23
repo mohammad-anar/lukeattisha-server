@@ -5,7 +5,7 @@ import { ZodError } from "zod";
 import handleZodError from "../../errors/handleZodError.js";
 import handlePrismaError from "../../errors/handlePrismaError.js";
 import handleValidationError from "../../errors/handleValidationError.js";
-import config from "../../config/index.js";
+import { config } from "config/index.js";
 
 const globalErrorHandler = (
   err: any,

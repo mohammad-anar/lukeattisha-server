@@ -1,7 +1,8 @@
-import { prisma } from "src/helpers.ts/prisma.js";
-import ApiError from "src/errors/ApiError.js";
+
 import httpStatus from "http-status";
 import { IReviewCreatePayload, IReviewReplyPayload } from "./review.interface.js";
+import { prisma } from "helpers.ts/prisma.js";
+import ApiError from "errors/ApiError.js";
 
 /* ================= CREATE REVIEW ================= */
 const createReview = async (userId: string, payload: IReviewCreatePayload) => {

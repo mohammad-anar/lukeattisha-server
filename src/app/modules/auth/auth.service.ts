@@ -3,7 +3,6 @@ import { JwtPayload, Secret, SignOptions } from "jsonwebtoken";
 import { Prisma } from "@prisma/client";
 import { Response } from "express";
 import { ILogin, IVerifyEmail } from "./auth.interface.js";
-import config from "../../../config/index.js";
 import { prisma } from "../../../helpers.ts/prisma.js";
 import generateOTP from "../../../helpers.ts/generateOTP.js";
 import redisClient from "../../../helpers.ts/redis.js";
@@ -11,6 +10,7 @@ import { emailTemplate } from "../../shared/emailTemplate.js";
 import { emailHelper } from "../../../helpers.ts/emailHelper.js";
 import ApiError from "../../../errors/ApiError.js";
 import { jwtHelper } from "../../../helpers.ts/jwtHelper.js";
+import { config } from "config/index.js";
 
 /* ================= REGISTER ================= */
 const register = async (payload: Prisma.UserCreateInput) => {

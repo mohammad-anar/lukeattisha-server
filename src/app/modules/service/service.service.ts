@@ -1,5 +1,6 @@
 
-import ApiError from "src/errors/ApiError.js";
+
+import { prisma } from "helpers.ts/prisma.js";
 import {
   IServiceCreatePayload,
   IServiceUpdatePayload,
@@ -7,7 +8,7 @@ import {
   IAddonUpdatePayload,
 } from "./service.interface.js";
 import httpStatus from "http-status";
-import { prisma } from "src/helpers.ts/prisma.js";
+import ApiError from "errors/ApiError.js";
 
 const createService = async (userId: string, payload: IServiceCreatePayload) => {
   const profile = await prisma.operatorProfile.findUnique({

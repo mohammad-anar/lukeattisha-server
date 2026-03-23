@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import catchAsync from "src/app/shared/catchAsync.js";
-import sendResponse from "src/app/shared/sendResponse.js";
 import { SubscriptionService } from "./subscription.service.js";
+import catchAsync from "app/shared/catchAsync.js";
+import sendResponse from "app/shared/sendResponse.js";
 
 const createPackage = catchAsync(async (req: Request, res: Response) => {
   const result = await SubscriptionService.createPackage(req.body);
