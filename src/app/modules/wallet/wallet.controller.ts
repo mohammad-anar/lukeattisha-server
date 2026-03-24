@@ -1,10 +1,15 @@
 import { Request, Response } from "express";
 import { WalletService } from "./wallet.services.js";
+import { Role } from "@prisma/client";
+import ApiError from "../../../errors/ApiError.js";
 import catchAsync from "app/shared/catchAsync.js";
 import sendResponse from "app/shared/sendResponse.js";
 
 /* ================= GET WALLET ================= */
-const getWallet = catchAsync(async (req: Request, res: Response) => {
+const getWallet = catchAsync(async (req: any, res: Response) => {
+  if (req.user?.role === Role.USER && req.user?.id !== req.params.userId) {
+    throw new ApiError(403, "You are not authorized to view this wallet.");
+  }
   const wallet = await WalletService.getWalletByUser(
     req.params.userId as string,
   );
@@ -17,7 +22,10 @@ const getWallet = catchAsync(async (req: Request, res: Response) => {
 });
 
 /* ================= ADD FUNDS ================= */
-const addFunds = catchAsync(async (req: Request, res: Response) => {
+const addFunds = catchAsync(async (req: any, res: Response) => {
+  if (req.user?.role === Role.USER && req.user?.id !== req.params.userId) {
+    throw new ApiError(403, "You are not authorized to add funds to this wallet.");
+  }
   const { amount } = req.body;
   const wallet = await WalletService.addFunds(
     req.params.userId as string,
@@ -32,7 +40,10 @@ const addFunds = catchAsync(async (req: Request, res: Response) => {
 });
 
 /* ================= DEDUCT FUNDS ================= */
-const deductFunds = catchAsync(async (req: Request, res: Response) => {
+const deductFunds = catchAsync(async (req: any, res: Response) => {
+  if (req.user?.role === Role.USER && req.user?.id !== req.params.userId) {
+    throw new ApiError(403, "You are not authorized to deduct funds from this wallet.");
+  }
   const { amount } = req.body;
   const wallet = await WalletService.deductFunds(
     req.params.userId as string,

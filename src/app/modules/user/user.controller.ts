@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { UserService } from "./user.service.js";
-import { UserStatus } from "@prisma/client";
+import { UserStatus, Role } from "@prisma/client";
+import ApiError from "../../../errors/ApiError.js";
 import catchAsync from "app/shared/catchAsync.js";
 import sendResponse from "app/shared/sendResponse.js";
 import { getSingleFilePath } from "app/shared/getFilePath.js";
@@ -28,7 +29,11 @@ const getUserById = catchAsync(async (req: Request, res: Response) => {
 });
 
 /* ================= UPDATE USER ================= */
-const updateUser = catchAsync(async (req: Request, res: Response) => {  
+const updateUser = catchAsync(async (req: any, res: Response) => {
+  if (req.user?.role === Role.USER && req.user?.id !== req.params.id) {
+    throw new ApiError(403, "You are not authorized to perform this action.");
+  }
+  
   const payload = req.body;
   const image = getSingleFilePath(req.files, "image") as string;
   if (image) payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
