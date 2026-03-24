@@ -1,66 +1,141 @@
 
-import httpStatus from "http-status";
-import { ITicketCreatePayload, ITicketMessageCreatePayload } from "./chat.interface.js";
-import { prisma } from "../../../helpers.ts/prisma.js";
+import { prisma } from "helpers.ts/prisma.js";
 import ApiError from "../../../errors/ApiError.js";
 
-/* ================= CREATE TICKET ================= */
-const createTicket = async (userId: string, payload: ITicketCreatePayload) => {
-  return await prisma.supportTicket.create({
-    data: { ...payload, userId },
-  });
-};
 
-/* ================= GET MY TICKETS ================= */
-const getMyTickets = async (userId: string) => {
-  return await prisma.supportTicket.findMany({
-    where: { userId },
-    include: {
-      messages: { orderBy: { createdAt: "asc" } },
-      order: { select: { id: true, status: true } },
+/* ================= CREATE OR GET ROOM ================= */
+const createOrGetRoom = async (userId1: string, userId2: string) => {
+  // Try to find if a room exists with BOTH participants
+  const existingRooms = await prisma.chatRoom.findMany({
+    where: {
+      AND: [
+        { participants: { some: { userId: userId1 } } },
+        { participants: { some: { userId: userId2 } } },
+      ],
     },
-    orderBy: { createdAt: "desc" },
-  });
-};
-
-/* ================= GET TICKET BY ID ================= */
-const getTicketById = async (id: string) => {
-  const ticket = await prisma.supportTicket.findUnique({
-    where: { id },
     include: {
-      user: { select: { id: true, name: true, email: true } },
-      messages: {
-        include: { sender: { select: { id: true, name: true, role: true } } },
-        orderBy: { createdAt: "asc" },
+      participants: true,
+    },
+  });
+
+  // Since a room might have more people, find the exact 2-person room
+  const directRoom = existingRooms.find((r: any) => r.participants.length === 2);
+
+  if (directRoom) {
+    return directRoom;
+  }
+
+  // Otherwise, create a new room
+  return await prisma.chatRoom.create({
+    data: {
+      participants: {
+        create: [{ userId: userId1 }, { userId: userId2 }],
       },
-      order: { select: { id: true, status: true } },
+    },
+    include: {
+      participants: true,
     },
   });
-  if (!ticket) throw new ApiError(httpStatus.NOT_FOUND, "Ticket not found");
-  return ticket;
+};
+
+/* ================= GET MY ROOMS ================= */
+const getMyRooms = async (userId: string) => {
+  return await prisma.chatRoom.findMany({
+    where: {
+      participants: {
+        some: { userId },
+      },
+    },
+    include: {
+      participants: {
+        include: {
+          user: { select: { id: true, name: true, avatar: true, role: true } },
+        },
+      },
+      messages: {
+        orderBy: { createdAt: "desc" },
+        take: 1, // Get the latest message for preview
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+};
+
+/* ================= GET ROOM MESSAGES ================= */
+const getMessages = async (roomId: string, userId: string) => {
+  // Validate if user is in room
+  const participant = await prisma.chatParticipant.findUnique({
+    where: { roomId_userId: { roomId, userId } },
+  });
+
+  if (!participant) {
+    throw new ApiError(403, "Not authorized to access messages in this room");
+  }
+
+  return await prisma.chatMessage.findMany({
+    where: { roomId, isDeleted: false },
+    include: {
+      sender: { select: { id: true, name: true, avatar: true } },
+    },
+    orderBy: { createdAt: "asc" },
+  });
 };
 
 /* ================= SEND MESSAGE ================= */
-const sendMessage = async (ticketId: string, senderId: string, payload: ITicketMessageCreatePayload) => {
-  await getTicketById(ticketId);
+const sendMessage = async (roomId: string, senderId: string, content: string) => {
+  const participant = await prisma.chatParticipant.findUnique({
+    where: { roomId_userId: { roomId, userId: senderId } },
+  });
 
-  return await prisma.ticketMessage.create({
-    data: { ticketId, senderId, content: payload.content },
-    include: { sender: { select: { id: true, name: true, role: true } } },
+  if (!participant) {
+    throw new ApiError(403, "Not authorized to send messages to this room");
+  }
+
+  const message = await prisma.chatMessage.create({
+    data: { roomId, senderId, content },
+    include: {
+      sender: { select: { id: true, name: true, avatar: true } },
+    },
+  });
+
+  // Update room's updatedAt so it bubbles to top of list
+  await prisma.chatRoom.update({
+    where: { id: roomId },
+    data: { updatedAt: new Date() },
+  });
+
+  return message;
+};
+
+/* ================= EDIT MESSAGE ================= */
+const editMessage = async (messageId: string, userId: string, content: string) => {
+  const msg = await prisma.chatMessage.findUnique({ where: { id: messageId } });
+  if (!msg || msg.isDeleted) throw new ApiError(404, "Message not found");
+  if (msg.senderId !== userId) throw new ApiError(403, "Cannot edit another user's message");
+
+  return await prisma.chatMessage.update({
+    where: { id: messageId },
+    data: { content },
   });
 };
 
-/* ================= CLOSE TICKET ================= */
-const closeTicket = async (userId: string, ticketId: string) => {
-  const ticket = await getTicketById(ticketId);
-  if (ticket.userId !== userId) throw new ApiError(httpStatus.FORBIDDEN, "Forbidden");
-  return await prisma.supportTicket.update({ where: { id: ticketId }, data: { status: "RESOLVED" } });
+/* ================= DELETE MESSAGE ================= */
+const deleteMessage = async (messageId: string, userId: string) => {
+  const msg = await prisma.chatMessage.findUnique({ where: { id: messageId } });
+  if (!msg || msg.isDeleted) throw new ApiError(404, "Message not found");
+  if (msg.senderId !== userId) throw new ApiError(403, "Cannot delete another user's message");
+
+  return await prisma.chatMessage.update({
+    where: { id: messageId },
+    data: { isDeleted: true, content: "[Message Deleted]" },
+  });
 };
 
 export const ChatService = {
-  createTicket,
-  getMyTickets,
-  getTicketById,
+  createOrGetRoom,
+  getMyRooms,
+  getMessages,
   sendMessage,
-  closeTicket,
+  editMessage,
+  deleteMessage,
 };

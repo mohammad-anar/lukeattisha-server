@@ -1,0 +1,3529 @@
+{
+  "info": {
+    "name": "Lukeattisha Server API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://10.10.7.111:4000/api/v1"
+    },
+    {
+      "key": "adminAccessToken",
+      "value": ""
+    },
+    {
+      "key": "userAccessToken",
+      "value": ""
+    },
+    {
+      "key": "operatorAccessToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"name\": \"string\",\n  \"password\": \"password123\",\n  \"contact_no\": \"string\",\n  \"address\": \"string\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Category",
+      "item": [
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/category/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"createdAt\": \"2026-03-24T18:17:16.842Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Categorys",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/category",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Category By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/category/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/category/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "category",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OperatorCategory",
+      "item": [
+        {
+          "name": "Update OperatorCategory",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operatorcategory/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operatorcategory",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"operatorId\": \"string\",\n  \"categoryId\": \"string\",\n  \"createdAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get OperatorCategorys",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operatorcategory",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operatorcategory"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get OperatorCategory By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operatorcategory/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operatorcategory",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete OperatorCategory",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operatorcategory/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operatorcategory",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ChatRoom",
+      "item": [
+        {
+          "name": "Update ChatRoom",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatroom/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatroom",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"createdAt\": \"2026-03-24T18:17:16.843Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get ChatRooms",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatroom",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatroom"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get ChatRoom By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatroom/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatroom",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete ChatRoom",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatroom/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatroom",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ChatParticipant",
+      "item": [
+        {
+          "name": "Update ChatParticipant",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatparticipant/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatparticipant",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"roomId\": \"string\",\n  \"userId\": \"string\",\n  \"joinedAt\": \"2026-03-24T18:17:16.843Z\",\n  \"lastReadAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get ChatParticipants",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatparticipant",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatparticipant"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get ChatParticipant By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatparticipant/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatparticipant",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete ChatParticipant",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatparticipant/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatparticipant",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ChatMessage",
+      "item": [
+        {
+          "name": "Update ChatMessage",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatmessage/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatmessage",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"roomId\": \"string\",\n  \"senderId\": \"string\",\n  \"content\": \"string\",\n  \"isDeleted\": true,\n  \"createdAt\": \"2026-03-24T18:17:16.843Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get ChatMessages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatmessage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatmessage"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get ChatMessage By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatmessage/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatmessage",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete ChatMessage",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/chatmessage/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "chatmessage",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AdminSetting",
+      "item": [
+        {
+          "name": "Update AdminSetting",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adminsetting/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adminsetting",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"cancellationWindowHours\": 1,\n  \"bookingLeadTimeHours\": 1,\n  \"requirePaymentUpfront\": true,\n  \"allowPartialPayments\": true,\n  \"platformCommissionRate\": \"[Decimal]\",\n  \"fixedTransactionFee\": \"[Decimal]\",\n  \"pickupDeliveryFee\": \"[Decimal]\",\n  \"payoutSchedule\": \"string\",\n  \"updatedAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get AdminSettings",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adminsetting",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adminsetting"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get AdminSetting By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adminsetting/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adminsetting",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete AdminSetting",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/adminsetting/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "adminsetting",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notification",
+      "item": [
+        {
+          "name": "Update Notification",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"title\": \"string\",\n  \"message\": \"string\",\n  \"type\": \"string\",\n  \"channel\": \"string\",\n  \"isSent\": true,\n  \"createdAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Notification By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Notification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notification/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notification",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "NotificationPreference",
+      "item": [
+        {
+          "name": "Update NotificationPreference",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notificationpreference/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificationpreference",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"orderUpdatesEmail\": true,\n  \"orderUpdatesSMS\": true,\n  \"orderUpdatesPush\": true,\n  \"marketingEmail\": true,\n  \"marketingSMS\": true,\n  \"marketingPush\": true,\n  \"chatPush\": true,\n  \"createdAt\": \"2026-03-24T18:17:16.843Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get NotificationPreferences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notificationpreference",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificationpreference"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get NotificationPreference By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notificationpreference/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificationpreference",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete NotificationPreference",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notificationpreference/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notificationpreference",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OrderStatusLog",
+      "item": [
+        {
+          "name": "Update OrderStatusLog",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderstatuslog/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderstatuslog",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"orderId\": \"string\",\n  \"status\": \"[OrderStatus]\",\n  \"note\": \"string\",\n  \"createdAt\": \"2026-03-24T18:17:16.843Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get OrderStatusLogs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderstatuslog",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderstatuslog"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get OrderStatusLog By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderstatuslog/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderstatuslog",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete OrderStatusLog",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderstatuslog/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderstatuslog",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Order",
+      "item": [
+        {
+          "name": "Update Order",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/order/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "order",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"operatorId\": \"string\",\n  \"status\": \"[OrderStatus]\",\n  \"total\": \"[Decimal]\",\n  \"pickupLatitude\": 1,\n  \"pickupLongitude\": 1,\n  \"dropoffLatitude\": 1,\n  \"dropoffLongitude\": 1,\n  \"pickupAddress\": \"string\",\n  \"dropoffAddress\": \"string\",\n  \"pickupAt\": \"2026-03-24T18:17:16.843Z\",\n  \"dropoffAt\": \"2026-03-24T18:17:16.843Z\",\n  \"createdAt\": \"2026-03-24T18:17:16.843Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.843Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/order",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "order"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Order By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/order/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "order",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/order/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "order",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OrderItem",
+      "item": [
+        {
+          "name": "Update OrderItem",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderitem/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderitem",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"orderId\": \"string\",\n  \"serviceId\": \"string\",\n  \"quantity\": 1,\n  \"price\": \"[Decimal]\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get OrderItems",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderitem",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderitem"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get OrderItem By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderitem/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderitem",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete OrderItem",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderitem/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderitem",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OrderItemAddon",
+      "item": [
+        {
+          "name": "Update OrderItemAddon",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderitemaddon/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderitemaddon",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"orderItemId\": \"string\",\n  \"addonId\": \"string\",\n  \"price\": \"[Decimal]\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get OrderItemAddons",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderitemaddon",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderitemaddon"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get OrderItemAddon By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderitemaddon/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderitemaddon",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete OrderItemAddon",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/orderitemaddon/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "orderitemaddon",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payment",
+      "item": [
+        {
+          "name": "Update Payment",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"orderId\": \"string\",\n  \"amount\": \"[Decimal]\",\n  \"method\": \"[PaymentMethodType]\",\n  \"status\": \"[PaymentStatus]\",\n  \"transactionId\": \"string\",\n  \"stripePaymentIntentId\": \"string\",\n  \"stripeChargeId\": \"string\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Payments",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Payment By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Payment",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payment/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "PaymentCard",
+      "item": [
+        {
+          "name": "Update PaymentCard",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paymentcard/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paymentcard",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"stripeMethodId\": \"string\",\n  \"last4\": \"string\",\n  \"brand\": \"string\",\n  \"isDefault\": true,\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get PaymentCards",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paymentcard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paymentcard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get PaymentCard By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paymentcard/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paymentcard",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete PaymentCard",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paymentcard/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paymentcard",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payout",
+      "item": [
+        {
+          "name": "Update Payout",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payout/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payout",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"operatorId\": \"string\",\n  \"walletId\": \"string\",\n  \"amount\": \"[Decimal]\",\n  \"status\": \"[PayoutStatus]\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\",\n  \"userId\": \"string\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Payouts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payout"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Payout By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payout/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payout",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Payout",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payout/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payout",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "ServiceReview",
+      "item": [
+        {
+          "name": "Update ServiceReview",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/servicereview/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "servicereview",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"serviceId\": \"string\",\n  \"orderId\": \"string\",\n  \"rating\": 1,\n  \"comment\": \"string\",\n  \"operatorReply\": \"string\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get ServiceReviews",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/servicereview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "servicereview"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get ServiceReview By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/servicereview/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "servicereview",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete ServiceReview",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/servicereview/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "servicereview",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Service",
+      "item": [
+        {
+          "name": "Update Service",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/service/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "service",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"operatorId\": \"string\",\n  \"categoryId\": \"string\",\n  \"name\": \"string\",\n  \"basePrice\": \"[Decimal]\",\n  \"isActive\": true,\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Services",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/service",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "service"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Service By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/service/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "service",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Service",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/service/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "service",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "AddonService",
+      "item": [
+        {
+          "name": "Update AddonService",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addonservice/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addonservice",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"serviceId\": \"string\",\n  \"name\": \"string\",\n  \"price\": \"[Decimal]\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get AddonServices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addonservice",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addonservice"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get AddonService By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addonservice/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addonservice",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete AddonService",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/addonservice/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "addonservice",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "FavoriteService",
+      "item": [
+        {
+          "name": "Update FavoriteService",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favoriteservice/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoriteservice",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"serviceId\": \"string\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get FavoriteServices",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favoriteservice",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoriteservice"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get FavoriteService By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favoriteservice/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoriteservice",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete FavoriteService",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favoriteservice/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoriteservice",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SubscriptionPackage",
+      "item": [
+        {
+          "name": "Update SubscriptionPackage",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptionpackage/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptionpackage",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"price\": \"[Decimal]\",\n  \"durationDays\": 1,\n  \"freeDelivery\": true,\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get SubscriptionPackages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptionpackage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptionpackage"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get SubscriptionPackage By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptionpackage/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptionpackage",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete SubscriptionPackage",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/subscriptionpackage/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "subscriptionpackage",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "UserSubscription",
+      "item": [
+        {
+          "name": "Update UserSubscription",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usersubscription/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usersubscription",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"packageId\": \"string\",\n  \"subscriptionType\": \"[SubscriptionType]\",\n  \"startDate\": \"2026-03-24T18:17:16.844Z\",\n  \"endDate\": \"2026-03-24T18:17:16.844Z\",\n  \"isActive\": true,\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get UserSubscriptions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usersubscription",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usersubscription"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get UserSubscription By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usersubscription/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usersubscription",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete UserSubscription",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usersubscription/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usersubscription",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "SupportTicket",
+      "item": [
+        {
+          "name": "Update SupportTicket",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/supportticket/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "supportticket",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"orderId\": \"string\",\n  \"subject\": \"string\",\n  \"description\": \"string\",\n  \"status\": \"[TicketStatus]\",\n  \"type\": \"[TicketType]\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get SupportTickets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/supportticket",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "supportticket"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get SupportTicket By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/supportticket/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "supportticket",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete SupportTicket",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/supportticket/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "supportticket",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "TicketMessage",
+      "item": [
+        {
+          "name": "Update TicketMessage",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ticketmessage/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ticketmessage",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"ticketId\": \"string\",\n  \"senderId\": \"string\",\n  \"content\": \"string\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get TicketMessages",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ticketmessage",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ticketmessage"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get TicketMessage By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ticketmessage/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ticketmessage",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete TicketMessage",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/ticketmessage/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ticketmessage",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "User",
+      "item": [
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"name\": \"string\",\n  \"email\": \"user@example.com\",\n  \"phone\": \"string\",\n  \"password\": \"string\",\n  \"role\": \"[Role]\",\n  \"status\": \"[UserStatus]\",\n  \"avatar\": \"string\",\n  \"city\": \"string\",\n  \"state\": \"string\",\n  \"country\": \"string\",\n  \"postalCode\": \"string\",\n  \"isVerified\": true,\n  \"isDeleted\": true,\n  \"isTwoFactorEnabled\": true,\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get User By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/user/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "user",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "UserAddress",
+      "item": [
+        {
+          "name": "Update UserAddress",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/useraddress/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "useraddress",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"address\": \"string\",\n  \"city\": \"string\",\n  \"state\": \"string\",\n  \"country\": \"string\",\n  \"postalCode\": \"string\",\n  \"isDefault\": true,\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get UserAddresss",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/useraddress",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "useraddress"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get UserAddress By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/useraddress/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "useraddress",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete UserAddress",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/useraddress/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "useraddress",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "OperatorProfile",
+      "item": [
+        {
+          "name": "Update OperatorProfile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operatorprofile/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operatorprofile",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"storeName\": \"string\",\n  \"address\": \"string\",\n  \"latitude\": 1,\n  \"longitude\": 1,\n  \"platformFee\": \"[Decimal]\",\n  \"stripeAccountId\": \"string\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get OperatorProfiles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operatorprofile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operatorprofile"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get OperatorProfile By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operatorprofile/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operatorprofile",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete OperatorProfile",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/operatorprofile/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "operatorprofile",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Wallet",
+      "item": [
+        {
+          "name": "Update Wallet",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"balance\": \"[Decimal]\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Wallets",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Wallet By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Wallet",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/wallet/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "wallet",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transaction",
+      "item": [
+        {
+          "name": "Update Transaction",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transaction/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transaction",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"string\",\n  \"userId\": \"string\",\n  \"walletId\": \"string\",\n  \"orderId\": \"string\",\n  \"type\": \"[TransactionType]\",\n  \"amount\": \"[Decimal]\",\n  \"status\": \"[TransactionStatus]\",\n  \"createdAt\": \"2026-03-24T18:17:16.844Z\",\n  \"updatedAt\": \"2026-03-24T18:17:16.844Z\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transaction",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transaction"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Transaction By Id",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transaction/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transaction",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Transaction",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "{{adminAccessToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/transaction/:id",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "transaction",
+                ":id"
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

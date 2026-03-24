@@ -4,10 +4,9 @@ import { UserAddressController } from "./address.controller.js";
 import { UserAddressValidation } from "./address.validation.js";
 import auth from "../../middlewares/auth.js";
 import validateRequest from "../../middlewares/validateRequest.js";
-
 const router = express.Router();
 
-/* ================= USER OWN ADDRESSES ================= */
+/* ================= USER OWN ADDRESSES ================= */    
 router.post(
   "/addresses",
   auth(Role.USER, Role.ADMIN),

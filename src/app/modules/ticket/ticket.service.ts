@@ -1,6 +1,5 @@
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "helpers.ts/prisma.js";
 
-const prisma = new PrismaClient();
 
 /* ================= CREATE TICKET ================= */
 const createTicket = async (userId: string, payload: any) => {

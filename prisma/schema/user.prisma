@@ -40,6 +40,9 @@ model User {
   payouts      Payout[] // Payouts for user
   transactions Transaction[] // All user transactions
 
+  chatParticipants ChatParticipant[]
+  chatMessages     ChatMessage[]
+
   @@index([role])
   @@index([status])
   @@index([email])

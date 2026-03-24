@@ -54,6 +54,39 @@ CREATE TABLE "OperatorCategory" (
 );
 
 -- CreateTable
+CREATE TABLE "ChatRoom" (
+    "id" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ChatRoom_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ChatParticipant" (
+    "id" TEXT NOT NULL,
+    "roomId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "joinedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "lastReadAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "ChatParticipant_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "ChatMessage" (
+    "id" TEXT NOT NULL,
+    "roomId" TEXT NOT NULL,
+    "senderId" TEXT NOT NULL,
+    "content" TEXT NOT NULL,
+    "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ChatMessage_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "AdminSetting" (
     "id" TEXT NOT NULL DEFAULT '1',
     "cancellationWindowHours" INTEGER NOT NULL DEFAULT 24,
@@ -119,10 +152,10 @@ CREATE TABLE "Order" (
     "operatorId" TEXT,
     "status" "OrderStatus" NOT NULL DEFAULT 'PENDING',
     "total" DECIMAL(10,2) NOT NULL,
-    "pickupLatitude" DOUBLE PRECISION NOT NULL,
-    "pickupLongitude" DOUBLE PRECISION NOT NULL,
-    "dropoffLatitude" DOUBLE PRECISION NOT NULL,
-    "dropoffLongitude" DOUBLE PRECISION NOT NULL,
+    "pickupLatitude" DOUBLE PRECISION,
+    "pickupLongitude" DOUBLE PRECISION,
+    "dropoffLatitude" DOUBLE PRECISION,
+    "dropoffLongitude" DOUBLE PRECISION,
     "pickupAddress" TEXT,
     "dropoffAddress" TEXT,
     "pickupAt" TIMESTAMP(3) NOT NULL,
@@ -387,6 +420,21 @@ CREATE TABLE "Transaction" (
 );
 
 -- CreateIndex
+CREATE INDEX "ChatParticipant_roomId_idx" ON "ChatParticipant"("roomId");
+
+-- CreateIndex
+CREATE INDEX "ChatParticipant_userId_idx" ON "ChatParticipant"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "ChatParticipant_roomId_userId_key" ON "ChatParticipant"("roomId", "userId");
+
+-- CreateIndex
+CREATE INDEX "ChatMessage_roomId_idx" ON "ChatMessage"("roomId");
+
+-- CreateIndex
+CREATE INDEX "ChatMessage_senderId_idx" ON "ChatMessage"("senderId");
+
+-- CreateIndex
 CREATE INDEX "Notification_userId_idx" ON "Notification"("userId");
 
 -- CreateIndex
@@ -493,6 +541,18 @@ ALTER TABLE "OperatorCategory" ADD CONSTRAINT "OperatorCategory_operatorId_fkey"
 
 -- AddForeignKey
 ALTER TABLE "OperatorCategory" ADD CONSTRAINT "OperatorCategory_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ChatParticipant" ADD CONSTRAINT "ChatParticipant_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "ChatRoom"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ChatParticipant" ADD CONSTRAINT "ChatParticipant_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ChatMessage" ADD CONSTRAINT "ChatMessage_roomId_fkey" FOREIGN KEY ("roomId") REFERENCES "ChatRoom"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ChatMessage" ADD CONSTRAINT "ChatMessage_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
