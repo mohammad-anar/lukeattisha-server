@@ -20,6 +20,21 @@ const register = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+/* ================= REGISTER OPERATOR ================= */
+const registerOperator = catchAsync(async (req: Request, res: Response) => {
+  const payload = req.body;
+  const image = getSingleFilePath(req.files, "image") as string;
+  if (image)
+    payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
+
+  const result = await AuthService.registerOperator(payload);
+  sendResponse(res, {
+    success: true,
+    statusCode: 201,
+    message: "Operator registered successfully",
+    data: result,
+  });
+});
 
 /* ================= LOGIN ================= */
 const login = catchAsync(async (req: Request, res: Response) => {
@@ -134,6 +149,7 @@ const logout = catchAsync(async (req: Request, res: Response) => {
 
 export const AuthController = {
   register,
+  registerOperator,
   login,
   verifyUser,
   resendOTP,

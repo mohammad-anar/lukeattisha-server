@@ -16,17 +16,9 @@ const validateRequest =
           parsedBody = req.body;
         }
       }
-      const parsedData = await schema.parseAsync({
-        body: parsedBody,
-        query: req.query,
-        params: req.params,
-        cookies: req.cookies,
-      });
+      await schema.parseAsync(parsedBody);
 
-      req.body = parsedData.body;
-      req.query = parsedData.query as any;
-      req.params = parsedData.params as any;
-
+      req.body = parsedBody;
       next();
     } catch (error) {
       next(error);

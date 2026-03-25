@@ -13,14 +13,19 @@ import { jwtHelper } from "../../../helpers.ts/jwtHelper.js";
 import { config } from "config/index.js";
 
 /* ================= REGISTER ================= */
-const register = async (payload: Prisma.UserCreateInput) => {
+const register = async (payload: Prisma.UserCreateInput & {address: string}) => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
     Number(config.bcrypt_salt_round),
   );
 
-  const user = await prisma.user.create({
-    data: { ...payload, password: hashedPassword },
+  const {address, ...userData} = payload;
+
+//  prisma transaction
+
+const user = await prisma.$transaction(async (tx) => {
+  const user = await tx.user.create({
+    data: { ...userData, password: hashedPassword},
     select: {
       id: true,
       name: true,
@@ -33,10 +38,66 @@ const register = async (payload: Prisma.UserCreateInput) => {
     },
   });
 
+  await tx.userAddress.create({
+    data: { userId: user.id, address },
+  });
+
+  return user;
+});
+
   const otp = generateOTP();
   await redisClient.set(`otp:${user.email}`, otp, { EX: 300 });
 
   const emailData = await emailTemplate.createAccount({
+    name: user.name,
+    otp,
+    email: user.email!,
+  });
+  await emailHelper.sendEmail(emailData);
+
+  return user;
+};
+/* ================= REGISTER OPERATOR ================= */
+const registerOperator = async (payload: Prisma.UserCreateInput & {address: string, storeName: string}) => {
+  const hashedPassword = await bcrypt.hash(
+    payload.password,
+    Number(config.bcrypt_salt_round),
+  );
+
+  const { name, email, password, phone, address, storeName } = payload;
+
+  // use prisma transaction
+  const user = await prisma.$transaction(async (tx) => {
+    const user = await tx.user.create({
+      data: { name, email, password: hashedPassword, phone },
+      select: {
+        id: true,
+        name: true,
+      email: true,
+      phone: true,
+      role: true,
+      status: true,
+      operatorProfile: true,
+      isVerified: true,
+      createdAt: true,
+    },
+  });
+
+  await tx.operatorProfile.create({
+    data: { userId: user.id, storeName },
+  });
+
+    await tx.userAddress.create({
+      data: { userId: user.id, address },
+    });
+
+    return user;
+  });
+
+  const otp = generateOTP();
+  await redisClient.set(`otp:${user.email}`, otp, { EX: 300 });
+
+  const emailData = emailTemplate.createAccount({
     name: user.name,
     otp,
     email: user.email!,
@@ -91,6 +152,16 @@ const verifyUser = async ({ email, otp }: IVerifyEmail) => {
   const user = await prisma.user.update({
     where: { email },
     data: { isVerified: true },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      status: true,
+      isVerified: true,
+      createdAt: true,
+    },
   });
   await redisClient.del(key);
 
@@ -201,6 +272,7 @@ const logout = async (res: Response) => {
 
 export const AuthService = {
   register,
+  registerOperator,
   login,
   verifyUser,
   resendOTP,

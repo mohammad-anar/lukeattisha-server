@@ -4,22 +4,25 @@ import { AuthController } from "./auth.controller.js";
 import { AuthValidation } from "./auth.validation.js";
 import fileUploadHandler from "../../middlewares/fileUploadHandler.js";
 import auth from "../../middlewares/auth.js";
+import validateRequest from "app/middlewares/validateRequest.js";
 
 const router = express.Router();
 
-router.post("/register", fileUploadHandler(), AuthController.register);
+router.post("/register", fileUploadHandler(), validateRequest(AuthValidation.registerSchema), AuthController.register);
+router.post("/register/operator", fileUploadHandler(), validateRequest(AuthValidation.registerSchema), AuthController.registerOperator);
 
-router.post("/login", AuthController.login);
+router.post("/login", validateRequest(AuthValidation.loginSchema), AuthController.login);
 
-router.post("/verify-user", AuthController.verifyUser);
+router.post("/verify-user", validateRequest(AuthValidation.verifyEmailSchema), AuthController.verifyUser);
 
 router.post("/resend-otp", AuthController.resendOTP);
 
-router.post("/forget-password", AuthController.forgetPassword);
+router.post("/forget-password", validateRequest(AuthValidation.forgetPasswordSchema), AuthController.forgetPassword);
 
 router.post(
   "/reset-password",
   auth(Role.USER, Role.ADMIN, Role.OPERATOR),
+  validateRequest(AuthValidation.resetPasswordSchema),
   AuthController.resetPassword,
 );
 

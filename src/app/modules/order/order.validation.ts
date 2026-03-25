@@ -2,14 +2,14 @@ import { OrderStatus } from "@prisma/client";
 import { z } from "zod";
 
 const createOrderSchema = z.object({
-  body: z.object({
-    operatorId: z.string().uuid(),
+
+    operatorId: z.string(),
     items: z
       .array(
         z.object({
-          serviceId: z.string().uuid(),
+          serviceId: z.string(),
           quantity: z.number().int().min(1),
-          addonIds: z.array(z.string().uuid()).optional(),
+          addonIds: z.array(z.string()).optional(),
         }),
       )
       .min(1),
@@ -23,14 +23,13 @@ const createOrderSchema = z.object({
     dropoffLongitude: z.number().optional(),
     specialInstruction: z.string().optional(),
     paymentMethod: z.enum(["CARD", "APPLE_PAY", "GOOGLE_PAY"]),
-  }),
+
 });
 
 const updateOrderStatusSchema = z.object({
-  body: z.object({
+
     status: z.enum(OrderStatus),
     note: z.string().optional(),
-  }),
 });
 
 export const OrderValidation = { createOrderSchema, updateOrderStatusSchema };
