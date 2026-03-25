@@ -74,6 +74,33 @@ const assignCategories = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getOperatorCategories = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user;
+  const result = await OperatorService.getOperatorCategories(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Operator categories retrieved successfully",
+    data: result,
+  });
+});
+
+// // remove operator categories
+const removeCategory = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user;
+  const result = await OperatorService.removeCategory(userId, req.params.id as string);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Category removed successfully",
+    data: result,
+  });
+});
+
+
+
 export const OperatorController = {
   createProfile,
   getMyProfile,
@@ -81,4 +108,6 @@ export const OperatorController = {
   getOperatorById,
   updateProfile,
   assignCategories,
+  getOperatorCategories,
+  removeCategory,
 };

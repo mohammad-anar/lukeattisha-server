@@ -43,8 +43,8 @@ const registerOperatorSchema = z.object({
   email: z.email({ message: "Email is required" }),
   phone: z.string().optional(),
   password: z.string({ message: "Password is required" }).min(8, "Password must be at least 8 characters"),
-  address: z.string().optional(),
-  
+  address: z.string({ message: "Address is required" }),
+  storeName: z.string({ message: "Store name is required" }),
 });
 
 export const AuthValidation = {
@@ -54,4 +54,5 @@ export const AuthValidation = {
   resetPasswordSchema,
   changePasswordSchema,
   registerSchema,
+  registerOperatorSchema
 };

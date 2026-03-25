@@ -133,6 +133,30 @@ const assignCategories = async (
   return await getOperatorProfile(userId);
 };
 
+// get operator categories 
+const getOperatorCategories = async (userId: string) => {
+  const profile = await getOperatorProfile(userId);
+
+  const result = await prisma.operatorCategory.findMany({
+    where: { operatorId: profile.id },
+    include: {
+      category: true,
+    },
+  });
+
+  return result;
+};
+
+const removeCategory = async (userId: string, categoryId: string) => {
+  const profile = await getOperatorProfile(userId);
+
+  await prisma.operatorCategory.delete({
+    where: { operatorId_categoryId: { operatorId: profile.id, categoryId } },
+  });
+
+  return await getOperatorProfile(userId);
+};
+
 export const OperatorService = {
   createOperatorProfile,
   getOperatorProfile,
@@ -140,4 +164,6 @@ export const OperatorService = {
   getOperatorById,
   updateOperatorProfile,
   assignCategories,
+  getOperatorCategories,
+  removeCategory,
 };

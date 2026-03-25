@@ -9,7 +9,7 @@ import validateRequest from "app/middlewares/validateRequest.js";
 const router = express.Router();
 
 router.post("/register", fileUploadHandler(), validateRequest(AuthValidation.registerSchema), AuthController.register);
-router.post("/register/operator", fileUploadHandler(), validateRequest(AuthValidation.registerSchema), AuthController.registerOperator);
+router.post("/register/operator", fileUploadHandler(), validateRequest(AuthValidation.registerOperatorSchema), AuthController.registerOperator);
 
 router.post("/login", validateRequest(AuthValidation.loginSchema), AuthController.login);
 

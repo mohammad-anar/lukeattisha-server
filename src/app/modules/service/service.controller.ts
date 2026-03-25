@@ -14,6 +14,16 @@ const createService = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const getAllServices = catchAsync(async (req: Request, res: Response) => {
+  const result = await ServiceModule.getAllServices();
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Services retrieved successfully",
+    data: result,
+  });
+});
 
 const getServicesByOperator = catchAsync(async (req: Request, res: Response) => {
   const { operatorId } = req.params as { operatorId: string };
@@ -78,6 +88,30 @@ const createAddon = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAddonById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params as { id: string };
+  const result = await ServiceModule.getAddonById(id);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Addon details retrieved successfully",
+    data: result,
+  });
+});
+
+const getAddonsByServiceId = catchAsync(async (req: Request, res: Response) => {
+  const { serviceId } = req.params as { serviceId: string };
+  const result = await ServiceModule.getAddonsByServiceId(serviceId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Addons retrieved successfully",
+    data: result,
+  });
+});
+
 const updateAddon = catchAsync(async (req: Request, res: Response) => {
   const { id: userId } = req.user;
   const { id } = req.params as { id: string };
@@ -107,10 +141,13 @@ const deleteAddon = catchAsync(async (req: Request, res: Response) => {
 export const ServiceController = {
   createService,
   getServicesByOperator,
+  getAllServices,
   getServiceById,
-  updateService,
+  updateService,  
   deleteService,
   createAddon,
+  getAddonById,
+  getAddonsByServiceId,
   updateAddon,
   deleteAddon,
 };

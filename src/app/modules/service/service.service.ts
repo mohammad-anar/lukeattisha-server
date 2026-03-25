@@ -29,9 +29,33 @@ const createService = async (userId: string, payload: IServiceCreatePayload) => 
   return result;
 };
 
-const getServicesByOperator = async (operatorId: string) => {
+// get all services 
+const getAllServices = async () => {
   const result = await prisma.service.findMany({
-    where: { operatorId },
+    include: {
+      addons: true,
+      category: true,
+      operator: {
+        include: {
+          user: {
+            select: { name: true, email: true, phone: true }
+          }
+        }
+      }
+    },
+  });
+  return result;
+};
+
+const getServicesByOperator = async (operatorId: string) => {
+  const operator = await prisma.operatorProfile.findUnique({
+    where: { userId: operatorId },
+  });
+  if (!operator) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Operator profile not found");
+  }
+  const result = await prisma.service.findMany({
+    where: { operatorId: operator.id },
     include: {
       addons: true,
       category: true,
@@ -115,7 +139,10 @@ const createAddon = async (userId: string, serviceId: string, payload: IAddonCre
   }
 
   // verify service ownership
-  await getServiceById(serviceId, profile.id);
+  const service =await getServiceById(serviceId, profile.id);
+  if (!service) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Service not found");
+  }
 
   const result = await prisma.addonService.create({
     data: {
@@ -127,7 +154,26 @@ const createAddon = async (userId: string, serviceId: string, payload: IAddonCre
   return result;
 };
 
-const updateAddon = async (userId: string, id: string, payload: IAddonUpdatePayload) => {
+// get addons by id 
+const getAddonById = async (id: string) => {
+  const result = await prisma.addonService.findUnique({
+    where: { id },
+  });
+  if (!result) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Addon not found");
+  }
+  return result;
+};
+
+// get addons by service id 
+const getAddonsByServiceId = async (serviceId: string) => {
+  const result = await prisma.addonService.findMany({
+    where: { serviceId },
+  });
+  return result;
+};
+
+  const updateAddon = async (userId: string, id: string, payload: IAddonUpdatePayload) => {
   const profile = await prisma.operatorProfile.findUnique({
     where: { userId },
   });
@@ -178,11 +224,14 @@ const deleteAddon = async (userId: string, id: string) => {
 
 export const ServiceModule = {
   createService,
+  getAllServices,
   getServicesByOperator,
   getServiceById,
   updateService,
   deleteService,
   createAddon,
+  getAddonById,
+  getAddonsByServiceId,
   updateAddon,
   deleteAddon,
 };

@@ -30,6 +30,20 @@ router.post(
   OperatorController.assignCategories
 );
 
+// get operator categories
+router.get(
+  "/categories",
+  auth(Role.OPERATOR, Role.ADMIN, Role.USER),
+  OperatorController.getOperatorCategories
+);
+
+// remove operator categories
+router.delete(
+  "/categories/:id",
+  auth(Role.OPERATOR, Role.ADMIN),
+  OperatorController.removeCategory
+);
+
 // Admins and Users can see operators
 router.get(
   "/",

@@ -69,7 +69,7 @@ const registerOperator = async (payload: Prisma.UserCreateInput & {address: stri
   // use prisma transaction
   const user = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
-      data: { name, email, password: hashedPassword, phone },
+      data: { name, email, password: hashedPassword, phone, role: "OPERATOR" },
       select: {
         id: true,
         name: true,
@@ -77,14 +77,13 @@ const registerOperator = async (payload: Prisma.UserCreateInput & {address: stri
       phone: true,
       role: true,
       status: true,
-      operatorProfile: true,
       isVerified: true,
       createdAt: true,
     },
   });
 
   await tx.operatorProfile.create({
-    data: { userId: user.id, storeName },
+    data: { userId: user.id, storeName, address },
   });
 
     await tx.userAddress.create({

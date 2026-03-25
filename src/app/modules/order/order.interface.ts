@@ -25,3 +25,8 @@ export type IOrderUpdateStatusPayload = {
   status: OrderStatus;
   note?: string;
 };
+
+export type IOrderCreateResponse = {
+  order: any; // Using any for now to avoid deep listing of the included relations
+  paymentUrl: string | null;
+};

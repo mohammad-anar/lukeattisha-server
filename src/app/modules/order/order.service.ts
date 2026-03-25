@@ -2,12 +2,17 @@ import httpStatus from "http-status";
 import {
   IOrderCreatePayload,
   IOrderUpdateStatusPayload,
+  IOrderCreateResponse,
 } from "./order.interface.js";
 import { prisma } from "../../../helpers.ts/prisma.js";
 import ApiError from "../../../errors/ApiError.js";
+import { createOrderPaymentSession } from "../../../helpers.ts/stripeHelpers.js";
 
 /* ================= CREATE ORDER ================= */
-const createOrder = async (userId: string, payload: IOrderCreatePayload) => {
+const createOrder = async (
+  userId: string,
+  payload: IOrderCreatePayload
+): Promise<IOrderCreateResponse> => {
   const {
     items,
     operatorId,
@@ -134,7 +139,26 @@ const createOrder = async (userId: string, payload: IOrderCreatePayload) => {
       },
     });
 
-    return order;
+    // 5. Generate Stripe Payment Link
+    let paymentUrl = null;
+
+    // Any electronic payment method will trigger a Stripe Checkout Session
+    if (
+      paymentMethod === "CARD" ||
+      paymentMethod === "APPLE_PAY" ||
+      paymentMethod === "GOOGLE_PAY"
+    ) {
+      paymentUrl = await createOrderPaymentSession(
+        order.id,
+        totalAmount,
+        userId
+      );
+    }
+
+    return {
+      order,
+      paymentUrl,
+    };
   });
 };
 
