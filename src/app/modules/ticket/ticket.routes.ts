@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post(
   "/",
-  auth(Role.USER, Role.ADMIN, Role.OPERATOR),
+  auth(Role.USER, Role.OPERATOR),
   validateRequest(TicketValidation.createTicketSchema),
   TicketController.createTicket
 );
