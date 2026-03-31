@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { AdminService } from "./admin.service.js";
 import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
+import pick from "helpers.ts/pick.js";
 
 const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
   const result = await AdminService.getDashboardStats();
@@ -9,7 +10,15 @@ const getDashboardStats = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdminService.getAllUsers();
+  const filters = pick(req.query, [
+    "role",
+    "status",
+    "isVerified",
+    "isDeleted",
+    "searchTerm",
+  ]);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await AdminService.getAllUsers(filters, options);
   sendResponse(res, { success: true, statusCode: 200, message: "Users retrieved", data: result });
 });
 
@@ -19,9 +28,14 @@ const updateUserStatus = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, { success: true, statusCode: 200, message: "User status updated", data: result });
 });
 
+const createAdminSettings = catchAsync(async (req: Request, res: Response) => {
+  const result = await AdminService.createAdminSettings(req.body);
+  sendResponse(res, { success: true, statusCode: 201, message: "Admin settings created", data: result });
+});
+
 const getAdminSettings = catchAsync(async (req: Request, res: Response) => {
   const result = await AdminService.getAdminSettings();
-  sendResponse(res, { success: true, statusCode: 200, message: "Admin settings retrieved", data: result });
+  sendResponse(res, { success: true, statusCode: 200, message: "Admin settings retrieved", data: result || "No admin settings found" });
 });
 
 const updateAdminSettings = catchAsync(async (req: Request, res: Response) => {
@@ -43,6 +57,7 @@ export const AdminController = {
   getDashboardStats,
   getAllUsers,
   updateUserStatus,
+  createAdminSettings,
   getAdminSettings,
   updateAdminSettings,
   getAllTickets,
