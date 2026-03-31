@@ -39,6 +39,12 @@ router.patch(
   TicketController.updateTicketStatus
 );
 
+router.delete(
+  "/:id",
+  auth(Role.ADMIN),
+  TicketController.deleteTicket
+);
+
 router.post(
   "/:id/messages",
   auth(Role.USER, Role.ADMIN, Role.OPERATOR),

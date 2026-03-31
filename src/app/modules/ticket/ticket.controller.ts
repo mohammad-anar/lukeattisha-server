@@ -38,6 +38,12 @@ const updateTicketStatus = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, { success: true, statusCode: 200, message: "Ticket updated", data: result });
 });
 
+const deleteTicket = catchAsync(async (req: Request, res: Response) => {
+  const id = req.params.id as string;
+  const result = await TicketService.deleteTicket(id);
+  sendResponse(res, { success: true, statusCode: 200, message: "Ticket deleted", data: result });
+});
+
 const addMessage = catchAsync(async (req: any, res: Response) => {
   const id = req.params.id as string;
   const ticket = await TicketService.getSingleTicket(id);
@@ -57,5 +63,6 @@ export const TicketController = {
   getAllTickets,
   getSingleTicket,
   updateTicketStatus,
+  deleteTicket,
   addMessage,
 };

@@ -44,6 +44,14 @@ const updateTicket = async (id: string, payload: any) => {
   });
 };
 
+
+/* ================= DELETE TICKET ================= */
+const deleteTicket = async (id: string) => {
+  return await prisma.supportTicket.delete({
+    where: { id },
+  });
+};
+
 /* ================= ADD MESSAGE ================= */
 const addMessage = async (ticketId: string, senderId: string, content: string) => {
   return await prisma.ticketMessage.create({
@@ -61,5 +69,6 @@ export const TicketService = {
   getAllTickets,
   getSingleTicket,
   updateTicket,
+  deleteTicket,
   addMessage,
 };
