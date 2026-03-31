@@ -11,6 +11,8 @@ router.get("/users", auth(Role.ADMIN), AdminController.getAllUsers);
 
 router.patch("/users/:id/status", auth(Role.ADMIN), AdminController.updateUserStatus);
 
+router.post("/settings", auth(Role.ADMIN), AdminController.createAdminSettings);
+
 router.get("/settings", auth(Role.ADMIN), AdminController.getAdminSettings);
 
 router.patch("/settings", auth(Role.ADMIN), AdminController.updateAdminSettings);
