@@ -58,6 +58,8 @@ const user = await prisma.$transaction(async (tx) => {
   return user;
 };
 /* ================= REGISTER OPERATOR ================= */
+import { createStripeAccount } from "../../../helpers.ts/stripeHelpers.js";
+
 const registerOperator = async (payload: Prisma.UserCreateInput & {address: string, storeName: string}) => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
@@ -65,6 +67,9 @@ const registerOperator = async (payload: Prisma.UserCreateInput & {address: stri
   );
 
   const { name, email, password, phone, address, storeName } = payload;
+
+  // 1. Pre-create Stripe account to ensure it works before DB write
+  const stripeAccountId = await createStripeAccount(email);
 
   // use prisma transaction
   const user = await prisma.$transaction(async (tx) => {
@@ -83,7 +88,12 @@ const registerOperator = async (payload: Prisma.UserCreateInput & {address: stri
   });
 
   await tx.operatorProfile.create({
-    data: { userId: user.id, storeName, address },
+    data: { 
+      userId: user.id, 
+      storeName, 
+      address,
+      stripeAccountId // ✅ Link Stripe Account Here
+    },
   });
 
     await tx.userAddress.create({

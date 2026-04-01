@@ -49,7 +49,6 @@ const getMyFavorites = async (userId: string) => {
       service: {
         include: {
           category: true,
-          addons: true,
           operator: {
             include: {
               user: {

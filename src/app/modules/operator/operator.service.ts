@@ -8,6 +8,8 @@ import {
 } from "./operator.interface.js";
 import httpStatus from "http-status";
 
+import { createStripeAccount } from "../../../helpers.ts/stripeHelpers.js";
+
 const createOperatorProfile = async (
   userId: string,
   payload: IOperatorProfileCreatePayload
@@ -20,9 +22,22 @@ const createOperatorProfile = async (
     throw new ApiError(httpStatus.BAD_REQUEST, "Operator profile already exists");
   }
 
+  // 1. Fetch user to get email for Stripe
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true }
+  });
+
+  if (!user) throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+
+  // 2. Create Stripe Connected Account
+  const stripeAccountId = await createStripeAccount(user.email);
+
+  // 3. Create Profile with stripeAccountId
   const result = await prisma.operatorProfile.create({
     data: {
       userId,
+      stripeAccountId,
       ...payload,
     },
   });
@@ -157,6 +172,26 @@ const removeCategory = async (userId: string, categoryId: string) => {
   return await getOperatorProfile(userId);
 };
 
+const ensureStripeAccountId = async (operatorId: string) => {
+  const profile = await prisma.operatorProfile.findUnique({
+    where: { id: operatorId },
+    include: { user: { select: { email: true } } }
+  });
+
+  if (!profile) throw new ApiError(httpStatus.NOT_FOUND, "Operator profile not found");
+
+  if (!profile.stripeAccountId) {
+    const stripeAccountId = await createStripeAccount(profile.user.email);
+    await prisma.operatorProfile.update({
+      where: { id: operatorId },
+      data: { stripeAccountId }
+    });
+    return stripeAccountId;
+  }
+
+  return profile.stripeAccountId;
+};
+
 export const OperatorService = {
   createOperatorProfile,
   getOperatorProfile,
@@ -166,4 +201,5 @@ export const OperatorService = {
   assignCategories,
   getOperatorCategories,
   removeCategory,
+  ensureStripeAccountId,
 };

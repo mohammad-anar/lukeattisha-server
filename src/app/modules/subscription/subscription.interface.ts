@@ -9,4 +9,5 @@ export type ISubscriptionPackageUpdatePayload = Partial<ISubscriptionPackageCrea
 
 export type IUserSubscribePayload = {
   packageId: string;
+  operatorId?: string;
 };

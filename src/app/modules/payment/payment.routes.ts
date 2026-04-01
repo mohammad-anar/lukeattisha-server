@@ -7,12 +7,12 @@ import { PaymentController } from "./payment.controller.js";
 
 const router = express.Router();
 
-router.post(
-  "/",
-  auth(Role.USER, Role.ADMIN),
-  validateRequest(PaymentValidation.createPaymentSchema),
-  PaymentController.createPayment
-);
+// router.post(
+//   "/",
+//   auth(Role.USER, Role.ADMIN),
+//   validateRequest(PaymentValidation.createPaymentSchema),
+//   PaymentController.createPayment
+// );
 
 router.get("/all", auth(Role.ADMIN), PaymentController.getAllPayments);
 

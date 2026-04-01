@@ -1,12 +1,12 @@
-import { Request, Response } from "express";
-import { UserService } from "./user.service.js";
-import { UserStatus, Role } from "@prisma/client";
-import ApiError from "../../../errors/ApiError.js";
+import { Role, UserStatus } from "@prisma/client";
 import catchAsync from "app/shared/catchAsync.js";
-import sendResponse from "app/shared/sendResponse.js";
 import { getSingleFilePath } from "app/shared/getFilePath.js";
-import pick from "helpers.ts/pick.js";
+import sendResponse from "app/shared/sendResponse.js";
 import { config } from "config/index.js";
+import { Request, Response } from "express";
+import pick from "helpers.ts/pick.js";
+import ApiError from "../../../errors/ApiError.js";
+import { UserService } from "./user.service.js";
 
 /* ================= GET ME ================= */
 const getMe = catchAsync(async (req: any, res: Response) => {
@@ -16,7 +16,7 @@ const getMe = catchAsync(async (req: any, res: Response) => {
 
 /* ================= GET ALL USERS ================= */
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ["role", "status", "isVerified", "isDeleted", "searchTerm"]);
+  const filters = pick(req.query, ["role", "status", "isVerified", "isDeleted", "searchTerm", "minspent"]);
   const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
   const result = await UserService.getAllUsers(filters, options);
   sendResponse(res, { success: true, statusCode: 200, message: "Users retrieved successfully", data: result });

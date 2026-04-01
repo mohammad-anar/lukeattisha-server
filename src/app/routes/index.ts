@@ -16,6 +16,7 @@ import { UserAddressRouter } from "../modules/address/address.routes.js";
 import { PayoutRouter } from "../modules/payout/payout.routes.js";
 import { WalletRouter } from "../modules/wallet/wallet.routes.js";
 import { TicketRouter } from "../modules/ticket/ticket.routes.js";
+import { BannerRouter } from "../modules/banner/banner.routes.js";
 
 const router = express.Router();
 
@@ -37,6 +38,7 @@ const moduleRoutes = [
   { path: "/payout", route: PayoutRouter },
   { path: "/wallet", route: WalletRouter },
   { path: "/ticket", route: TicketRouter },
+  { path: "/banner", route: BannerRouter },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

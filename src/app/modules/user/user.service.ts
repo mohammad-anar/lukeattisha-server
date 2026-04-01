@@ -14,6 +14,7 @@ const getMe = async (email: string) => {
       email: true,
       phone: true,
       role: true,
+      avatar:true,
       status: true,
       isVerified: true,
       userAddresses: true,
@@ -27,8 +28,7 @@ const getMe = async (email: string) => {
 /* ================= GET ALL USERS ================= */
 const getAllUsers = async (filter: IUserFilterRequest, options: IPaginationOptions) => {
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filter;
-
+  const { searchTerm, minspent, isVerified, ...filterData } = filter;
   const conditions: Prisma.UserWhereInput[] = [];
 
   if (searchTerm) {
@@ -39,6 +39,27 @@ const getAllUsers = async (filter: IUserFilterRequest, options: IPaginationOptio
     });
   }
 
+  if (minspent && Number(minspent) > 0) {
+    const ordersWithSum = await prisma.order.groupBy({
+      by: ["userId"],
+      _sum: { total: true },
+      having: {
+        total: {
+          _sum: {
+            gte: Number(minspent),
+          },
+        },
+      },
+    });
+
+    const userIds = ordersWithSum.map((s) => s.userId);
+    conditions.push({ id: { in: userIds } });
+  }
+
+  if (isVerified) {
+    conditions.push({ isVerified: isVerified === "true" });
+  }
+
   if (Object.keys(filterData).length) {
     conditions.push({
       AND: Object.keys(filterData).map((key) => ({
@@ -47,7 +68,7 @@ const getAllUsers = async (filter: IUserFilterRequest, options: IPaginationOptio
     });
   }
 
-  conditions.push({ role: { not: "ADMIN" } });
+  conditions.push({ role: "USER"});
   conditions.push({ isDeleted: false });
 
   const where = { AND: conditions };
@@ -59,35 +80,70 @@ const getAllUsers = async (filter: IUserFilterRequest, options: IPaginationOptio
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      userID: true,
       name: true,
       email: true,
       phone: true,
       role: true,
+      avatar: true,
       status: true,
       isVerified: true,
       createdAt: true,
       userAddresses: true,
       paymentCards: true,
-      orders: true,
-      reviews: true,
-      _count: true,
+      _count: {
+        select: {
+          orders: true,
+          reviews: true,
+        },
+      },
     },
   });
 
   const total = await prisma.user.count({ where });
 
+  // Separate query for order statistics to avoid heavy joins
+  const userIds = data.map((u) => u.id);
+  const orderStats = await prisma.order.groupBy({
+    by: ["userId"],
+    _sum: { total: true },
+    _count: { id: true },
+    where: { userId: { in: userIds } },
+  });
+
+  const statsMap = orderStats.reduce((acc: any, stat: any) => {
+    const totalPaymentAmount = Number(stat._sum.total) || 0;
+    const totalOrders = stat._count.id || 0;
+    acc[stat.userId] = {
+      totalPaymentAmount,
+      totalOrders,
+      averageOrderValue: totalOrders > 0 ? totalPaymentAmount / totalOrders : 0,
+    };
+    return acc;
+  }, {});
+
+  const enrichedData = data.map((user) => ({
+    ...user,
+    ...(statsMap[user.id] || {
+      totalPaymentAmount: 0,
+      totalOrders: 0,
+      averageOrderValue: 0,
+    }),
+  }));
+
   return {
     meta: { page, limit, total, totalPage: Math.ceil(total / limit) },
-    data,
+    data: enrichedData,
   };
 };
 
 /* ================= GET USER BY ID ================= */
 const getUserById = async (id: string) => {
-  return prisma.user.findUniqueOrThrow({
+  const user = await prisma.user.findUniqueOrThrow({
     where: { id },
     select: {
       id: true,
+      userID: true,
       name: true,
       email: true,
       phone: true,
@@ -96,11 +152,34 @@ const getUserById = async (id: string) => {
       isVerified: true,
       userAddresses: true,
       paymentCards: true,
-      orders: true,
+      createdAt:true,
+      updatedAt:true,
       reviews: true,
-      _count: true,
+      _count: {
+        select: {
+          orders: true,
+          reviews: true,
+        },
+      },
     },
   });
+
+  // Calculate stats for a single user
+  const orderStats = await prisma.order.aggregate({
+    where: { userId: id },
+    _sum: { total: true },
+    _count: { id: true },
+  });
+
+  const totalPaymentAmount = Number(orderStats._sum.total) || 0;
+  const totalOrders = orderStats._count.id || 0;
+
+  return {
+    ...user,
+    totalPaymentAmount,
+    totalOrders,
+    averageOrderValue: totalOrders > 0 ? totalPaymentAmount / totalOrders : 0,
+  };
 };
 
 /* ================= UPDATE USER ================= */

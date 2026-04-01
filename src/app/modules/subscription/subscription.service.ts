@@ -1,76 +1,104 @@
-
 import httpStatus from "http-status";
 import {
   ISubscriptionPackageCreatePayload,
   ISubscriptionPackageUpdatePayload,
   IUserSubscribePayload,
 } from "./subscription.interface.js";
+import ApiError from "../../../errors/ApiError.js";
+import { config } from "../../../config/index.js";
 import { prisma } from "helpers.ts/prisma.js";
-import ApiError from "errors/ApiError.js";
+import { stripe } from "helpers.ts/stripeHelpers.js";
 
-/* ================= CREATE PACKAGE (admin) ================= */
+/* ================= CREATE PACKAGE (Admin) ================= */
 const createPackage = async (payload: ISubscriptionPackageCreatePayload) => {
-  return await prisma.subscriptionPackage.create({ data: payload });
+  return await prisma.subscriptionPackage.create({
+    data: {
+      ...payload,
+      // Ensure price is handled correctly if using Prisma.Decimal
+      price: payload.price, 
+    },
+  });
 };
 
 /* ================= GET ALL PACKAGES ================= */
 const getAllPackages = async () => {
-  return await prisma.subscriptionPackage.findMany({ orderBy: { price: "asc" } });
+  return await prisma.subscriptionPackage.findMany({
+    orderBy: { price: "asc" },
+  });
 };
 
 /* ================= GET PACKAGE BY ID ================= */
 const getPackageById = async (id: string) => {
-  const pkg = await prisma.subscriptionPackage.findUnique({ where: { id } });
-  if (!pkg) throw new ApiError(httpStatus.NOT_FOUND, "Package not found");
+  const pkg = await prisma.subscriptionPackage.findUnique({
+    where: { id },
+  });
+  if (!pkg) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Subscription package not found");
+  }
   return pkg;
 };
 
-/* ================= UPDATE PACKAGE (admin) ================= */
+/* ================= UPDATE PACKAGE (Admin) ================= */
 const updatePackage = async (id: string, payload: ISubscriptionPackageUpdatePayload) => {
-  await getPackageById(id);
-  return await prisma.subscriptionPackage.update({ where: { id }, data: payload });
+  await getPackageById(id); // Check existence first
+  return await prisma.subscriptionPackage.update({
+    where: { id },
+    data: payload,
+  });
 };
 
-/* ================= DELETE PACKAGE (admin) ================= */
+/* ================= DELETE PACKAGE (Admin) ================= */
 const deletePackage = async (id: string) => {
-  await getPackageById(id);
-  return await prisma.subscriptionPackage.delete({ where: { id } });
+  await getPackageById(id); // Check existence first
+  return await prisma.subscriptionPackage.delete({
+    where: { id },
+  });
 };
 
-/* ================= SUBSCRIBE ================= */
-const subscribe = async (userId: string, payload: IUserSubscribePayload) => {
-  const pkg = await getPackageById(payload.packageId);
+/* ================= CREATE SUBSCRIPTION SESSION ================= */
+/**
+ * Generates the Stripe Checkout URL. 
+ * Database is NOT updated here; it waits for the Webhook.
+ */
+const createSubscriptionSession = async (
+  userId: string,
+  payload: IUserSubscribePayload,
+) => {
+  const { packageId } = payload; // operatorId is no longer needed here
 
-  // Deactivate any existing active subscription
-  await prisma.userSubscription.updateMany({
-    where: { userId, isActive: true },
-    data: { isActive: false },
-  });
+  // 1. Fetch package from DB
+  const pkg = await getPackageById(packageId);
 
-  const startDate = new Date();
-  const endDate = new Date();
-  endDate.setDate(endDate.getDate() + pkg.durationDays);
+  if (!pkg.stripePriceId) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "This package does not have a valid Stripe Price ID configured."
+    );
+  }
 
-  return await prisma.$transaction(async (tx) => {
-    const userSub = await tx.userSubscription.create({
-      data: {
-        userId,
-        packageId: pkg.id,
-        startDate,
-        endDate,
-        isActive: true,
+  console.log(`[Stripe] Creating Platform-owned session for package: ${pkg.name}`);
+
+  // 2. Create the Checkout Session (Money stays on Platform)
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price: pkg.stripePriceId, 
+        quantity: 1,
       },
-    });
-
-    await tx.user.update({
-      where: { id: userId },
-      data: { isSubscribed: true } as any,
-    });
-
-    return userSub;
+    ],
+    // Remove 'subscription_data.transfer_data' so money stays with you
+    subscription_data: {
+      metadata: { userId, packageId: pkg.id }, 
+    },
+    metadata: { userId, packageId: pkg.id }, 
+    success_url: `${config.frontend_url}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${config.frontend_url}/subscription-cancelled`,
   });
-};
 
+  return session.url;
+};
 /* ================= GET MY SUBSCRIPTION ================= */
 const getMySubscription = async (userId: string) => {
   return await prisma.userSubscription.findFirst({
@@ -79,7 +107,7 @@ const getMySubscription = async (userId: string) => {
   });
 };
 
-/* ================= GET ALL SUBSCRIPTIONS (admin) ================= */
+/* ================= GET ALL SUBSCRIPTIONS (Admin) ================= */
 const getAllSubscriptions = async () => {
   return await prisma.userSubscription.findMany({
     include: {
@@ -96,7 +124,7 @@ export const SubscriptionService = {
   getPackageById,
   updatePackage,
   deletePackage,
-  subscribe,
+  createSubscriptionSession,
   getMySubscription,
   getAllSubscriptions,
 };

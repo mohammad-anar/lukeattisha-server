@@ -16,13 +16,11 @@ router.post(
 
 router.get(
   "/",
-  auth(Role.ADMIN, Role.OPERATOR, Role.USER),
   CategoryController.getAllCategories
 );
 
 router.get(
   "/:id",
-  auth(Role.ADMIN, Role.OPERATOR, Role.USER),
   CategoryController.getCategoryById
 );
 

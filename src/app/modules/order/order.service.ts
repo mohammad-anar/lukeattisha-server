@@ -7,6 +7,7 @@ import {
 import { prisma } from "../../../helpers.ts/prisma.js";
 import ApiError from "../../../errors/ApiError.js";
 import { createOrderPaymentSession } from "../../../helpers.ts/stripeHelpers.js";
+import { OperatorService } from "../operator/operator.service.js";
 
 /* ================= CREATE ORDER ================= */
 const createOrder = async (
@@ -29,7 +30,7 @@ const createOrder = async (
   } = payload;
 
   return await prisma.$transaction(async (tx) => {
-    // 1. Fetch all services with addons
+    // 1. Fetch services
     const serviceIds = items.map((i) => i.serviceId);
 
     const services = await tx.service.findMany({
@@ -39,30 +40,33 @@ const createOrder = async (
 
     let totalAmount = 0;
 
-    // Check if user is subscribed
+    // 2. Check subscription
     const user = await tx.user.findUnique({
       where: { id: userId },
       select: { isSubscribed: true },
     });
 
+    // ✅ delivery fee
     if (!user?.isSubscribed) {
-      totalAmount += 4.99; // Delivery Fee
+      totalAmount += 4.99;
     }
 
-    // 2. Prepare OrderItems CREATE INPUT
     const orderItemsCreateInput: any[] = [];
 
+    // 3. Build items
     for (const item of items) {
       const svc = services.find((s) => s.id === item.serviceId);
 
       if (!svc) {
         throw new ApiError(
           httpStatus.NOT_FOUND,
-          `Service ${item.serviceId} not found`,
+          `Service ${item.serviceId} not found`
         );
       }
 
-      const basePrice = Number(svc.basePrice) * item.quantity;
+      const quantity = item.quantity || 1;
+
+      const basePrice = Number(svc.basePrice) * quantity;
       let addonTotal = 0;
 
       const addonCreateInput: any[] = [];
@@ -73,47 +77,49 @@ const createOrder = async (
         if (!addon) {
           throw new ApiError(
             httpStatus.NOT_FOUND,
-            `Addon ${addonId} not found`,
+            `Addon ${addonId} not found`
           );
         }
 
-        addonTotal += Number(addon.price) * item.quantity;
+        const addonPrice = Number(addon.price) * quantity;
+        addonTotal += addonPrice;
 
         addonCreateInput.push({
           addonId,
-          price: addon.price,
+          price: addon.price.toString(), // ✅ FIX
         });
       }
 
       totalAmount += basePrice + addonTotal;
-      
+
       orderItemsCreateInput.push({
         serviceId: item.serviceId,
-        quantity: item.quantity,
-        price: svc.basePrice,
+        quantity,
+        price: svc.basePrice.toString(), // ✅ FIX
         addons: {
           create: addonCreateInput,
         },
       });
     }
 
-    // 3. Create Order
+    // 4. Create Order
     const order = await tx.order.create({
       data: {
         userId,
-        operatorId,
-        total: totalAmount,
+        operatorId: operatorId ?? null,
+
+        total: totalAmount.toFixed(2), // ✅ FIX
 
         pickupAt: new Date(pickupAt),
-        dropoffAt: new Date(dropoffAt),
+        dropoffAt: dropoffAt ? new Date(dropoffAt) : null, // ✅ FIX
 
-        pickupLatitude,
-        pickupLongitude,
-        dropoffLatitude,
-        dropoffLongitude,
+        pickupLatitude: pickupLatitude ?? null,
+        pickupLongitude: pickupLongitude ?? null,
+        dropoffLatitude: dropoffLatitude ?? null,
+        dropoffLongitude: dropoffLongitude ?? null,
 
-        pickupAddress,
-        dropoffAddress,
+        pickupAddress: pickupAddress ?? null,
+        dropoffAddress: dropoffAddress ?? null,
 
         ...rest,
 
@@ -139,30 +145,37 @@ const createOrder = async (
       },
     });
 
-    // 4. Optional: create Payment record (recommended)
+    // 5. Create Payment
     await tx.payment.create({
       data: {
         orderId: order.id,
-        amount: totalAmount,
+        amount: totalAmount.toFixed(2), // ✅ FIX
         method: paymentMethod,
         status: "PENDING",
       },
     });
 
-    // 5. Generate Stripe Payment Link
+    // 6. Stripe Payment
     let paymentUrl = null;
 
-    // Any electronic payment method will trigger a Stripe Checkout Session
     if (
-      paymentMethod === "CARD" ||
-      paymentMethod === "APPLE_PAY" ||
-      paymentMethod === "GOOGLE_PAY"
+      ["CARD", "APPLE_PAY", "GOOGLE_PAY"].includes(paymentMethod)
     ) {
+      if (!operatorId) {
+        throw new ApiError(
+          httpStatus.BAD_REQUEST,
+          "Operator is required for online payment"
+        );
+      }
+
+      const stripeAccountId = await OperatorService.ensureStripeAccountId(operatorId);
+
       paymentUrl = await createOrderPaymentSession(
         order.id,
         totalAmount,
         userId,
-        !user?.isSubscribed // includeDeliveryFee if not subscribed
+        stripeAccountId,
+        user?.isSubscribed || false
       );
     }
 

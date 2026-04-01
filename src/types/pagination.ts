@@ -19,4 +19,6 @@ export type IUserFilterRequest = {
   email?: string | undefined;
   phone?: string | undefined;
   searchTerm?: string | undefined;
+  minspent?: number | string | undefined;
+  isVerified?: boolean | string | undefined;
 };

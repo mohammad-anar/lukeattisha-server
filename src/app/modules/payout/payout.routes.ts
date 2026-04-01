@@ -5,8 +5,8 @@ import auth from "app/middlewares/auth.js";
 
 const router = express.Router();
 
-// Create a payout (admin only)
-router.post("/", auth(Role.ADMIN), PayoutController.createPayout);
+// Create a payout (Operator requests, Admin can also create)
+router.post("/", auth(Role.ADMIN, Role.OPERATOR), PayoutController.createPayout);
 
 // Get all payouts for an operator
 router.get(

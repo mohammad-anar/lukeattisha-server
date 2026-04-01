@@ -30,10 +30,10 @@ router.delete("/packages/:id", auth(Role.ADMIN), SubscriptionController.deletePa
 
 // User subscriptions
 router.post(
-  "/subscribe",
+  "/create-session",
   auth(Role.USER),
   validateRequest(SubscriptionValidation.subscribeSchema),
-  SubscriptionController.subscribe
+  SubscriptionController.createSubscriptionSession
 );
 
 router.get("/me", auth(Role.USER), SubscriptionController.getMySubscription);

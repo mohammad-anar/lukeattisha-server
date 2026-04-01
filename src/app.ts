@@ -14,120 +14,141 @@ const endpointSecret = config.stripe.stripe_webhook_secret as string;
 
 const app: Application = express();
 
-// ---------- CORS ----------
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  }),
-);
-
-// ---------- Static files ----------
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.static("uploads"));
 
-// ---------- Webhook route must come BEFORE express.json() ----------
+// ---------- 1. WEBHOOK (Must stay BEFORE express.json()) ----------
 app.post(
   "/webhook",
   express.raw({ type: "application/json" }),
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     const sig = req.headers["stripe-signature"];
     let event: Stripe.Event;
 
     try {
       event = stripe.webhooks.constructEvent(req.body, sig!, endpointSecret);
+      console.log(`✅ Webhook Verified: ${event.type}`);
     } catch (err: any) {
-      console.error("Webhook signature verification failed:", err.message);
+      console.error(`❌ Webhook Error: ${err.message}`);
       return res.status(400).send(`Webhook Error: ${err.message}`);
     }
 
-    // Handle the event
     if (event.type === "checkout.session.completed") {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const userId = session.metadata?.userId;
+  const session = event.data.object as Stripe.Checkout.Session;
 
-      if (userId) {
-        await prisma.userSubscription.create({
-          data: {
-            userId,
-            subscriptionType: "PREMIUM",
-            startDate: new Date(),
-            endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            isActive: true,
-            packageId: "",
-          },
+  // 1. Extract metadata (Ensure these were passed during session creation)
+  const userId = session.metadata?.userId;
+  const orderId = session.metadata?.orderId;
+  const packageId = session.metadata?.packageId;
+  const isSubscribed = session.metadata?.isSubscribed === "true";
+  const operatorAccountId = session.metadata?.operatorAccountId;
+
+  console.log(`Processing Session: Mode=${session.mode}, User=${userId}, Order=${orderId}, Package=${packageId}`);
+
+  // --- HANDLE LAUNDRY ORDER (One-time Payment) ---
+  if (session.mode === "payment" && orderId) {
+    await prisma.$transaction([
+      // Update payment record
+      prisma.payment.updateMany({
+        where: { orderId },
+        data: {
+          status: "PAID",
+          stripePaymentIntentId: session.payment_intent as string,
+        },
+      }),
+      // Log the status change
+      prisma.orderStatusLog.create({
+        data: {
+          orderId,
+          status: "ACCEPTED",
+          note: "Payment confirmed via Stripe. Order accepted.",
+        },
+      }),
+      // Update order status
+      prisma.order.update({
+        where: { id: orderId },
+        data: { status: "ACCEPTED" },
+      }),
+    ]);
+
+    console.log(`✅ Order ${orderId} marked as PAID and ACCEPTED.`);
+
+    // --- SUBSIDY LOGIC (If user is Premium, Platform pays the Operator) ---
+    if (isSubscribed && operatorAccountId) {
+      console.log(`Subsidizing delivery fee for subscriber user ${userId}`);
+      const subsidyAmount = 4.49; // $4.99 minus your 10% cut
+
+      try {
+        // Dynamic import to avoid circular dependency
+        const { createStripeTransfer } = await import("./helpers.ts/stripeHelpers.js");
+        await createStripeTransfer(subsidyAmount, operatorAccountId, { 
+          orderId, 
+          type: "delivery_subsidy" 
         });
+        console.log(`✅ Subsidy transfer of $${subsidyAmount} sent to operator ${operatorAccountId}`);
+      } catch (transferErr) {
+        console.error("❌ Subsidy transfer failed:", transferErr);
+        // Note: You might want to log this to a 'FailedTransfers' table
       }
     }
+  }
 
+  // --- HANDLE SUBSCRIPTION PACKAGE ($99.95 / Premium) ---
+  if (session.mode === "subscription" && userId && packageId) {
+    // 1. Find the specific package from your DB
+    const pkg = await prisma.subscriptionPackage.findUnique({
+      where: { id: packageId },
+    });
+
+    if (pkg) {
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + pkg.durationDays);
+
+      await prisma.$transaction([
+        // Update user profile flag
+        prisma.user.update({
+          where: { id: userId },
+          data: { isSubscribed: true },
+        }),
+        // Create or Update the subscription record (Upsert is safer)
+        prisma.userSubscription.upsert({
+          where: { userId: userId },
+          update: {
+            packageId: pkg.id,
+            startDate,
+            endDate,
+            isActive: true,
+            stripeSubscriptionId: session.subscription as string,
+          },
+          create: {
+            userId,
+            packageId: pkg.id,
+            startDate,
+            endDate,
+            isActive: true,
+            stripeSubscriptionId: session.subscription as string,
+          },
+        }),
+      ]);
+      console.log(`✅ User ${userId} successfully upgraded to ${pkg.name}.`);
+    } else {
+      console.error(`❌ Webhook Error: Package ID ${packageId} not found in database.`);
+    }
+  }
+}
     res.json({ received: true });
-  },
+  }
 );
 
-// ---------- Parsers for all other routes ----------
+// ---------- 2. PARSERS (Must stay AFTER webhook) ----------
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ---------- API Routes ----------
+// ---------- 3. ROUTES ----------
 app.use("/api/v1", router);
 
-// ---------- Real-time job sending ----------
-app.post("/send-job", (req: Request, res: Response) => {
-  const { roomId, jobId, message } = req.body;
-
-  try {
-    const io = getIO();
-    io.to(roomId).emit("newJob", { jobId, message });
-
-    res.json({ success: true, message: `Job sent to room ${roomId}` });
-  } catch (error: any) {
-    console.error(error);
-    res.status(500).json({ success: false, error: error.message });
-  }
-});
-
-// ---------- Create Stripe checkout session ----------
-app.post("/subscribe-premium", async (req: Request, res: Response) => {
-  const { userId } = req.body;
-
-  try {
-    const session = await stripe.checkout.sessions.create({
-      mode: "payment", // or 'subscription' if you use a Stripe subscription
-      line_items: [
-        {
-          price_data: {
-            currency: "usd",
-            product_data: {
-              name: "Premium Subscription",
-            },
-            unit_amount: 999, // $9.99
-          },
-          quantity: 1,
-        },
-      ],
-      payment_method_types: ["card"], // ✅ only card is allowed in TS type
-      success_url: `${config.frontend_url}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${config.frontend_url}/subscription-cancelled`,
-      metadata: { userId },
-    });
-
-    res.json({ url: session.url });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Unable to create Stripe session" });
-  }
-});
-
-// ---------- Health check ----------
-app.get("/", (req: Request, res: Response) => {
-  res.send({
-    message: "Server is running..",
-    environment: config.node_env,
-    uptime: process.uptime().toFixed(2) + " sec",
-    timeStamp: new Date().toISOString(),
-  });
-});
-
-// ---------- Error handling ----------
+app.get("/", (req, res) => res.send({ status: "Server Running" }));
 app.use(globalErrorHandler);
 app.use(notFound);
 

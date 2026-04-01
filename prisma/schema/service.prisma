@@ -10,13 +10,11 @@ model Service {
   basePrice Decimal @db.Decimal(10, 2)
   isActive  Boolean @default(true)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  addons      AddonService[]
   favoritedBy FavoriteService[]
   orderItems  OrderItem[]
   reviews     ServiceReview[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt  
 
   @@index([operatorId])
   @@index([categoryId])
@@ -24,9 +22,9 @@ model Service {
 
 model AddonService {
   id        String @id @default(uuid())
-  serviceId String
+  operatorId String
 
-  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  operator OperatorProfile @relation(fields: [operatorId], references: [id], onDelete: Cascade)
 
   name  String
   price Decimal @db.Decimal(10, 2)
@@ -36,7 +34,7 @@ model AddonService {
 
   orderItemAddons OrderItemAddon[]
 
-  @@index([serviceId])
+  @@index([operatorId])
 }
 
 model FavoriteService {

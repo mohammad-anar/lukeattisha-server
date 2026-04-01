@@ -1,31 +1,35 @@
 model SubscriptionPackage {
-  id           String  @id @default(uuid())
-  name         String
-  price        Decimal @db.Decimal(10, 2)
-  durationDays Int
-  freeDelivery Boolean @default(true)
+  id              String   @id @default(uuid())
+  name            String
+  price           Decimal  @db.Decimal(10, 2)
+  durationDays    Int
+  freeDelivery    Boolean  @default(true)
+  stripeProductId String?
+  stripePriceId   String?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  subscriptions UserSubscription[]
+  subscriptions   UserSubscription[]
 }
 
 model UserSubscription {
-  id        String @id @default(uuid())
-  userId    String
-  packageId String  
-  subscriptionType SubscriptionType @default(PREMIUM)
+  id                   String           @id @default(uuid())
+  userId               String           @unique // Added @unique to prevent multiple active subs
+  packageId            String
+  subscriptionType     SubscriptionType @default(PREMIUM)
+  stripeSubscriptionId String?          @unique // Added @unique for easier webhook lookups
 
-  user    User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  package SubscriptionPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  // Relations
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package              SubscriptionPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
 
-  startDate DateTime
-  endDate   DateTime
-  isActive  Boolean  @default(true)
+  startDate            DateTime
+  endDate              DateTime
+  isActive             Boolean             @default(true)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
 
   @@index([userId])
   @@index([packageId])

@@ -27,6 +27,8 @@ export const config = {
     stripe_pk: process.env.STRIPE_PUBLISHABLE_KEY,
     stripe_sk: process.env.STRIPE_SECRET_KEY,
     stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
+    premium_product_id: process.env.STRIPE_PREMIUM_PRODUCT_ID,
+    premium_price_id: process.env.STRIPE_PREMIUM_PRICE_ID,
   },
   admin: {
     name: process.env.NAME,
