@@ -8,6 +8,7 @@ model User {
   role   Role       @default(USER)
   status UserStatus @default(ACTIVE)
   avatar String?
+  isSubscribed Boolean @default(false)
 
   city       String?
   state      String?

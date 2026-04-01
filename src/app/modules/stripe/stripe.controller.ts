@@ -7,12 +7,16 @@ import sendResponse from "app/shared/sendResponse.js";
 
 /* ================= CREATE CHECKOUT SESSION ================= */
 const createCheckoutSession = catchAsync(async (req: any, res: Response) => {
-  const session = await StripeService.createCheckoutSession(req.user.id);
+  const { operatorId } = req.body;
+  const session = await StripeService.createCheckoutSession(
+    req.user.id,
+    operatorId as string,
+  );
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Checkout session created successfully",
-    data: session,
+    data: session.url,
   });
 });
 

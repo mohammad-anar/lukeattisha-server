@@ -6,8 +6,7 @@ import { prisma } from "helpers.ts/prisma.js";
 export const seedSuperAdmin = async () => {
   const isExist = await prisma.user.findFirst({
     where: {
-      email: config.admin.email,
-      role: Role.ADMIN,
+      OR: [{ email: config.admin.email as string }, { phone: config.admin.phone as string }],
     },
   });
 

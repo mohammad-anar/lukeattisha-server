@@ -51,14 +51,23 @@ const subscribe = async (userId: string, payload: IUserSubscribePayload) => {
   const endDate = new Date();
   endDate.setDate(endDate.getDate() + pkg.durationDays);
 
-  return await prisma.userSubscription.create({
-    data: {
-      userId,
-      packageId: pkg.id,
-      startDate,
-      endDate,
-      isActive: true,
-    },
+  return await prisma.$transaction(async (tx) => {
+    const userSub = await tx.userSubscription.create({
+      data: {
+        userId,
+        packageId: pkg.id,
+        startDate,
+        endDate,
+        isActive: true,
+      },
+    });
+
+    await tx.user.update({
+      where: { id: userId },
+      data: { isSubscribed: true } as any,
+    });
+
+    return userSub;
   });
 };
 

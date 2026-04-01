@@ -39,6 +39,16 @@ const createOrder = async (
 
     let totalAmount = 0;
 
+    // Check if user is subscribed
+    const user = await tx.user.findUnique({
+      where: { id: userId },
+      select: { isSubscribed: true },
+    });
+
+    if (!user?.isSubscribed) {
+      totalAmount += 4.99; // Delivery Fee
+    }
+
     // 2. Prepare OrderItems CREATE INPUT
     const orderItemsCreateInput: any[] = [];
 
@@ -67,7 +77,7 @@ const createOrder = async (
           );
         }
 
-        addonTotal += Number(addon.price);
+        addonTotal += Number(addon.price) * item.quantity;
 
         addonCreateInput.push({
           addonId,
@@ -76,7 +86,7 @@ const createOrder = async (
       }
 
       totalAmount += basePrice + addonTotal;
-
+      
       orderItemsCreateInput.push({
         serviceId: item.serviceId,
         quantity: item.quantity,
@@ -151,7 +161,8 @@ const createOrder = async (
       paymentUrl = await createOrderPaymentSession(
         order.id,
         totalAmount,
-        userId
+        userId,
+        !user?.isSubscribed // includeDeliveryFee if not subscribed
       );
     }
 
