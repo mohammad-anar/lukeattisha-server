@@ -17,6 +17,10 @@ import { PayoutRouter } from "../modules/payout/payout.routes.js";
 import { WalletRouter } from "../modules/wallet/wallet.routes.js";
 import { TicketRouter } from "../modules/ticket/ticket.routes.js";
 import { BannerRouter } from "../modules/banner/banner.routes.js";
+import { CartRoutes } from "../modules/cart/cart.routes.js";
+import { AddonRoutes } from "../modules/addon/addon.routes.js";
+import { ServiceBundleRoutes } from "../modules/serviceBundle/serviceBundle.routes.js";
+
 
 const router = express.Router();
 
@@ -39,7 +43,11 @@ const moduleRoutes = [
   { path: "/wallet", route: WalletRouter },
   { path: "/ticket", route: TicketRouter },
   { path: "/banner", route: BannerRouter },
+  { path: "/cart", route: CartRoutes },
+  { path: "/addon", route: AddonRoutes },
+  { path: "/service-bundle", route: ServiceBundleRoutes },
 ];
+
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
 

@@ -8,11 +8,16 @@ model Service {
 
   name      String
   basePrice Decimal @db.Decimal(10, 2)
+  image     String?
   isActive  Boolean @default(true)
 
   favoritedBy FavoriteService[]
   orderItems  OrderItem[]
+  cartItems   CartItem[]
+  addons      AddonService[]
   reviews     ServiceReview[]
+  serviceBundles ServiceBundleItem[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt  
 
@@ -21,6 +26,21 @@ model Service {
 }
 
 model AddonService {
+  id        String @id @default(uuid())
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  addonId   String
+  addon     Addon    @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([serviceId, addonId])
+  @@index([serviceId])
+  @@index([addonId])
+}
+
+model Addon {
   id        String @id @default(uuid())
   operatorId String
 
@@ -33,6 +53,8 @@ model AddonService {
   updatedAt DateTime @updatedAt
 
   orderItemAddons OrderItemAddon[]
+  cartItemAddons  CartItemAddon[]
+  addonServices   AddonService[]
 
   @@index([operatorId])
 }

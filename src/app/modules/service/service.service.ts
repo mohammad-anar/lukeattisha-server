@@ -4,11 +4,15 @@ import { prisma } from "helpers.ts/prisma.js";
 import {
   IServiceCreatePayload,
   IServiceUpdatePayload,
-  IAddonCreatePayload,
-  IAddonUpdatePayload,
+  IAssignAddonPayload,
+  IServiceFilterRequest,
 } from "./service.interface.js";
 import httpStatus from "http-status";
 import ApiError from "errors/ApiError.js";
+import { Prisma } from "@prisma/client";
+import { paginationHelper } from "helpers.ts/paginationHelper.js";
+import { IPaginationOptions } from "types/pagination.js";
+
 
 const createService = async (userId: string, payload: IServiceCreatePayload) => {
   const profile = await prisma.operatorProfile.findUnique({
@@ -30,10 +34,55 @@ const createService = async (userId: string, payload: IServiceCreatePayload) => 
 };
 
 // get all services 
-const getAllServices = async () => {
+const getAllServices = async (filter: IServiceFilterRequest, options: IPaginationOptions) => {
+  const { page, limit, skip } = paginationHelper.calculatePagination(options);
+  const { searchTerm, minPrice, maxPrice, ...filterData } = filter;
+  const conditions: Prisma.ServiceWhereInput[] = [];
+
+  if (searchTerm) {
+    conditions.push({
+      OR: ["name"].map((field) => ({
+        [field]: { contains: searchTerm, mode: "insensitive" },
+      })),
+    });
+  }
+
+  if (minPrice) {
+    conditions.push({
+      basePrice: { gte: parseFloat(minPrice) },
+    });
+  }
+
+  if (maxPrice) {
+    conditions.push({
+      basePrice: { lte: parseFloat(maxPrice) },
+    });
+  }
+
+  if (Object.keys(filterData).length) {
+    conditions.push({
+      AND: Object.keys(filterData).map((key) => {
+        if (key === "isActive") {
+          return { [key]: (filterData as any)[key] === "true" };
+        }
+        return { [key]: { equals: (filterData as any)[key] } };
+      }),
+    });
+  }
+
+  const where = { AND: conditions };
+
   const result = await prisma.service.findMany({
+    where,
+    skip,
+    take: limit,
+    orderBy: options.sortBy && options.sortOrder ? { [options.sortBy]: options.sortOrder } : { createdAt: "desc" },
     include: {
-      addons: true,
+      addons: {
+        include: {
+          addon: true,
+        },
+      },
       category: true,
       operator: {
         include: {
@@ -44,8 +93,15 @@ const getAllServices = async () => {
       }
     },
   });
-  return result;
+
+  const total = await prisma.service.count({ where });
+
+  return {
+    meta: { page, limit, total, totalPage: Math.ceil(total / limit) },
+    data: result,
+  };
 };
+
 
 const getServicesByOperator = async (operatorId: string) => {
   const operator = await prisma.operatorProfile.findUnique({
@@ -57,7 +113,11 @@ const getServicesByOperator = async (operatorId: string) => {
   const result = await prisma.service.findMany({
     where: { operatorId: operator.id },
     include: {
-      addons: true,
+      addons: {
+        include: {
+          addon: true,
+        },
+      },
       category: true,
     },
   });
@@ -68,7 +128,11 @@ const getServiceById = async (id: string, operatorId?: string) => {
   const result = await prisma.service.findUnique({
     where: { id },
     include: {
-      addons: true,
+      addons: {
+        include: {
+          addon: true,
+        },
+      },
       category: true,
       operator: {
         include: {
@@ -129,7 +193,7 @@ const deleteService = async (userId: string, id: string) => {
   return result;
 };
 
-const createAddon = async (userId: string, serviceId: string, payload: IAddonCreatePayload) => {
+const createAddon = async (userId: string, serviceId: string, payload: { addonId: string }) => {
   const profile = await prisma.operatorProfile.findUnique({
     where: { userId },
   });
@@ -139,14 +203,14 @@ const createAddon = async (userId: string, serviceId: string, payload: IAddonCre
   }
 
   // verify service ownership
-  const service =await getServiceById(serviceId, profile.id);
+  const service = await getServiceById(serviceId, profile.id);
   if (!service) {
     throw new ApiError(httpStatus.NOT_FOUND, "Service not found");
   }
 
   const result = await prisma.addonService.create({
     data: {
-      ...payload,
+      addonId: payload.addonId,
       serviceId,
     },
   });
@@ -158,6 +222,9 @@ const createAddon = async (userId: string, serviceId: string, payload: IAddonCre
 const getAddonById = async (id: string) => {
   const result = await prisma.addonService.findUnique({
     where: { id },
+    include: {
+      addon: true,
+    },
   });
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, "Addon not found");
@@ -169,34 +236,13 @@ const getAddonById = async (id: string) => {
 const getAddonsByServiceId = async (serviceId: string) => {
   const result = await prisma.addonService.findMany({
     where: { serviceId },
+    include: {
+      addon: true,
+    },
   });
   return result;
 };
 
-  const updateAddon = async (userId: string, id: string, payload: IAddonUpdatePayload) => {
-  const profile = await prisma.operatorProfile.findUnique({
-    where: { userId },
-  });
-
-  if (!profile) {
-    throw new ApiError(httpStatus.NOT_FOUND, "Operator profile not found");
-  }
-
-  const addon = await prisma.addonService.findUnique({
-    where: { id },
-    include: { service: true }
-  });
-
-  if (!addon) throw new ApiError(httpStatus.NOT_FOUND, "Addon not found");
-  if (addon.service.operatorId !== profile.id) throw new ApiError(httpStatus.FORBIDDEN, "Forbidden access");
-
-  const result = await prisma.addonService.update({
-    where: { id },
-    data: payload,
-  });
-
-  return result;
-};
 
 const deleteAddon = async (userId: string, id: string) => {
   const profile = await prisma.operatorProfile.findUnique({
@@ -207,13 +253,16 @@ const deleteAddon = async (userId: string, id: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Operator profile not found");
   }
 
-  const addon = await prisma.addonService.findUnique({
+  const addonRelation = await prisma.addonService.findUnique({
     where: { id },
-    include: { service: true }
+    include: {
+      service: true,
+      addon: true,
+    }
   });
 
-  if (!addon) throw new ApiError(httpStatus.NOT_FOUND, "Addon not found");
-  if (addon.service.operatorId !== profile.id) throw new ApiError(httpStatus.FORBIDDEN, "Forbidden access");
+  if (!addonRelation) throw new ApiError(httpStatus.NOT_FOUND, "Addon association not found");
+  if (addonRelation.service.operatorId !== profile.id) throw new ApiError(httpStatus.FORBIDDEN, "Forbidden access");
 
   const result = await prisma.addonService.delete({
     where: { id },
@@ -232,6 +281,5 @@ export const ServiceModule = {
   createAddon,
   getAddonById,
   getAddonsByServiceId,
-  updateAddon,
   deleteAddon,
 };

@@ -4,13 +4,15 @@ import { ServiceController } from "./service.controller.js";
 import { ServiceValidation } from "./service.validation.js";
 import auth from "app/middlewares/auth.js";
 import validateRequest from "app/middlewares/validateRequest.js";
+import fileUploadHandler from "app/middlewares/fileUploadHandler.js";
 
 const router = express.Router();
 
 router.post(
   "/",
   auth(Role.OPERATOR),
-  validateRequest(ServiceValidation.createServiceZodSchema),
+  fileUploadHandler(),
+  validateRequest(ServiceValidation.createServiceSchema),
   ServiceController.createService
 );
 
@@ -35,7 +37,8 @@ router.get(
 router.patch(
   "/:id",
   auth(Role.OPERATOR),
-  validateRequest(ServiceValidation.updateServiceZodSchema),
+  fileUploadHandler(),
+  validateRequest(ServiceValidation.updateServiceSchema),
   ServiceController.updateService
 );
 
@@ -49,7 +52,7 @@ router.delete(
 router.post(
   "/:serviceId/addons",
   auth(Role.OPERATOR),
-  validateRequest(ServiceValidation.createAddonZodSchema),
+  validateRequest(ServiceValidation.assignAddonZodSchema),
   ServiceController.createAddon
 );
 
@@ -65,12 +68,6 @@ router.get(
   ServiceController.getAddonsByServiceId
 );
 
-router.patch(
-  "/addons/:id",
-  auth(Role.OPERATOR),
-  validateRequest(ServiceValidation.updateAddonZodSchema),
-  ServiceController.updateAddon
-);
 
 router.delete(
   "/addons/:id",

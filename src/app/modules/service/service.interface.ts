@@ -7,9 +7,16 @@ export type IServiceCreatePayload = {
 
 export type IServiceUpdatePayload = Partial<IServiceCreatePayload>;
 
-export type IAddonCreatePayload = {
-  name: string;
-  price: number;
+export type IAssignAddonPayload = {
+  addonId: string;
 };
 
-export type IAddonUpdatePayload = Partial<IAddonCreatePayload>;
+export type IServiceFilterRequest = {
+  searchTerm?: string;
+  operatorId?: string;
+  categoryId?: string;
+  isActive?: string;
+  minPrice?: string;
+  maxPrice?: string;
+};
+

@@ -14,14 +14,16 @@ const getMe = async (email: string) => {
       email: true,
       phone: true,
       role: true,
-      avatar:true,
+      avatar: true,
       status: true,
       isVerified: true,
       userAddresses: true,
       orders: true,
       reviews: true,
+      operatorProfile: true,
       _count: true,
     },
+
   });
 };
 
@@ -68,7 +70,7 @@ const getAllUsers = async (filter: IUserFilterRequest, options: IPaginationOptio
     });
   }
 
-  conditions.push({ role: "USER"});
+  conditions.push({ role: "USER" });
   conditions.push({ isDeleted: false });
 
   const where = { AND: conditions };
@@ -152,8 +154,8 @@ const getUserById = async (id: string) => {
       isVerified: true,
       userAddresses: true,
       paymentCards: true,
-      createdAt:true,
-      updatedAt:true,
+      createdAt: true,
+      updatedAt: true,
       reviews: true,
       _count: {
         select: {

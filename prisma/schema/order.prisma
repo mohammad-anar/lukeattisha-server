@@ -66,7 +66,7 @@ model OrderItemAddon {
   addonId     String
 
   orderItem OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  addon     AddonService @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  addon     Addon    @relation(fields: [addonId], references: [id], onDelete: Cascade)
 
   price Decimal @db.Decimal(10, 2)
 

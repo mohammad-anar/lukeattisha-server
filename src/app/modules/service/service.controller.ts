@@ -2,10 +2,21 @@ import { Request, Response } from "express";
 import { ServiceModule } from "./service.service.js";
 import catchAsync from "app/shared/catchAsync.js";
 import sendResponse from "app/shared/sendResponse.js";
+import { getSingleFilePath } from "app/shared/getFilePath.js";
+import { config } from "config/index.js";
+import pick from "helpers.ts/pick.js";
+
 
 const createService = catchAsync(async (req: Request, res: Response) => {
   const { id: userId } = req.user;
-  const result = await ServiceModule.createService(userId, req.body);
+
+  const payload = req.body;
+
+  const image = getSingleFilePath(req.files, "image") as string;
+  if (image)
+    payload.image = `http://${config.ip_address}:${config.port}${image}`;
+
+  const result = await ServiceModule.createService(userId, payload);
 
   sendResponse(res, {
     success: true,
@@ -15,15 +26,19 @@ const createService = catchAsync(async (req: Request, res: Response) => {
   });
 });
 const getAllServices = catchAsync(async (req: Request, res: Response) => {
-  const result = await ServiceModule.getAllServices();
+  const filters = pick(req.query, ["searchTerm", "operatorId", "categoryId", "isActive", "minPrice", "maxPrice"]);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await ServiceModule.getAllServices(filters, options);
 
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Services retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
+
 
 const getServicesByOperator = catchAsync(async (req: Request, res: Response) => {
   const { operatorId } = req.params as { operatorId: string };
@@ -52,7 +67,14 @@ const getServiceById = catchAsync(async (req: Request, res: Response) => {
 const updateService = catchAsync(async (req: Request, res: Response) => {
   const { id: userId } = req.user;
   const { id } = req.params as { id: string };
-  const result = await ServiceModule.updateService(userId, id, req.body);
+
+  const payload = req.body;
+
+  const image = getSingleFilePath(req.files, "image") as string;
+  if (image)
+    payload.image = `http://${config.ip_address}:${config.port}${image}`;
+
+  const result = await ServiceModule.updateService(userId, id, payload);
 
   sendResponse(res, {
     success: true,
@@ -83,7 +105,7 @@ const createAddon = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     statusCode: 201,
-    message: "Addon created successfully",
+    message: "Addon assigned successfully",
     data: result,
   });
 });
@@ -112,18 +134,6 @@ const getAddonsByServiceId = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const updateAddon = catchAsync(async (req: Request, res: Response) => {
-  const { id: userId } = req.user;
-  const { id } = req.params as { id: string };
-  const result = await ServiceModule.updateAddon(userId, id, req.body);
-
-  sendResponse(res, {
-    success: true,
-    statusCode: 200,
-    message: "Addon updated successfully",
-    data: result,
-  });
-});
 
 const deleteAddon = catchAsync(async (req: Request, res: Response) => {
   const { id: userId } = req.user;
@@ -143,11 +153,10 @@ export const ServiceController = {
   getServicesByOperator,
   getAllServices,
   getServiceById,
-  updateService,  
+  updateService,
   deleteService,
   createAddon,
   getAddonById,
   getAddonsByServiceId,
-  updateAddon,
   deleteAddon,
 };

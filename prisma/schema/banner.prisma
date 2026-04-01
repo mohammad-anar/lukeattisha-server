@@ -3,12 +3,21 @@ model Banner {
   title           String
   description     String?
   buttonText      String?
-  bannerType      String?
+  bannerType      BannerType? 
   backgroundColor String?
   textColor       String?
-  isActive        Boolean  @default(true)
+  isActive        Boolean @default(true)
   image           String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+
+enum BannerType {
+  PROMOTION
+  MEMBERSHIP
+  SEASONAL
+  OFFER
+}
+

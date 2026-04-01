@@ -1,9 +1,9 @@
 import httpStatus from "http-status";
 import { prisma } from "helpers.ts/prisma.js";
 import ApiError from "../../../errors/ApiError.js";
-import { IBannerCreatePayload, IBannerUpdatePayload } from "./banner.interface.js";
+import { Prisma } from "@prisma/client";
 
-const createBanner = async (payload: IBannerCreatePayload) => {
+const createBanner = async (payload: Prisma.BannerCreateInput) => {
   return await prisma.banner.create({
     data: payload,
   });
@@ -25,7 +25,7 @@ const getBannerById = async (id: string) => {
   return banner;
 };
 
-const updateBanner = async (id: string, payload: IBannerUpdatePayload) => {
+const updateBanner = async (id: string, payload: Prisma.BannerUpdateInput) => {
   await getBannerById(id);
   return await prisma.banner.update({
     where: { id },

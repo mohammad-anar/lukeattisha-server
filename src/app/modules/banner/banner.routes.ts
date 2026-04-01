@@ -4,12 +4,14 @@ import { BannerController } from "./banner.controller.js";
 import { BannerValidation } from "./banner.validation.js";
 import auth from "../../middlewares/auth.js";
 import validateRequest from "../../middlewares/validateRequest.js";
+import fileUploadHandler from "app/middlewares/fileUploadHandler.js";
 
 const router = express.Router();
 
 router.post(
   "/",
   auth(Role.ADMIN),
+  fileUploadHandler(),
   validateRequest(BannerValidation.createBannerZodSchema),
   BannerController.createBanner
 );
@@ -27,6 +29,7 @@ router.get(
 router.patch(
   "/:id",
   auth(Role.ADMIN),
+  fileUploadHandler(),
   validateRequest(BannerValidation.updateBannerZodSchema),
   BannerController.updateBanner
 );

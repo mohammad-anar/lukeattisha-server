@@ -224,6 +224,51 @@ const forgetPassword = async (email: string) => {
   return { status: "Reset password email sent" };
 };
 
+/* ================= FORGET PASSWORD OTP ================= */
+const forgetPasswordOTP = async (email: string) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, name: true, email: true, isVerified: true, isDeleted: true },
+  });
+  if (!user) throw new ApiError(404, "User not found");
+  if (!user.isVerified || user.isDeleted) {
+    throw new ApiError(403, "Account not verified or deleted");
+  }
+
+  const otp = generateOTP();
+  await redisClient.set(`otp:${email}`, otp, { EX: 180 }); // 3 minutes
+
+  const template = await emailTemplate.resetPassword({ email, otp });
+  await emailHelper.sendEmail(template);
+
+  return { status: "OTP sent successfully" };
+};
+
+/* ================= VERIFY OTP ================= */
+const verifyOTP = async (email: string, otp: string) => {
+  const key = `otp:${email}`;
+  const stored = await redisClient.get(key);
+
+  if (!stored) throw new ApiError(400, "OTP expired");
+  if (stored !== String(otp)) throw new ApiError(400, "Invalid OTP");
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+    select: { id: true, name: true, email: true, role: true },
+  });
+  if (!user) throw new ApiError(404, "User not found");
+
+  const resetToken = jwtHelper.createToken(
+    user as JwtPayload,
+    config.jwt.jwt_secret as Secret,
+    "15m"
+  );
+
+  await redisClient.del(key);
+
+  return { resetToken };
+};
+
 /* ================= RESET PASSWORD ================= */
 const resetPassword = async (email: string, password: string) => {
   const user = await prisma.user.findUnique({ where: { email } });
@@ -286,6 +331,8 @@ export const AuthService = {
   verifyUser,
   resendOTP,
   forgetPassword,
+  forgetPasswordOTP,
+  verifyOTP,
   resetPassword,
   changePassword,
   refreshToken,

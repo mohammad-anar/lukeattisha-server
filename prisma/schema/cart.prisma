@@ -1,0 +1,39 @@
+model Cart {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  serviceId String
+  service   Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  quantity  Int      @default(1)
+  
+  addons    CartItemAddon[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cartId])
+  @@index([serviceId])
+}
+
+model CartItemAddon {
+  id         String       @id @default(uuid())
+  cartItemId String
+  cartItem   CartItem     @relation(fields: [cartItemId], references: [id], onDelete: Cascade)
+  addonId    String
+  addon      Addon    @relation(fields: [addonId], references: [id], onDelete: Cascade)
+
+  @@index([cartItemId])
+  @@index([addonId])
+}

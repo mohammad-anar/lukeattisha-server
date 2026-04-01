@@ -16,7 +16,7 @@ router.get("/:id", auth(Role.ADMIN), UserController.getUserById);
 
 router.patch(
   "/:id",
-  auth(Role.ADMIN, Role.USER),
+  auth(Role.ADMIN, Role.USER, Role.OPERATOR),
   fileUploadHandler(),
   validateRequest(UserValidation.updateUserSchema),
   UserController.updateUser,

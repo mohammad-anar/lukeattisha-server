@@ -3,9 +3,16 @@ import { BannerService } from "./banner.service.js";
 import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
 import httpStatus from "http-status";
+import { getSingleFilePath } from "app/shared/getFilePath.js";
+import { config } from "config/index.js";
 
 const createBanner = catchAsync(async (req: Request, res: Response) => {
-  const result = await BannerService.createBanner(req.body);
+  const payload = req.body;
+  const image = getSingleFilePath(req.files, "image") as string;
+  if (image)
+    payload.image = `http://${config.ip_address}:${config.port}${image}`;
+
+  const result = await BannerService.createBanner(payload);
 
   sendResponse(res, {
     success: true,
@@ -40,7 +47,12 @@ const getBannerById = catchAsync(async (req: Request, res: Response) => {
 
 const updateBanner = catchAsync(async (req: Request, res: Response) => {
   const { id } = req.params as { id: string };
-  const result = await BannerService.updateBanner(id, req.body);
+  const payload = req.body;
+  const image = getSingleFilePath(req.files, "image") as string;
+  if (image)
+    payload.image = `http://${config.ip_address}:${config.port}${image}`;
+
+  const result = await BannerService.updateBanner(id, payload);
 
   sendResponse(res, {
     success: true,

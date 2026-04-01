@@ -1,44 +1,60 @@
 import { z } from "zod";
 
-const createServiceZodSchema = z.object({
- 
-    categoryId: z.string({
-      message: "Category ID is required",
-    }),
-    name: z.string({
-      message: "Service name is required",
-    }),
-    basePrice: z.number({
-      message: "Base price is required",
-    }).min(0),
-  
+const createServiceSchema = z.object({
+  operatorId: z.string().uuid(),
+
+  categoryId: z.string().uuid(),
+
+  name: z
+    .string()
+    .min(2, "Service name must be at least 2 characters")
+    .max(100, "Service name too long"),
+
+  basePrice: z
+    .union([z.string(), z.number()])
+    .refine((val) => !isNaN(Number(val)), {
+      message: "basePrice must be a valid number",
+    })
+    .transform((val) => Number(val).toFixed(2)),
+
+  isActive: z.boolean().optional().default(true),
 });
 
-const updateServiceZodSchema = z.object({  
-    categoryId: z.string().optional(),
-    name: z.string().optional(),
-    basePrice: z.number().min(0).optional(),
+const updateServiceSchema = z.object({
+  operatorId: z.string().uuid().optional(),
+
+  categoryId: z.string().uuid().optional(),
+
+  name: z
+    .string()
+    .min(2, "Service name must be at least 2 characters")
+    .max(100)
+    .optional(),
+
+  basePrice: z
+    .union([z.string(), z.number()])
+    .refine((val) => !isNaN(Number(val)), {
+      message: "basePrice must be a valid number",
+    })
+    .transform((val) => Number(val).toFixed(2))
+    .optional(),
+
+  isActive: z.boolean().optional(),
 });
 
-const createAddonZodSchema = z.object({
-    name: z.string({
-      message: "Addon name is required",
-    }),
-    price: z.number({
-      message: "Addon price is required",
-    }).min(0),
+const assignAddonZodSchema = z.object({
+  addonId: z.string().uuid("Invalid addonId"),
 });
 
-const updateAddonZodSchema = z.object({
- 
-    name: z.string().optional(),
-    price: z.number().min(0).optional(),
+const updateAddonServiceSchema = z.object({
+  serviceId: z.string().uuid().optional(),
 
+  addonId: z.string().uuid().optional(),
 });
 
 export const ServiceValidation = {
-  createServiceZodSchema,
-  updateServiceZodSchema,
-  createAddonZodSchema,
-  updateAddonZodSchema,
+  createServiceSchema,
+  updateServiceSchema,
+  assignAddonZodSchema,
+  updateAddonServiceSchema
 };

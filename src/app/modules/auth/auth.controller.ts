@@ -94,6 +94,29 @@ const forgetPassword = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+/* ================= FORGET PASSWORD OTP ================= */
+const forgetPasswordOTP = catchAsync(async (req: Request, res: Response) => {
+  const result = await AuthService.forgetPasswordOTP(req.body.email);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "OTP sent successfully",
+    data: result,
+  });
+});
+
+/* ================= VERIFY OTP ================= */
+const verifyOTP = catchAsync(async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
+  const result = await AuthService.verifyOTP(email, otp);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "OTP verified successfully",
+    data: result,
+  });
+});
+
 /* ================= RESET PASSWORD ================= */
 const resetPassword = catchAsync(async (req: any, res: Response) => {
   const result = await AuthService.resetPassword(
@@ -154,6 +177,8 @@ export const AuthController = {
   verifyUser,
   resendOTP,
   forgetPassword,
+  forgetPasswordOTP,
+  verifyOTP,
   resetPassword,
   changePassword,
   refreshToken,

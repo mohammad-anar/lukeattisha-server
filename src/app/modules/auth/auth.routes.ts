@@ -19,6 +19,9 @@ router.post("/resend-otp", AuthController.resendOTP);
 
 router.post("/forget-password", validateRequest(AuthValidation.forgetPasswordSchema), AuthController.forgetPassword);
 
+router.post("/forget-password-otp", validateRequest(AuthValidation.forgetPasswordSchema), AuthController.forgetPasswordOTP);
+
+router.post("/verify-otp", validateRequest(AuthValidation.verifyEmailSchema), AuthController.verifyOTP);
 router.post(
   "/reset-password",
   auth(Role.USER, Role.ADMIN, Role.OPERATOR),

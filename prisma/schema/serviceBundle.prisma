@@ -1,0 +1,29 @@
+model ServiceBundle {
+  id          String   @id @default(uuid())
+  operatorId  String
+  operator    OperatorProfile @relation(fields: [operatorId], references: [id], onDelete: Cascade)
+  
+  name        String
+  description String?
+  image       String?
+  bundlePrice Decimal  @db.Decimal(10, 2)
+  
+  services    ServiceBundleItem[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([operatorId])
+}
+
+model ServiceBundleItem {
+  id              String        @id @default(uuid())
+  serviceBundleId String
+  serviceBundle   ServiceBundle @relation(fields: [serviceBundleId], references: [id], onDelete: Cascade)
+  serviceId       String
+  service         Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([serviceBundleId, serviceId])
+  @@index([serviceBundleId])
+  @@index([serviceId])
+}

@@ -67,7 +67,7 @@ const fileUploadHandler = () => {
         cb(
           new ApiError(
             StatusCodes.BAD_REQUEST,
-            "Only .jpeg, .png, .jpg file supported",
+            "Only .jpeg, .png, .jpg, webp file supported",
           ),
         );
       }
