@@ -14,6 +14,12 @@ const getMe = catchAsync(async (req: any, res: Response) => {
   sendResponse(res, { success: true, statusCode: 200, message: "User profile retrieved successfully", data: result });
 });
 
+/* ================= GET OPERATOR ME ================= */
+const getOperatorMe = catchAsync(async (req: any, res: Response) => {
+  const result = await UserService.getOperatorMe(req.user?.email);
+  sendResponse(res, { success: true, statusCode: 200, message: "Operator profile retrieved successfully", data: result });
+});
+
 /* ================= GET ALL USERS ================= */
 const getAllUsers = catchAsync(async (req: Request, res: Response) => {
   const filters = pick(req.query, ["role", "status", "isVerified", "isDeleted", "searchTerm", "minspent"]);
@@ -62,6 +68,7 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
 
 export const UserController = {
   getMe,
+  getOperatorMe,
   getAllUsers,
   getUserById,
   updateUser,

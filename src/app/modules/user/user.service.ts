@@ -20,11 +20,42 @@ const getMe = async (email: string) => {
       userAddresses: true,
       orders: true,
       reviews: true,
+      _count: true,
+    },
+  });
+};
+
+/* ================= GET OPERATOR ME ================= */
+const getOperatorMe = async (email: string) => {
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      role: true,
+      avatar: true,
+      status: true,
+      isVerified: true,
+      userAddresses: true,
+      orders: true,
+      reviews: true,
       operatorProfile: true,
       _count: true,
     },
-
   });
+
+  if (user.operatorProfile) {
+    const adminSettings = await prisma.adminSetting.findUnique({
+      where: { id: "1" },
+    });
+    if (adminSettings) {
+      (user.operatorProfile as any).platformFee = adminSettings.platformCommissionRate;
+    }
+  }
+
+  return user;
 };
 
 /* ================= GET ALL USERS ================= */
@@ -199,6 +230,7 @@ const deleteUser = async (id: string) => {
 
 export const UserService = {
   getMe,
+  getOperatorMe,
   getAllUsers,
   getUserById,
   updateUser,
