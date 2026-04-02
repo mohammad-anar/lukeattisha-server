@@ -59,6 +59,36 @@ const getMyCart = async (userId: string) => {
 const addToCart = async (userId: string, payload: ICartAddPayload) => {
   const { serviceId, serviceBundleId, quantity = 1, addons = [] } = payload;
 
+  let incomingOperatorId: string | undefined;
+
+  if (serviceId) {
+    const service = await prisma.service.findUnique({ where: { id: serviceId } });
+    if (!service) throw new ApiError(httpStatus.NOT_FOUND, "Service not found");
+    incomingOperatorId = service.operatorId;
+  } else if (serviceBundleId) {
+    const bundle = await prisma.serviceBundle.findUnique({ where: { id: serviceBundleId } });
+    if (!bundle) throw new ApiError(httpStatus.NOT_FOUND, "Service bundle not found");
+    incomingOperatorId = bundle.operatorId;
+  }
+
+  const existingCart = await prisma.cart.findUnique({
+    where: { userId },
+    include: {
+      items: {
+        include: { service: true, serviceBundle: true },
+      },
+    },
+  });
+
+  if (existingCart && existingCart.items.length > 0 && incomingOperatorId) {
+    const existingItem = existingCart.items[0];
+    const existingOperatorId = existingItem.service?.operatorId || existingItem.serviceBundle?.operatorId;
+    
+    if (existingOperatorId && existingOperatorId !== incomingOperatorId) {
+      throw new Error("You can only add services from one laundry provider at a time.");
+    }
+  }
+
   const cart = await prisma.cart.upsert({
     where: { userId },
     update: {},

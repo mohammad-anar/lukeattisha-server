@@ -21,22 +21,11 @@ router.post(
   StripeController.handleWebhook,
 );
 
-// ---------------- OPERATOR PAYOUT ----------------
-// Admin triggers a payout for an operator
-router.post("/payout/create", auth(Role.ADMIN), StripeController.createPayout);
 
-// Get all payouts for an operator
-router.get(
-  "/payout/:operatorId",
-  auth(Role.ADMIN, Role.OPERATOR),
-  StripeController.getPayouts,
-);
-
-// Update payout status
-router.patch(
-  "/payout/:id/status",
-  auth(Role.ADMIN),
-  StripeController.updatePayoutStatus,
+router.post(
+  "/setup-intent",
+  auth(Role.USER, Role.ADMIN),
+  StripeController.createSetupIntent
 );
 
 export const StripeRouter = router;

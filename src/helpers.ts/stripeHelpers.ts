@@ -44,28 +44,28 @@ export const createPremiumSubscriptionSession = async (
  */
 export const createOrderPaymentSession = async (
   orderId: string,
-  amount: number,
+  subtotal: number,
+  deliveryFee: number,
+  platformFeeAmount: number,
   userId: string,
-  operatorAccountId: string, // REQUIRED for destination transfer
+  operatorConnectId: string, // REQUIRED for destination transfer
   isSubscribed: boolean = false,
 ) => {
   const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [];
 
-  // Logic: Non-subscribers pay the $4.99 fee themselves
-  if (!isSubscribed) {
-    const mainAmount = Math.max(0, amount - 4.99); 
-    lineItems.push({
-      price_data: {
-        currency: "usd",
-        product_data: {
-          name: `Order Payment #${orderId.slice(0, 8)}`,
-          description: "Laundry Service",
-        },
-        unit_amount: Math.round(mainAmount * 100),
+  lineItems.push({
+    price_data: {
+      currency: "usd",
+      product_data: {
+        name: `Order Payment #${orderId.slice(0, 8)}`,
+        description: "Laundry Service",
       },
-      quantity: 1,
-    });
+      unit_amount: Math.round(subtotal * 100),
+    },
+    quantity: 1,
+  });
 
+  if (deliveryFee > 0) {
     lineItems.push({
       price_data: {
         currency: "usd",
@@ -73,37 +73,17 @@ export const createOrderPaymentSession = async (
           name: "Delivery Fee",
           description: "Pickup & Delivery",
         },
-        unit_amount: 499,
-      },
-      quantity: 1,
-    });
-  } else {
-    // Subscribers have the fee omitted from their checkout
-    lineItems.push({
-      price_data: {
-        currency: "usd",
-        product_data: {
-          name: `Order Payment #${orderId.slice(0, 8)}`,
-          description: "Laundry Service (Premium Free Delivery)",
-        },
-        unit_amount: Math.round(amount * 100),
+        unit_amount: Math.round(deliveryFee * 100),
       },
       quantity: 1,
     });
   }
-
-  // Calculate 10% Platform Fee based on what the user pays
-  const applicationFeeAmount = Math.round(amount * 100 * 0.10);
 
   const session = await stripe.checkout.sessions.create({
     payment_method_types: ["card"],
     mode: "payment",
     line_items: lineItems,
     payment_intent_data: {
-      application_fee_amount: applicationFeeAmount,
-      transfer_data: {
-        destination: operatorAccountId,
-      },
       metadata: { orderId, userId, isSubscribed: String(isSubscribed) },
     },
     success_url: `${config.frontend_url}/payment-success?order_id=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
@@ -112,7 +92,7 @@ export const createOrderPaymentSession = async (
       orderId, 
       userId,
       isSubscribed: String(isSubscribed),
-      operatorAccountId
+      operatorConnectId
     },
   });
 
@@ -126,18 +106,16 @@ export const createStripeTransfer = async (
   amount: number,
   destinationAccountId: string,
   metadata?: Stripe.Metadata,
+  options?: Stripe.RequestOptions,
 ) => {
   return await stripe.transfers.create({
     amount: Math.round(amount * 100), // in cents
     currency: "usd",
     destination: destinationAccountId,
     metadata,
-  });
+  }, options);
 };
 
-/**
- * Creates a new Stripe Connected Account for an Operator
- */
 export const createStripeAccount = async (email: string) => {
   const account = await stripe.accounts.create({
     type: "express", // Express is easier for user-friendly onboarding
@@ -148,4 +126,21 @@ export const createStripeAccount = async (email: string) => {
     },
   });
   return account.id;
+};
+
+/**
+ * Generates an Account Link for an Express Connect account
+ */
+export const generateAccountLink = async (
+  stripeConnectId: string,
+  successUrl: string = `${config.frontend_url}/operator/onboarding-success`,
+  refreshUrl: string = `${config.frontend_url}/operator/onboarding-failed`
+) => {
+  const accountLink = await stripe.accountLinks.create({
+    account: stripeConnectId,
+    refresh_url: refreshUrl,
+    return_url: successUrl,
+    type: "account_onboarding",
+  });
+  return accountLink;
 };

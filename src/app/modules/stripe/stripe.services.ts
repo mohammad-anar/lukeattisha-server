@@ -10,7 +10,7 @@ const createCheckoutSession = async (userId: string, operatorId: string) => {
     where: { id: operatorId },
   });
 
-  if (!operator?.stripeAccountId) {
+  if (!operator?.stripeConnectId) {
     throw new Error("Operator does not have a Stripe account connected.");
   }
 
@@ -31,7 +31,7 @@ const createCheckoutSession = async (userId: string, operatorId: string) => {
     subscription_data: {
       application_fee_percent: 10,
       transfer_data: {
-        destination: operator.stripeAccountId,
+        destination: operator.stripeConnectId,
       },
       metadata: { userId, operatorId },
     },
@@ -43,46 +43,97 @@ const createCheckoutSession = async (userId: string, operatorId: string) => {
 };
 
 const handleWebhookEvent = async (event: Stripe.Event) => {
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.metadata?.userId;
-    const operatorId = session.metadata?.operatorId;
-
-    if (!userId) return;
-
-    // Find a package to link to, or create a default one to ensure DB consistency
-    let pkg = await prisma.subscriptionPackage.findFirst({
-      where: { name: "Premium Package" },
-    });
-
-    if (!pkg) {
-      pkg = await prisma.subscriptionPackage.create({
-        data: {
-          name: "Premium Package",
-          price: 99.95,
-          durationDays: 30,
-          freeDelivery: true,
+  if (event.type === "account.updated") {
+    const account = event.data.object as Stripe.Account;
+    
+    if (account.details_submitted) {
+      await prisma.operatorProfile.updateMany({
+        where: { stripeConnectId: account.id },
+        data: { 
+          onboardingComplete: true,
+          chargesEnabled: account.charges_enabled,
+          payoutsEnabled: account.payouts_enabled
         },
       });
     }
+  }
 
-    // Save subscription in DB (initial record)
-    await prisma.userSubscription.create({
-      data: {
-        userId,
-        subscriptionType: "PREMIUM",
-        startDate: new Date(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
-        isActive: true,
-        packageId: pkg.id,
-      },
-    });
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session;
+    
+    // ==========================================
+    // 1) SUBSCRIPTION PAYMENTS
+    // ==========================================
+    if (session.mode === "subscription") {
+      const userId = session.metadata?.userId;
+      if (!userId) return;
 
-    // Also update user's subscription status
-    await prisma.user.update({
-      where: { id: userId },
-      data: { isSubscribed: true } as any,
-    });
+      // Find a package to link to, or create a default one to ensure DB consistency
+      let pkg = await prisma.subscriptionPackage.findFirst({
+        where: { name: "Premium Package" },
+      });
+
+      if (!pkg) {
+        pkg = await prisma.subscriptionPackage.create({
+          data: {
+            name: "Premium Package",
+            price: 99.95,
+            durationDays: 30,
+            freeDelivery: true,
+          },
+        });
+      }
+
+      // Save subscription in DB (initial record)
+      await prisma.userSubscription.create({
+        data: {
+          userId,
+          subscriptionType: "PREMIUM",
+          startDate: new Date(),
+          endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+          isActive: true,
+          packageId: pkg.id,
+        },
+      });
+
+      // Also update user's subscription status
+      await prisma.user.update({
+        where: { id: userId },
+        data: { isSubscribed: true } as any,
+      });
+    }
+
+    // ==========================================
+    // 2) STANDARD ORDER PAYMENTS 
+    // ==========================================
+    else if (session.mode === "payment") {
+      const orderId = session.metadata?.orderId;
+      if (!orderId) return;
+
+      // Update the Order status
+      await prisma.order.update({
+        where: { id: orderId },
+        data: { status: "ACCEPTED" },
+      });
+
+      // Record standard Payment as successful
+      await prisma.payment.updateMany({
+        where: { orderId },
+        data: { 
+          status: "PAID", 
+          transactionId: typeof session.payment_intent === 'string' ? session.payment_intent : null
+        },
+      });
+
+      // Log status change
+      await prisma.orderStatusLog.create({
+        data: {
+          orderId,
+          status: "ACCEPTED",
+          note: "Payment successfully captured by Stripe Webhook",
+        },
+      });
+    }
   }
 
   if (event.type === "invoice.paid") {
@@ -121,56 +172,30 @@ const handleWebhookEvent = async (event: Stripe.Event) => {
   }
 };
 
-const createPayout = async (operatorId: string, amount: number) => {
-  // 1️⃣ Find operator
-  const operator = await prisma.operatorProfile.findUnique({
-    where: { id: operatorId },
+
+const createSetupIntentForUser = async (userId: string) => {
+  let user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("User not found");
+
+  if (!user.stripeCustomerId) {
+    const customer = await stripe.customers.create({ email: user.email, name: user.name });
+    user = await prisma.user.update({
+      where: { id: userId },
+      data: { stripeCustomerId: customer.id }
+    });
+  }
+
+  const setupIntent = await stripe.setupIntents.create({
+    customer: user.stripeCustomerId!,
+    payment_method_types: ["card"],
+    usage: 'off_session', 
   });
 
-  if (!operator?.stripeAccountId)
-    throw new Error("Operator Stripe account not found");
-
-  // 2️⃣ Find operator's wallet
-  const wallet = await prisma.wallet.findUnique({
-    where: { userId: operator.userId },
-  });
-
-  if (!wallet) throw new Error("Operator wallet not found");
-
-  // 3️⃣ Create Stripe payout
-  const stripePayout = await stripe.payouts.create(
-    {
-      amount: Math.floor(amount * 100),
-      currency: "usd",
-      method: "standard",
-    },
-    {
-      stripeAccount: operator.stripeAccountId,
-    },
-  );
-
-  return await prisma.payout.create({
-    data: {
-      operatorId,
-      walletId: wallet.id,
-      amount,
-      status: "PENDING",
-    },
-  });
-};
-
-const getPayoutsByOperator = async (operatorId: string) => {
-  return await prisma.payout.findMany({ where: { operatorId } });
-};
-
-const updatePayoutStatus = async (id: string, status: PayoutStatus) => {
-  return await prisma.payout.update({ where: { id }, data: { status } });
+  return { clientSecret: setupIntent.client_secret };
 };
 
 export const StripeService = {
   createCheckoutSession,
   handleWebhookEvent,
-  createPayout,
-  getPayoutsByOperator,
-  updatePayoutStatus,
+  createSetupIntentForUser,
 };

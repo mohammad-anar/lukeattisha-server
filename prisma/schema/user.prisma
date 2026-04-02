@@ -9,6 +9,7 @@ model User {
   role         Role       @default(USER)
   status       UserStatus @default(ACTIVE)
   avatar       String?
+  stripeCustomerId String? @unique
   isSubscribed Boolean    @default(false)
 
   city       String?
@@ -81,8 +82,11 @@ model OperatorProfile {
   address         String?
   latitude        Float?
   longitude       Float?
-  platformFee     Decimal? @db.Decimal(10, 2)
-  stripeAccountId String?
+  platformFee        Decimal? @db.Decimal(10, 2)
+  stripeConnectId    String?  @unique
+  onboardingComplete Boolean  @default(false)
+  chargesEnabled     Boolean  @default(false)
+  payoutsEnabled     Boolean  @default(false)
 
   payouts Payout[]
 

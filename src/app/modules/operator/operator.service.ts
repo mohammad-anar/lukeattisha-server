@@ -33,11 +33,11 @@ const createOperatorProfile = async (
   // 2. Create Stripe Connected Account
   const stripeAccountId = await createStripeAccount(user.email);
 
-  // 3. Create Profile with stripeAccountId
+  // 3. Create Profile with stripeConnectId
   const result = await prisma.operatorProfile.create({
     data: {
       userId,
-      stripeAccountId,
+      stripeConnectId: stripeAccountId,
       ...payload,
     },
   });
@@ -172,7 +172,7 @@ const removeCategory = async (userId: string, categoryId: string) => {
   return await getOperatorProfile(userId);
 };
 
-const ensureStripeAccountId = async (operatorId: string) => {
+const ensureStripeConnectId = async (operatorId: string) => {
   const profile = await prisma.operatorProfile.findUnique({
     where: { id: operatorId },
     include: { user: { select: { email: true } } }
@@ -180,16 +180,27 @@ const ensureStripeAccountId = async (operatorId: string) => {
 
   if (!profile) throw new ApiError(httpStatus.NOT_FOUND, "Operator profile not found");
 
-  if (!profile.stripeAccountId) {
-    const stripeAccountId = await createStripeAccount(profile.user.email);
+  if (!profile.stripeConnectId) {
+    const stripeConnectId = await createStripeAccount(profile.user.email);
     await prisma.operatorProfile.update({
       where: { id: operatorId },
-      data: { stripeAccountId }
+      data: { stripeConnectId }
     });
-    return stripeAccountId;
+    return stripeConnectId;
   }
 
-  return profile.stripeAccountId;
+  return profile.stripeConnectId;
+};
+
+import { generateAccountLink as genStripeLink } from "../../../helpers.ts/stripeHelpers.js";
+
+const getOnboardingLink = async (userId: string) => {
+  const profile = await getOperatorProfile(userId);
+  if (!profile.stripeConnectId) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Operator does not have a Stripe Connect account yet.");
+  }
+  const accountLink = await genStripeLink(profile.stripeConnectId);
+  return accountLink;
 };
 
 export const OperatorService = {
@@ -201,5 +212,6 @@ export const OperatorService = {
   assignCategories,
   getOperatorCategories,
   removeCategory,
-  ensureStripeAccountId,
+  ensureStripeConnectId,
+  getOnboardingLink,
 };

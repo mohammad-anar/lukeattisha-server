@@ -16,6 +16,8 @@ router.post(
 
 router.get("/profile", auth(Role.OPERATOR), OperatorController.getMyProfile);
 
+router.get("/onboarding-link", auth(Role.OPERATOR), OperatorController.getOnboardingLink);
+
 router.patch(
   "/profile",
   auth(Role.OPERATOR),

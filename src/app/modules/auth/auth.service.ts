@@ -69,7 +69,7 @@ const registerOperator = async (payload: Prisma.UserCreateInput & {address: stri
   const { name, email, password, phone, address, storeName } = payload;
 
   // 1. Pre-create Stripe account to ensure it works before DB write
-  const stripeAccountId = await createStripeAccount(email);
+  const stripeConnectId = await createStripeAccount(email);
 
   // use prisma transaction
   const user = await prisma.$transaction(async (tx) => {
@@ -92,7 +92,7 @@ const registerOperator = async (payload: Prisma.UserCreateInput & {address: stri
       userId: user.id, 
       storeName, 
       address,
-      stripeAccountId // ✅ Link Stripe Account Here
+      stripeConnectId // ✅ Link Stripe Account Here
     },
   });
 

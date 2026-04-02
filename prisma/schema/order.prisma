@@ -15,8 +15,12 @@ model Order {
   id          String      @id @default(uuid())
   userId      String
   operatorIds String[]
-  status      OrderStatus @default(PENDING)
-  total       Decimal     @db.Decimal(10, 2)
+  status           OrderStatus @default(PENDING)
+  subtotal         Decimal     @db.Decimal(10, 2)
+  deliveryFee      Decimal     @db.Decimal(10, 2)
+  platformFee      Decimal     @db.Decimal(10, 2)
+  operatorEarnings Decimal     @db.Decimal(10, 2)
+  total            Decimal     @db.Decimal(10, 2)
 
   // Pickup / Dropoff location
   pickupLatitude   Float?

@@ -4,29 +4,7 @@ import { OrderStatus, PaymentMethodType, PaymentStatus } from "@prisma/client";
 import { prisma } from "helpers.ts/prisma.js";
 import ApiError from "errors/ApiError.js";
 
-/* ================= CREATE PAYMENT ================= */
-const createPayment = async (orderId: string, method: PaymentMethodType, transactionId?: string) => {
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!order) throw new ApiError(httpStatus.NOT_FOUND, "Order not found");
 
-  const payment = await prisma.payment.create({
-    data: {
-      orderId,
-      amount: order.total,
-      method,
-      status: PaymentStatus.PAID,
-      transactionId,
-    },
-  });
-
-  // Update order payment status
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { status: OrderStatus.ACCEPTED },
-  });
-
-  return payment;
-};
 
 /* ================= GET PAYMENTS BY ORDER ================= */
 const getPaymentsByOrder = async (orderId: string) => {
@@ -75,7 +53,6 @@ const getAllPayments = async () => {
 };
 
 export const PaymentService = {
-  createPayment,
   getPaymentsByOrder,
   getMyPaymentCards,
   addPaymentCard,

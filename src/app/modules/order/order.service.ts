@@ -49,19 +49,24 @@ const createOrder = async (
       throw new ApiError(httpStatus.BAD_REQUEST, "Cart is empty or not found");
     }
 
-    let totalAmount = 0;
+    let subtotalAmount = 0;
     const operatorIds = new Set<string>();
 
     // 2. Check subscription
     const user = await tx.user.findUnique({
       where: { id: userId },
-      select: { isSubscribed: true },
+      include: {
+        userSubscriptions: {
+          where: {
+            status: "active",
+            endDate: { gt: new Date() }
+          }
+        }
+      }
     });
 
-    // ✅ delivery fee
-    if (!user?.isSubscribed) {
-      totalAmount += 4.99;
-    }
+    const isSubscribed = user?.userSubscriptions && user.userSubscriptions.length > 0;
+    const deliveryFeeAmount = isSubscribed ? 0.00 : 4.99;
 
     const orderItemsCreateInput: any[] = [];
 
@@ -97,7 +102,7 @@ const createOrder = async (
         });
       }
 
-      totalAmount += itemBasePrice + addonTotal;
+      subtotalAmount += itemBasePrice + addonTotal;
 
       orderItemsCreateInput.push({
         serviceId: item.serviceId,
@@ -110,13 +115,23 @@ const createOrder = async (
       });
     }
 
+    // Calculate Platform split
+    // In production, fetch config from AdminSetting! Using 10% defaults.
+    const platformFeeAmount = Math.round((subtotalAmount * 0.10) * 100) / 100;
+    const operatorEarningsAmount = subtotalAmount - platformFeeAmount;
+    const totalCharge = subtotalAmount + deliveryFeeAmount;
+
     // 4. Create Order
     const order = await tx.order.create({
       data: {
         userId,
         operatorIds: Array.from(operatorIds),
 
-        total: totalAmount.toFixed(2),
+        subtotal: subtotalAmount.toFixed(2),
+        deliveryFee: deliveryFeeAmount.toFixed(2),
+        platformFee: platformFeeAmount.toFixed(2),
+        operatorEarnings: operatorEarningsAmount.toFixed(2),
+        total: totalCharge.toFixed(2),
 
         pickupAt: new Date(pickupAt),
         dropoffAt: dropoffAt ? new Date(dropoffAt) : null,
@@ -163,7 +178,7 @@ const createOrder = async (
     await tx.payment.create({
       data: {
         orderId: order.id,
-        amount: totalAmount.toFixed(2), // ✅ FIX
+        amount: totalCharge.toFixed(2), // ✅ Exact match to breakdown
         method: paymentMethod,
         status: "PENDING",
       },
@@ -183,14 +198,16 @@ const createOrder = async (
       }
 
       const firstOperatorId = Array.from(operatorIds)[0];
-      const stripeAccountId = await OperatorService.ensureStripeAccountId(firstOperatorId);
+      const stripeConnectId = await OperatorService.ensureStripeConnectId(firstOperatorId);
 
       paymentUrl = await createOrderPaymentSession(
         order.id,
-        totalAmount,
+        subtotalAmount,
+        deliveryFeeAmount,
+        platformFeeAmount,
         userId,
-        stripeAccountId,
-        user?.isSubscribed || false
+        stripeConnectId,
+        isSubscribed
       );
     }
 
@@ -260,12 +277,49 @@ const getOrderById = async (id: string) => {
 };
 
 /* ================= UPDATE ORDER STATUS ================= */
+import { WalletService } from "../wallet/wallet.services.js";
+import { TransactionType, TransactionStatus } from "@prisma/client";
+
 const updateOrderStatus = async (
   id: string,
   payload: IOrderUpdateStatusPayload,
 ) => {
-  await getOrderById(id);
+  const existingOrder = await getOrderById(id);
 
+  if (payload.status === "DELIVERED" && existingOrder.status !== "DELIVERED") {
+    return await prisma.$transaction(async (tx) => {
+      const order = await tx.order.update({ where: { id }, data: { status: payload.status } });
+      
+      await tx.orderStatusLog.create({
+        data: { orderId: id, status: payload.status, note: payload.note },
+      });
+
+      // Credit operator wallets based on exact earnings ATOMICALLY
+      for (const operatorId of existingOrder.operatorIds) {
+        const wallet = await tx.wallet.findUnique({ where: { userId: operatorId } });
+        if (wallet) {
+          await tx.wallet.update({
+            where: { userId: operatorId },
+            data: { balance: { increment: existingOrder.operatorEarnings } },
+          });
+          
+          await tx.transaction.create({
+            data: {
+              userId: operatorId,
+              walletId: wallet.id,
+              amount: existingOrder.operatorEarnings,
+              type: TransactionType.CREDIT,
+              status: TransactionStatus.COMPLETED,
+            },
+          });
+        }
+      }
+      
+      return order;
+    });
+  }
+
+  // Normal status update without wallet logic
   const [order] = await prisma.$transaction([
     prisma.order.update({ where: { id }, data: { status: payload.status } }),
     prisma.orderStatusLog.create({

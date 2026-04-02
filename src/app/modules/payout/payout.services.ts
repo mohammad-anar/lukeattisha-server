@@ -24,7 +24,7 @@ const createPayout = async (
     where: { id: operatorId },
   });
 
-  if (!operator?.stripeAccountId) {
+  if (!operator?.stripeConnectId) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
       "No Connected Stripe Account found for this operator. Please complete onboarding.",
@@ -61,16 +61,21 @@ const updatePayoutStatus = async (id: string, status: PayoutStatus) => {
   }
 
   if (status === PayoutStatus.PAID) {
-    const { stripeAccountId } = payout.operator;
-    if (!stripeAccountId) {
+    const { stripeConnectId } = payout.operator;
+    if (!stripeConnectId) {
       throw new ApiError(httpStatus.BAD_REQUEST, "No connected Stripe ID found.");
     }
 
     // 1. Trigger Stripe Transfer
-    await createStripeTransfer(Number(payout.amount), stripeAccountId, {
-      payoutId: payout.id,
-      operatorId: payout.operatorId,
-    });
+    await createStripeTransfer(
+      Number(payout.amount), 
+      stripeConnectId, 
+      {
+        payoutId: payout.id,
+        operatorId: payout.operatorId,
+      },
+      { idempotencyKey: payout.id }
+    );
 
     // 2. Update Database (Wallet and Status)
     return await prisma.$transaction(async (tx) => {

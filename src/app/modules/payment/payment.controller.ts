@@ -3,12 +3,6 @@ import { PaymentService } from "./payment.service.js";
 import catchAsync from "app/shared/catchAsync.js";
 import sendResponse from "app/shared/sendResponse.js";
 
-const createPayment = catchAsync(async (req: Request, res: Response) => {
-  const { orderId, method, transactionId } = req.body;
-  const result = await PaymentService.createPayment(orderId, method, transactionId);
-  sendResponse(res, { success: true, statusCode: 201, message: "Payment recorded successfully", data: result });
-});
-
 const getPaymentsByOrder = catchAsync(async (req: Request, res: Response) => {
   const result = await PaymentService.getPaymentsByOrder(req.params.orderId as string);
   sendResponse(res, { success: true, statusCode: 200, message: "Payments retrieved", data: result });
@@ -40,7 +34,6 @@ const getAllPayments = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const PaymentController = {
-  createPayment,
   getPaymentsByOrder,
   getMyPaymentCards,
   addPaymentCard,

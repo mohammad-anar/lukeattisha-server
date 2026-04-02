@@ -38,49 +38,20 @@ const handleWebhook = catchAsync(async (req: Request, res: Response) => {
   res.json({ received: true });
 });
 
-/* ================= CREATE OPERATOR PAYOUT ================= */
-const createPayout = catchAsync(async (req: Request, res: Response) => {
-  const { operatorId, amount } = req.body;
-  const payout = await StripeService.createPayout(operatorId, amount);
-  sendResponse(res, {
-    success: true,
-    statusCode: 200,
-    message: "Payout created successfully",
-    data: payout,
-  });
-});
 
-/* ================= GET OPERATOR PAYOUTS ================= */
-const getPayouts = catchAsync(async (req: Request, res: Response) => {
-  const { operatorId } = req.params;
-  const payouts = await StripeService.getPayoutsByOperator(
-    operatorId as string,
-  );
+/* ================= GET SETUP INTENT ================= */
+const createSetupIntent = catchAsync(async (req: Request, res: Response) => {
+  const result = await StripeService.createSetupIntentForUser(req.user.id);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: "Operator payouts retrieved successfully",
-    data: payouts,
-  });
-});
-
-/* ================= UPDATE PAYOUT STATUS ================= */
-const updatePayoutStatus = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { status } = req.body;
-  const payout = await StripeService.updatePayoutStatus(id as string, status);
-  sendResponse(res, {
-    success: true,
-    statusCode: 200,
-    message: "Payout status updated successfully",
-    data: payout,
+    message: "SetupIntent created successfully",
+    data: result,
   });
 });
 
 export const StripeController = {
   createCheckoutSession,
   handleWebhook,
-  createPayout,
-  getPayouts,
-  updatePayoutStatus,
+  createSetupIntent,
 };

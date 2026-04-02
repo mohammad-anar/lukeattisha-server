@@ -99,6 +99,17 @@ const removeCategory = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getOnboardingLink = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = req.user;
+  const result = await OperatorService.getOnboardingLink(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Onboarding link generated successfully",
+    data: result,
+  });
+});
 
 
 export const OperatorController = {
@@ -110,4 +121,5 @@ export const OperatorController = {
   assignCategories,
   getOperatorCategories,
   removeCategory,
+  getOnboardingLink,
 };
