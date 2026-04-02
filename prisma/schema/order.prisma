@@ -12,11 +12,11 @@ model OrderStatusLog {
 }
 
 model Order {
-  id         String      @id @default(uuid())
-  userId     String
-  operatorId String?
-  status     OrderStatus @default(PENDING)
-  total      Decimal     @db.Decimal(10, 2)
+  id          String      @id @default(uuid())
+  userId      String
+  operatorIds String[]
+  status      OrderStatus @default(PENDING)
+  total       Decimal     @db.Decimal(10, 2)
 
   // Pickup / Dropoff location
   pickupLatitude   Float?
@@ -29,8 +29,7 @@ model Order {
   pickupAt  DateTime
   dropoffAt DateTime?
 
-  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  operator OperatorProfile? @relation(fields: [operatorId], references: [id])
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   transactions Transaction[]
 
@@ -44,12 +43,15 @@ model Order {
 }
 
 model OrderItem {
-  id        String @id @default(uuid())
+  id        String   @id @default(uuid())
   orderId   String
-  serviceId String
+  serviceId String?
+  service   Service? @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 
-  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  serviceBundleId String?
+  serviceBundle   ServiceBundle? @relation(fields: [serviceBundleId], references: [id], onDelete: Cascade)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
   quantity Int     @default(1)
   price    Decimal @db.Decimal(10, 2)
@@ -58,6 +60,7 @@ model OrderItem {
 
   @@index([orderId])
   @@index([serviceId])
+  @@index([serviceBundleId])
 }
 
 model OrderItemAddon {
@@ -65,8 +68,8 @@ model OrderItemAddon {
   orderItemId String
   addonId     String
 
-  orderItem OrderItem    @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  addon     Addon    @relation(fields: [addonId], references: [id], onDelete: Cascade)
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  addon     Addon     @relation(fields: [addonId], references: [id], onDelete: Cascade)
 
   price Decimal @db.Decimal(10, 2)
 

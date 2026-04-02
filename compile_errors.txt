@@ -1,0 +1,1 @@
+src/app/modules/payment/payment.service.ts(72,59): error TS2561: Object literal may only specify known properties, but 'operatorId' does not exist in type 'OrderSelect<DefaultArgs>'. Did you mean to write 'operatorIds'?

@@ -1,26 +1,26 @@
 model Wallet {
-  id      String @id @default(uuid())
-  userId  String @unique
-  balance Decimal @db.Decimal(10,2) @default(0)
+  id      String  @id @default(uuid())
+  userId  String  @unique
+  balance Decimal @default(0) @db.Decimal(10, 2)
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // RELATIONS
-  payouts       Payout[]
-  transactions  Transaction[]
+  payouts      Payout[]
+  transactions Transaction[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
 model Transaction {
-  id        String @id @default(uuid())
-  userId    String
-  walletId  String
-  orderId   String?
-  type      TransactionType
-  amount    Decimal @db.Decimal(10,2)
-  status    TransactionStatus @default(PENDING)
+  id       String            @id @default(uuid())
+  userId   String
+  walletId String
+  orderId  String?
+  type     TransactionType
+  amount   Decimal           @db.Decimal(10, 2)
+  status   TransactionStatus @default(PENDING)
 
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)

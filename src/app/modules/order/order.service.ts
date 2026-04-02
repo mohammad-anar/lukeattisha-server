@@ -15,8 +15,7 @@ const createOrder = async (
   payload: IOrderCreatePayload
 ): Promise<IOrderCreateResponse> => {
   const {
-    items,
-    operatorId,
+    cartId,
     paymentMethod,
     pickupAt,
     dropoffAt,
@@ -30,15 +29,28 @@ const createOrder = async (
   } = payload;
 
   return await prisma.$transaction(async (tx) => {
-    // 1. Fetch services
-    const serviceIds = items.map((i) => i.serviceId);
-
-    const services = await tx.service.findMany({
-      where: { id: { in: serviceIds } },
-      include: { addons: true },
+    // 1. Fetch Cart
+    const cart = await tx.cart.findUnique({
+      where: { id: cartId, userId },
+      include: {
+        items: {
+          include: {
+            service: true,
+            serviceBundle: true,
+            addons: {
+              include: { addon: true },
+            },
+          },
+        },
+      },
     });
 
+    if (!cart || cart.items.length === 0) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Cart is empty or not found");
+    }
+
     let totalAmount = 0;
+    const operatorIds = new Set<string>();
 
     // 2. Check subscription
     const user = await tx.user.findUnique({
@@ -53,49 +65,45 @@ const createOrder = async (
 
     const orderItemsCreateInput: any[] = [];
 
-    // 3. Build items
-    for (const item of items) {
-      const svc = services.find((s) => s.id === item.serviceId);
+    // 3. Process Cart Items to map them to Order Items and calculate total
+    for (const item of cart.items) {
+      const quantity = item.quantity || 1;
+      let itemBasePrice = 0;
+      let unitPrice = 0;
 
-      if (!svc) {
-        throw new ApiError(
-          httpStatus.NOT_FOUND,
-          `Service ${item.serviceId} not found`
-        );
+      if (item.serviceId && item.service) {
+        operatorIds.add(item.service.operatorId);
+        unitPrice = Number(item.service.basePrice);
+        itemBasePrice = unitPrice * quantity;
+      } else if (item.serviceBundleId && item.serviceBundle) {
+        operatorIds.add(item.serviceBundle.operatorId);
+        unitPrice = Number(item.serviceBundle.bundlePrice);
+        itemBasePrice = unitPrice * quantity;
+      } else {
+        throw new ApiError(httpStatus.BAD_REQUEST, "Cart item must have a valid service or service bundle.");
       }
 
-      const quantity = item.quantity || 1;
-
-      const basePrice = Number(svc.basePrice) * quantity;
       let addonTotal = 0;
-
       const addonCreateInput: any[] = [];
 
-      for (const addonId of item.addonIds ?? []) {
-        const addon = svc.addons.find((a) => a.id === addonId);
-
-        if (!addon) {
-          throw new ApiError(
-            httpStatus.NOT_FOUND,
-            `Addon ${addonId} not found`
-          );
-        }
-
+      for (const cartItemAddon of item.addons) {
+        const addon = cartItemAddon.addon;
         const addonPrice = Number(addon.price) * quantity;
         addonTotal += addonPrice;
 
         addonCreateInput.push({
-          addonId,
-          price: addon.price.toString(), // ✅ FIX
+          addonId: addon.id,
+          price: addon.price.toString(),
         });
       }
 
-      totalAmount += basePrice + addonTotal;
+      totalAmount += itemBasePrice + addonTotal;
 
       orderItemsCreateInput.push({
         serviceId: item.serviceId,
+        serviceBundleId: item.serviceBundleId,
         quantity,
-        price: svc.basePrice.toString(), // ✅ FIX
+        price: unitPrice.toString(), 
         addons: {
           create: addonCreateInput,
         },
@@ -106,12 +114,12 @@ const createOrder = async (
     const order = await tx.order.create({
       data: {
         userId,
-        operatorId: operatorId ?? null,
+        operatorIds: Array.from(operatorIds),
 
-        total: totalAmount.toFixed(2), // ✅ FIX
+        total: totalAmount.toFixed(2),
 
         pickupAt: new Date(pickupAt),
-        dropoffAt: dropoffAt ? new Date(dropoffAt) : null, // ✅ FIX
+        dropoffAt: dropoffAt ? new Date(dropoffAt) : null,
 
         pickupLatitude: pickupLatitude ?? null,
         pickupLongitude: pickupLongitude ?? null,
@@ -139,10 +147,16 @@ const createOrder = async (
           include: {
             addons: true,
             service: true,
+            serviceBundle: true,
           },
         },
         orderStatusLogs: true,
       },
+    });
+
+    // 5. Clear Cart Items
+    await tx.cartItem.deleteMany({
+      where: { cartId: cart.id },
     });
 
     // 5. Create Payment
@@ -161,14 +175,15 @@ const createOrder = async (
     if (
       ["CARD", "APPLE_PAY", "GOOGLE_PAY"].includes(paymentMethod)
     ) {
-      if (!operatorId) {
+      if (operatorIds.size === 0) {
         throw new ApiError(
           httpStatus.BAD_REQUEST,
           "Operator is required for online payment"
         );
       }
 
-      const stripeAccountId = await OperatorService.ensureStripeAccountId(operatorId);
+      const firstOperatorId = Array.from(operatorIds)[0];
+      const stripeAccountId = await OperatorService.ensureStripeAccountId(firstOperatorId);
 
       paymentUrl = await createOrderPaymentSession(
         order.id,
@@ -191,7 +206,6 @@ const getMyOrders = async (userId: string) => {
   return await prisma.order.findMany({
     where: { userId },
     include: {
-      operator: true,
       orderItems: true,
       orderStatusLogs: true,
       payments: true,
@@ -220,10 +234,9 @@ const getOperatorOrders = async (userId: string) => {
     throw new ApiError(httpStatus.NOT_FOUND, "Operator profile not found");
 
   return await prisma.order.findMany({
-    where: { operatorId: profile.id },
+    where: { operatorIds: { has: profile.id } },
     include: {
       user: { select: { id: true, name: true, email: true, phone: true } },
-      operator: true,
       orderItems: true,
       payments: true,
     },
@@ -237,7 +250,6 @@ const getOrderById = async (id: string) => {
     where: { id },
     include: {
       user: { select: { id: true, name: true, email: true, phone: true } },
-      operator: true,
       orderItems: true,
       orderStatusLogs: { orderBy: { createdAt: "desc" } },
       payments: true,
@@ -286,7 +298,6 @@ const getAllOrders = async () => {
   return await prisma.order.findMany({
     include: {
       user: { select: { id: true, name: true, email: true } },
-      operator: { select: { id: true, storeName: true } },
       orderItems: true,
     },
     orderBy: { createdAt: "desc" },

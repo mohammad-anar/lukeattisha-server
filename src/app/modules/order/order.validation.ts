@@ -2,17 +2,8 @@ import { OrderStatus } from "@prisma/client";
 import { z } from "zod";
 
 const createOrderSchema = z.object({
-    userId: z.string({message: "User ID is required"}),
-    operatorId: z.string().optional(),
-    items: z
-      .array(
-        z.object({
-          serviceId: z.string(),
-          quantity: z.number().int().min(1),
-          addonIds: z.array(z.string()).optional(),
-        }),
-      )
-      .min(1),
+    userId: z.string({message: "User ID is required"}).optional(),
+    cartId: z.string({message: "Cart ID is required"}),
     pickupAt: z.string().min(1), // ISO string or any date string
     dropoffAt: z.string().min(1), // ISO string
     pickupAddress: z.string().min(1),

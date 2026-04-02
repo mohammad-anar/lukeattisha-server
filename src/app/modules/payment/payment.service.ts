@@ -69,7 +69,7 @@ const deletePaymentCard = async (userId: string, cardId: string) => {
 /* ================= GET ALL PAYMENTS (admin) ================= */
 const getAllPayments = async () => {
   return await prisma.payment.findMany({
-    include: { order: { select: { id: true, userId: true, operatorId: true } } },
+    include: { order: { select: { id: true, userId: true, operatorIds: true } } },
     orderBy: { createdAt: "desc" },
   });
 };

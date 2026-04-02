@@ -7,8 +7,7 @@ export type IOrderItemPayload = {
 };
 
 export type IOrderCreatePayload = {
-  operatorId: string;
-  items: IOrderItemPayload[];
+  cartId: string;
   pickupAt: string; // ISO string for pickup date/time
   dropoffAt: string; // ISO string for dropoff date/time
   pickupAddress: string;

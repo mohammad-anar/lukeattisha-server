@@ -1,5 +1,6 @@
 export type ICartAddPayload = {
-  serviceId: string;
+  serviceId?: string;
+  serviceBundleId?: string;
   quantity?: number;
   addons?: string[]; // Array of addon IDs
 };

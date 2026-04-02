@@ -15,7 +15,7 @@ model ChatParticipant {
   room ChatRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
   user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  joinedAt  DateTime @default(now())
+  joinedAt   DateTime @default(now())
   lastReadAt DateTime @default(now())
 
   @@unique([roomId, userId])

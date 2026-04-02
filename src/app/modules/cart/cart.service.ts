@@ -10,6 +10,13 @@ const getMyCart = async (userId: string) => {
       items: {
         include: {
           service: true,
+          serviceBundle: {
+            include: {
+              services: {
+                include: { service: true }
+              }
+            }
+          },
           addons: {
             include: {
               addon: true,
@@ -28,6 +35,13 @@ const getMyCart = async (userId: string) => {
         items: {
           include: {
             service: true,
+            serviceBundle: {
+              include: {
+                services: {
+                  include: { service: true }
+                }
+              }
+            },
             addons: {
               include: {
                 addon: true,
@@ -43,7 +57,7 @@ const getMyCart = async (userId: string) => {
 };
 
 const addToCart = async (userId: string, payload: ICartAddPayload) => {
-  const { serviceId, quantity = 1, addons = [] } = payload;
+  const { serviceId, serviceBundleId, quantity = 1, addons = [] } = payload;
 
   const cart = await prisma.cart.upsert({
     where: { userId },
@@ -51,14 +65,11 @@ const addToCart = async (userId: string, payload: ICartAddPayload) => {
     create: { userId },
   });
 
-  // Check if exactly same item (serviceId + same set of addons) exists
-  // For simplicity, we just create a new CartItem for now. 
-  // If merging is needed, we would Fetch items and Compare addons list.
-
   const result = await prisma.cartItem.create({
     data: {
       cartId: cart.id,
       serviceId,
+      serviceBundleId,
       quantity,
       addons: {
         create: addons.map((addonId) => ({
@@ -68,6 +79,13 @@ const addToCart = async (userId: string, payload: ICartAddPayload) => {
     },
     include: {
       service: true,
+      serviceBundle: {
+        include: {
+          services: {
+            include: { service: true }
+          }
+        }
+      },
       addons: {
         include: {
           addon: true,
@@ -117,6 +135,7 @@ const updateCartItem = async (userId: string, cartItemId: string, payload: ICart
     data: updateData,
     include: {
       service: true,
+      serviceBundle: true,
       addons: {
         include: {
           addon: true,

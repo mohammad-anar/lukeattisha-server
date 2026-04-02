@@ -1,15 +1,15 @@
 model User {
   id       String  @id @default(uuid())
-  userID   Int?  @unique @default(autoincrement())
+  userID   Int?    @unique @default(autoincrement())
   name     String
   email    String  @unique
   phone    String? @unique
   password String
 
-  role   Role       @default(USER)
-  status UserStatus @default(ACTIVE)
-  avatar String?
-  isSubscribed Boolean @default(false)
+  role         Role       @default(USER)
+  status       UserStatus @default(ACTIVE)
+  avatar       String?
+  isSubscribed Boolean    @default(false)
 
   city       String?
   state      String?
@@ -89,12 +89,10 @@ model OperatorProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  addons      Addon[]
-  categories OperatorCategory[]
-  services   Service[]
-  orders     Order[]
+  addons         Addon[]
+  categories     OperatorCategory[]
+  services       Service[]
   serviceBundles ServiceBundle[]
-
 
   @@index([userId])
 }

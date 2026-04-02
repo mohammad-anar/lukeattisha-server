@@ -1,9 +1,9 @@
 model Payment {
-  id String @id @default(uuid())
+  id      String            @id @default(uuid())
   orderId String
-  amount Decimal @db.Decimal(10,2)
-  method PaymentMethodType
-  status PaymentStatus
+  amount  Decimal           @db.Decimal(10, 2)
+  method  PaymentMethodType
+  status  PaymentStatus
 
   transactionId         String?
   stripePaymentIntentId String?

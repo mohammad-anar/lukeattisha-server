@@ -10,7 +10,6 @@ model Category {
   operatorProfiles OperatorCategory[]
 }
 
-
 model OperatorCategory {
   operatorId String
   categoryId String
