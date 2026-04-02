@@ -89,7 +89,18 @@ const getAllServices = async (filter: IServiceFilterRequest, options: IPaginatio
     include: {
       addons: {
         include: {
-          addon: true,
+          addon: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+              price: true,
+              operatorId: true,
+              isActive: true,
+              createdAt: true,
+              updatedAt: true,
+            }
+          },
         },
       },
       category: true,
@@ -156,10 +167,10 @@ const getServiceById = async (id: string, operatorId?: string) => {
   if (!result) {
     throw new ApiError(httpStatus.NOT_FOUND, "Service not found");
   }
-  
+
   // verify ownership if operatorId is provided context
   if (operatorId && result.operatorId !== operatorId) {
-     throw new ApiError(httpStatus.FORBIDDEN, "Forbidden access to this service");
+    throw new ApiError(httpStatus.FORBIDDEN, "Forbidden access to this service");
   }
 
   return result;
@@ -186,7 +197,7 @@ const updateService = async (userId: string, id: string, payload: IServiceUpdate
         addons: {
           deleteMany: {},
           create: addons.map(addonId => ({
-             addonId,
+            addonId,
           }))
         }
       } : {})
