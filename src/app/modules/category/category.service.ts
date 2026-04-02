@@ -17,6 +17,7 @@ const createCategory = async (payload: ICategoryCreatePayload) => {
 
 const getAllCategories = async (filter: ICategoryFilterRequest, options: IPaginationOptions) => {
   const { page, limit, skip } = paginationHelper.calculatePagination(options);
+  const thisLimit = 1000;
   const { searchTerm, ...filterData } = filter;
   const conditions: Prisma.CategoryWhereInput[] = [];
 
@@ -41,14 +42,14 @@ const getAllCategories = async (filter: ICategoryFilterRequest, options: IPagina
   const result = await prisma.category.findMany({
     where,
     skip,
-    take: limit,
+    take: thisLimit,
     orderBy: options.sortBy && options.sortOrder ? { [options.sortBy]: options.sortOrder } : { createdAt: "desc" },
   });
 
   const total = await prisma.category.count({ where });
 
   return {
-    meta: { page, limit, total, totalPage: Math.ceil(total / limit) },
+    meta: { page, limit: thisLimit, total, totalPage: Math.ceil(total / thisLimit) },
     data: result,
   };
 };

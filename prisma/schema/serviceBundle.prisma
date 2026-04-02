@@ -7,6 +7,7 @@ model ServiceBundle {
   description String?
   image       String?
   bundlePrice Decimal @db.Decimal(10, 2)
+  isActive    Boolean @default(true)
 
   services   ServiceBundleItem[]
   cartItems  CartItem[]

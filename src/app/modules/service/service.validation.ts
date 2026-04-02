@@ -40,16 +40,17 @@ const updateServiceSchema = z.object({
     .optional(),
 
   isActive: z.boolean().optional(),
+
+  addons: z.array(z.string().uuid()).optional(),
 });
 
 const assignAddonZodSchema = z.object({
-  addonId: z.string().uuid("Invalid addonId"),
+  addonIds: z.array(z.string().uuid("Invalid addonId")).optional(),
+
 });
 
 const updateAddonServiceSchema = z.object({
-  serviceId: z.string().uuid().optional(),
-
-  addonId: z.string().uuid().optional(),
+  addonIds: z.array(z.string().uuid("Invalid addonId")).optional(),
 });
 
 export const ServiceValidation = {

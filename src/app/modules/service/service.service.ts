@@ -23,10 +23,19 @@ const createService = async (userId: string, payload: IServiceCreatePayload) => 
     throw new ApiError(httpStatus.NOT_FOUND, "Operator profile not found");
   }
 
+  const { addons, ...serviceData } = payload;
+
   const result = await prisma.service.create({
     data: {
-      ...payload,
+      ...serviceData,
       operatorId: profile.id,
+      ...(addons ? {
+        addons: {
+          create: addons.map(addonId => ({
+            addonId,
+          }))
+        }
+      } : {})
     },
   });
 
@@ -167,9 +176,21 @@ const updateService = async (userId: string, id: string, payload: IServiceUpdate
 
   await getServiceById(id, profile.id);
 
+  const { addons, ...serviceData } = payload;
+
   const result = await prisma.service.update({
     where: { id },
-    data: payload,
+    data: {
+      ...serviceData,
+      ...(addons ? {
+        addons: {
+          deleteMany: {},
+          create: addons.map(addonId => ({
+             addonId,
+          }))
+        }
+      } : {})
+    },
   });
 
   return result;
@@ -193,7 +214,7 @@ const deleteService = async (userId: string, id: string) => {
   return result;
 };
 
-const createAddon = async (userId: string, serviceId: string, payload: { addonId: string }) => {
+const createAddon = async (userId: string, serviceId: string, payload: { addonIds: string[] }) => {
   const profile = await prisma.operatorProfile.findUnique({
     where: { userId },
   });
@@ -208,11 +229,13 @@ const createAddon = async (userId: string, serviceId: string, payload: { addonId
     throw new ApiError(httpStatus.NOT_FOUND, "Service not found");
   }
 
-  const result = await prisma.addonService.create({
-    data: {
-      addonId: payload.addonId,
-      serviceId,
-    },
+  const addonData = payload.addonIds.map(addonId => ({
+    addonId,
+    serviceId,
+  }))
+
+  const result = await prisma.addonService.createMany({
+    data: addonData,
   });
 
   return result;

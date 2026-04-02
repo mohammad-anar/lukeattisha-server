@@ -3,6 +3,7 @@ export type IServiceCreatePayload = {
   name: string;
   basePrice: number;
   isActive?: boolean;
+  addons?: string[];
 };
 
 export type IServiceUpdatePayload = Partial<IServiceCreatePayload>;

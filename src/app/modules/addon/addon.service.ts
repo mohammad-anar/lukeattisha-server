@@ -25,6 +25,16 @@ const createAddon = async (userId: string, payload: IAddonCreatePayload) => {
       ...payload,
       operatorId: profile.id,
     },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      operatorId: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
+      operator: true,
+    }
   });
 
   return result;
@@ -70,9 +80,17 @@ const getAllAddons = async (filter: IAddonFilterRequest, options: IPaginationOpt
     skip,
     take: limit,
     orderBy: options.sortBy && options.sortOrder ? { [options.sortBy]: options.sortOrder } : { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
+      operatorId: true,
+      isActive: true,
+      createdAt: true,
+      updatedAt: true,
       operator: true,
-    },
+    }
   });
 
   const total = await prisma.addon.count({ where });
@@ -101,7 +119,7 @@ const getAddonById = async (id: string) => {
   const result = await prisma.addon.findUnique({
     where: { id },
     include: {
-        operator: true
+      operator: true
     }
   });
 
