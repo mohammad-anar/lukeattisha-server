@@ -13,6 +13,7 @@ model OrderStatusLog {
 
 model Order {
   id          String      @id @default(uuid())
+  orderId     String?     @unique
   userId      String
   operatorIds String[]
   status           OrderStatus @default(PENDING)

@@ -1,9 +1,12 @@
 
 import ApiError from "../../../errors/ApiError.js";
 import { prisma } from "../../../helpers.ts/prisma.js";
-import { ICategoryCreatePayload, ICategoryUpdatePayload } from "./category.interface.js";
+import { ICategoryCreatePayload, ICategoryFilterRequest, ICategoryUpdatePayload } from "./category.interface.js";
 
 import httpStatus from "http-status";
+import { IPaginationOptions } from "../../../types/pagination.js";
+import { Prisma } from "@prisma/client";
+import { paginationHelper } from "../../../helpers.ts/paginationHelper.js";
 
 const createCategory = async (payload: ICategoryCreatePayload) => {
   const result = await prisma.category.create({
@@ -12,11 +15,42 @@ const createCategory = async (payload: ICategoryCreatePayload) => {
   return result;
 };
 
-const getAllCategories = async () => {
+const getAllCategories = async (filter: ICategoryFilterRequest, options: IPaginationOptions) => {
+  const { page, limit, skip } = paginationHelper.calculatePagination(options);
+  const { searchTerm, ...filterData } = filter;
+  const conditions: Prisma.CategoryWhereInput[] = [];
+
+  if (searchTerm) {
+    conditions.push({
+      OR: ["name"].map((field) => ({
+        [field]: { contains: searchTerm, mode: "insensitive" },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length) {
+    conditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: { equals: (filterData as any)[key] },
+      })),
+    });
+  }
+
+  const where = { AND: conditions };
+
   const result = await prisma.category.findMany({
-    orderBy: { createdAt: "desc" },
+    where,
+    skip,
+    take: limit,
+    orderBy: options.sortBy && options.sortOrder ? { [options.sortBy]: options.sortOrder } : { createdAt: "desc" },
   });
-  return result;
+
+  const total = await prisma.category.count({ where });
+
+  return {
+    meta: { page, limit, total, totalPage: Math.ceil(total / limit) },
+    data: result,
+  };
 };
 
 const getCategoryById = async (id: string) => {

@@ -11,6 +11,7 @@ import { emailHelper } from "../../../helpers.ts/emailHelper.js";
 import ApiError from "../../../errors/ApiError.js";
 import { jwtHelper } from "../../../helpers.ts/jwtHelper.js";
 import { config } from "config/index.js";
+import { generateCustomId } from "../../../helpers.ts/idGenerator.js";
 
 /* ================= REGISTER ================= */
 const register = async (payload: Prisma.UserCreateInput & {address: string}) => {
@@ -24,8 +25,9 @@ const register = async (payload: Prisma.UserCreateInput & {address: string}) => 
 //  prisma transaction
 
 const user = await prisma.$transaction(async (tx) => {
+  const customUserId = await generateCustomId('USER');
   const user = await tx.user.create({
-    data: { ...userData, password: hashedPassword},
+    data: { ...userData, password: hashedPassword, userId: customUserId},
     select: {
       id: true,
       name: true,
@@ -73,8 +75,9 @@ const registerOperator = async (payload: Prisma.UserCreateInput & {address: stri
 
   // use prisma transaction
   const user = await prisma.$transaction(async (tx) => {
+    const customUserId = await generateCustomId('USER');
     const user = await tx.user.create({
-      data: { name, email, password: hashedPassword, phone, role: "OPERATOR" },
+      data: { name, email, password: hashedPassword, phone, role: "OPERATOR", userId: customUserId },
       select: {
         id: true,
         name: true,

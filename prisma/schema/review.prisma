@@ -1,5 +1,6 @@
 model ServiceReview {
   id        String @id @default(uuid())
+  reviewId  String? @unique
   userId    String
   serviceId String
   orderId   String

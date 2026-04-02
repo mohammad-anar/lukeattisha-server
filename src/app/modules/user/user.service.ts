@@ -113,7 +113,7 @@ const getAllUsers = async (filter: IUserFilterRequest, options: IPaginationOptio
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
-      userID: true,
+      userId: true,
       name: true,
       email: true,
       phone: true,
@@ -176,7 +176,7 @@ const getUserById = async (id: string) => {
     where: { id },
     select: {
       id: true,
-      userID: true,
+      userId: true,
       name: true,
       email: true,
       phone: true,

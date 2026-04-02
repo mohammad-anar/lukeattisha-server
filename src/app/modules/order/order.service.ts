@@ -8,6 +8,7 @@ import { prisma } from "../../../helpers.ts/prisma.js";
 import ApiError from "../../../errors/ApiError.js";
 import { createOrderPaymentSession } from "../../../helpers.ts/stripeHelpers.js";
 import { OperatorService } from "../operator/operator.service.js";
+import { generateCustomId } from "../../../helpers.ts/idGenerator.js";
 
 /* ================= CREATE ORDER ================= */
 const createOrder = async (
@@ -121,9 +122,12 @@ const createOrder = async (
     const operatorEarningsAmount = subtotalAmount - platformFeeAmount;
     const totalCharge = subtotalAmount + deliveryFeeAmount;
 
+    const customOrderId = await generateCustomId('ORDER');
+
     // 4. Create Order
     const order = await tx.order.create({
       data: {
+        orderId: customOrderId,
         userId,
         operatorIds: Array.from(operatorIds),
 

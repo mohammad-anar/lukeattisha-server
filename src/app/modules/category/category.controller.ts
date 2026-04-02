@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { CategoryService } from "./category.service.js";
 import catchAsync from "../../shared/catchAsync.js";
 import sendResponse from "../../shared/sendResponse.js";
+import pick from "../../../helpers.ts/pick.js";
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
   const result = await CategoryService.createCategory(req.body);
@@ -15,13 +16,16 @@ const createCategory = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllCategories = catchAsync(async (req: Request, res: Response) => {
-  const result = await CategoryService.getAllCategories();
+  const filters = pick(req.query, ["searchTerm"]);
+  const options = pick(req.query, ["limit", "page", "sortBy", "sortOrder"]);
+  const result = await CategoryService.getAllCategories(filters, options);
 
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: "Categories retrieved successfully",
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

@@ -1,6 +1,6 @@
 model User {
   id       String  @id @default(uuid())
-  userID   Int?    @unique @default(autoincrement())
+  userId   String? @unique
   name     String
   email    String  @unique
   phone    String? @unique

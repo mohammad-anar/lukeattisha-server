@@ -1,10 +1,13 @@
-import { prisma } from "helpers.ts/prisma.js";
+import { prisma } from "../../../helpers.ts/prisma.js";
+import { generateCustomId } from "../../../helpers.ts/idGenerator.js";
 
 
 /* ================= CREATE TICKET ================= */
 const createTicket = async (userId: string, payload: any) => {
+  const customTicketId = await generateCustomId('TICKET');
   return await prisma.supportTicket.create({
     data: {
+      ticketId: customTicketId,
       userId,
       ...payload,
     },

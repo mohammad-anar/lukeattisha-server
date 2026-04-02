@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { config } from "config/index.js";
+import { generateCustomId } from "helpers.ts/idGenerator.js";
 import { prisma } from "helpers.ts/prisma.js";
 
 export const seedSuperAdmin = async () => {
@@ -20,6 +21,7 @@ export const seedSuperAdmin = async () => {
       data: {
         name: config.admin.name as string,
         email: config.admin.email as string,
+        userId: await generateCustomId('USER'),
         phone: config.admin.phone as string,
         password: hashedPassword,
         avatar: config.admin.avatar as string,

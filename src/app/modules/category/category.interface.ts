@@ -5,3 +5,7 @@ export type ICategoryCreatePayload = {
 export type ICategoryUpdatePayload = {
   name?: string;
 };
+
+export type ICategoryFilterRequest = {
+  searchTerm?: string;
+};

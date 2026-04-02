@@ -1,8 +1,9 @@
 
 import httpStatus from "http-status";
 import { IReviewCreatePayload, IReviewReplyPayload } from "./review.interface.js";
-import { prisma } from "helpers.ts/prisma.js";
-import ApiError from "errors/ApiError.js";
+import { prisma } from "../../../helpers.ts/prisma.js";
+import ApiError from "../../../errors/ApiError.js";
+import { generateCustomId } from "../../../helpers.ts/idGenerator.js";
 
 /* ================= CREATE REVIEW ================= */
 const createReview = async (userId: string, payload: IReviewCreatePayload) => {
@@ -18,8 +19,10 @@ const createReview = async (userId: string, payload: IReviewCreatePayload) => {
   });
   if (existing) throw new ApiError(httpStatus.CONFLICT, "You have already reviewed this service for this order");
 
+  const customReviewId = await generateCustomId('REVIEW');
+
   return await prisma.serviceReview.create({
-    data: { ...payload, userId },
+    data: { ...payload, userId, reviewId: customReviewId },
   });
 };
 
