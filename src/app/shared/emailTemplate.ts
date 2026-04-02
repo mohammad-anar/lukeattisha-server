@@ -17,7 +17,7 @@ const baseTemplate = (content: string) => `
           <tr>
             <td align="center" style="padding-bottom:20px;">
               <h1 style="margin:0; font-size:22px; color:${PRIMARY_COLOR}; font-weight:700;">
-                FixMinCykel
+                Laundry Link
               </h1>
             </td>
           </tr>
@@ -44,7 +44,7 @@ const baseTemplate = (content: string) => `
                 If you have any questions, contact our support team.
               </p>
               <p style="font-size:12px; color:#bbbbbb; margin-top:10px;">
-                © ${new Date().getFullYear()} FixMinCykel. All rights reserved.
+                © ${new Date().getFullYear()} Laundry Link. All rights reserved.
               </p>
             </td>
           </tr>
@@ -66,7 +66,7 @@ const createAccount = (values: ICreateAccount) => {
     </h2>
 
     <p style="font-size:15px; line-height:1.7; color:#555; margin-bottom:25px;">
-      Thank you for creating an account with FixMinCykel.
+      Thank you for creating an account with Laundry Link.
       Please use the verification code below to activate your account.
     </p>
 
@@ -95,7 +95,7 @@ const createAccount = (values: ICreateAccount) => {
 
   return {
     to: values.email,
-    subject: "Verify your FixMinCykel account",
+    subject: "Verify your Laundry Link account",
     html: baseTemplate(content),
   };
 };
@@ -138,7 +138,7 @@ const resetPassword = (values: IResetPassword) => {
 
   return {
     to: values.email,
-    subject: "Reset your FixMinCykel password",
+    subject: "Reset your Laundry Link password",
     html: baseTemplate(content),
   };
 };
