@@ -1,5 +1,7 @@
 import { prisma } from '../../../helpers.ts/prisma.js';
 import ApiError from '../../../errors/ApiError.js';
+import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
+import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
   const result = await prisma.chatMessage.create({
@@ -8,9 +10,54 @@ const create = async (payload: any) => {
   return result;
 };
 
-const getAll = async (query: any) => {
-  const result = await prisma.chatMessage.findMany();
-  return result;
+const getAll = async (filters: any, options: any) => {
+  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+  const { searchTerm, ...filterData } = filters;
+
+  const andConditions = [];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ["content"].map((field) => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.ChatMessageWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.chatMessage.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      sortBy && sortOrder
+        ? { [sortBy]: sortOrder }
+        : { createdAt: 'desc' },
+  });
+  const total = await prisma.chatMessage.count({ where: whereConditions });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
 
 const getById = async (id: string) => {

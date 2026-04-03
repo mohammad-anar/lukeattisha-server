@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  // Add validation fields here
+  storeId: z.string({ message: 'Store ID is required' }),
 });
 
 const updateSchema = z.object({
-  // Add validation fields here
-}).partial();
+  storeId: z.string().optional(),
+});
 
 export const CartValidation = {
   createSchema,

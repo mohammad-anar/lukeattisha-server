@@ -1,7 +1,7 @@
 import { config } from "config/index.js";
 import app from "./app.js";
-import { seedSuperAdmin } from "./db/seedSuperAdmin.js";
 import { initSocket } from "./helpers.ts/socketHelper.js";
+import { seedSuperAdmin } from "./db/seedSuperAdmin.js";
 
 let server: any;
 

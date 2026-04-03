@@ -1,12 +1,14 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  // Add validation fields here
+  platformCommissionRate: z.number().min(0).max(1).optional(),
+  payoutSchedule: z.string().optional(),
 });
 
 const updateSchema = z.object({
-  // Add validation fields here
-}).partial();
+  platformCommissionRate: z.number().min(0).max(1).optional(),
+  payoutSchedule: z.string().optional(),
+});
 
 export const AdminSettingValidation = {
   createSchema,

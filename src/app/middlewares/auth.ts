@@ -39,13 +39,6 @@ const auth =
         throw new ApiError(StatusCodes.UNAUTHORIZED, "User not found or deleted");
       }
 
-      if (user.status !== "ACTIVE") {
-        throw new ApiError(
-          StatusCodes.FORBIDDEN,
-          `Your account is ${user.status.toLowerCase()}`,
-        );
-      }
-
       //set user to header
       req.user = verifyUser;
 

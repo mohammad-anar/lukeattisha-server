@@ -163,6 +163,7 @@ model Operator {
   // Business Logistics
   approvalStatus           ApprovalStatus @default(PENDING)
   stripeConnectedAccountId String?        @unique
+  onboardingUrl            String?
   onboardingComplete       Boolean        @default(false)
 
   createdAt DateTime @default(now())

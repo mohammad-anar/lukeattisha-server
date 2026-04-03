@@ -1,12 +1,15 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  // Add validation fields here
+  subject: z.string({ message: 'Subject is required' }),
+  description: z.string({ message: 'Description is required' }),
+  orderId: z.string().optional(),
+  type: z.enum(['ORDER_ISSUE', 'PAYMENT_ISSUE', 'GENERAL']).optional(),
 });
 
 const updateSchema = z.object({
-  // Add validation fields here
-}).partial();
+  status: z.enum(['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).optional(),
+});
 
 export const SupportTicketValidation = {
   createSchema,

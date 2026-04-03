@@ -1,35 +1,53 @@
-import { Role } from "@prisma/client";
+import { prisma } from "../helpers.ts/prisma.js";
+import { config } from "../config/index.js";
 import bcrypt from "bcryptjs";
-import { config } from "config/index.js";
-import { generateCustomId } from "helpers.ts/idGenerator.js";
-import { prisma } from "helpers.ts/prisma.js";
 
 export const seedSuperAdmin = async () => {
-  const isExist = await prisma.user.findFirst({
-    where: {
-      OR: [{ email: config.admin.email as string }, { phone: config.admin.phone as string }],
-    },
-  });
+  try {
+    const adminConfig = config.admin;
+    
+    if (!adminConfig.email || !adminConfig.password) {
+      console.error("Super Admin config missing in .env");
+      return;
+    }
 
-  if (!isExist) {
-    const hashedPassword = await bcrypt.hash(
-      config.admin.password as string,
-      config.bcrypt_salt_round,
-    );
+    const isExist = await prisma.user.findUnique({
+      where: { email: adminConfig.email },
+    });
 
-    await prisma.user.create({
+    if (isExist) {
+      console.log("Super Admin already exists. Skipping seeding.");
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(adminConfig.password, config.bcrypt_salt_round);
+
+    const superAdmin = await prisma.user.create({
       data: {
-        name: config.admin.name as string,
-        email: config.admin.email as string,
-        userId: await generateCustomId('USER'),
-        phone: config.admin.phone as string,
+        name: adminConfig.name || "Super Admin",
+        email: adminConfig.email,
+        phone: adminConfig.phone,
         password: hashedPassword,
-        avatar: config.admin.avatar as string,
-        role: Role.ADMIN,
+        avatar: adminConfig.avatar,
+        role: "SUPER_ADMIN",
         isVerified: true,
       },
     });
-  } else {
-    console.log("Super admin already exist.");
+
+    // Initialize Admin Wallet if it doesn't exist
+    await prisma.adminWallet.upsert({
+      where: { userId: superAdmin.id },
+      update: {},
+      create: { userId: superAdmin.id, balance: 0 },
+    });
+
+    console.log("✅ Super Admin seeded successfully.");
+  } catch (error) {
+    console.error("Error seeding Super Admin:", error);
+  } finally {
+    // await prisma.$disconnect(); 
+    // Usually, we don't want to disconnect if the server is still running and using prisma.
+    // However, if this was a standalone script, disconnect makes sense.
+    // In server.ts, we probably shouldn't disconnect here.
   }
 };

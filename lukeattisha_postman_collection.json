@@ -1,0 +1,61 @@
+{
+  "info": {
+    "name": "Lukeattisha API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        { "name": "Register User", "request": { "method": "POST", "body": { "mode": "json", "json": { "name": "John Doe", "email": "john@example.com", "password": "password123", "phone": "123456789" } }, "url": "{{baseUrl}}/auth/register" } },
+        { "name": "Register Operator", "request": { "method": "POST", "body": { "mode": "json", "json": { "name": "Owner Name", "email": "operator@example.com", "password": "password123", "address": "123 Laundry St", "storeName": "QuickWash" } }, "url": "{{baseUrl}}/auth/register/operator" } },
+        { "name": "Login", "event": [ { "listen": "test", "script": { "exec": [ "var jsonData = JSON.parse(responseBody);", "if(jsonData.data && jsonData.data.accessToken) {", "    var role = jsonData.data.user.role;", "    if(role === 'ADMIN' || role === 'SUPER_ADMIN') pm.collectionVariables.set(\"adminAccessToken\", jsonData.data.accessToken);", "    else if(role === 'OPERATOR') pm.collectionVariables.set(\"operatorAccessToken\", jsonData.data.accessToken);", "    else pm.collectionVariables.set(\"userAccessToken\", jsonData.data.accessToken);", "}" ] } } ], "request": { "method": "POST", "body": { "mode": "json", "json": { "email": "john@example.com", "password": "password123" } }, "url": "{{baseUrl}}/auth/login" } }
+      ]
+    },
+    {
+      "name": "User & Admin",
+      "item": [
+        { "name": "Get All Users", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }] }, "method": "GET", "url": "{{baseUrl}}/user" } },
+        { "name": "Create Admin", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "name": "Admin Name", "email": "admin@example.com", "password": "password123" } }, "url": "{{baseUrl}}/user/create-admin" } },
+        { "name": "Admin Settings", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }] }, "method": "PATCH", "body": { "mode": "json", "json": { "platformCommissionRate": 0.15, "payoutSchedule": "weekly" } }, "url": "{{baseUrl}}/adminsetting" } }
+      ]
+    },
+    {
+      "name": "Operator & Store",
+      "item": [
+        { "name": "Get All Operators", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminAccessToken}}", "type": "string" }] }, "method": "GET", "url": "{{baseUrl}}/operator" } },
+        { "name": "Setup Connect Account", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{operatorAccessToken}}", "type": "string" }] }, "method": "POST", "url": "{{baseUrl}}/operator/setup-connect/:id" } },
+        { "name": "Create Store", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{operatorAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "name": "Downtown Laundry", "address": "456 Main St" } }, "url": "{{baseUrl}}/store" } },
+        { "name": "Create Service", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{operatorAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "name": "Standard Bag", "categoryId": "ID", "basePrice": 25 } }, "url": "{{baseUrl}}/service" } },
+        { "name": "Withdraw Funds", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{operatorAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "amount": 100 } }, "url": "{{baseUrl}}/withdrawal" } }
+      ]
+    },
+    {
+      "name": "Order & Payment",
+      "item": [
+        { "name": "Create Order", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "storeId": "ID", "addressId": "ID" } }, "url": "{{baseUrl}}/order" } },
+        { "name": "Create Payment Intent", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "orderId": "ID" } }, "url": "{{baseUrl}}/payment" } }
+      ]
+    },
+    {
+      "name": "Cart & Tools",
+      "item": [
+        { "name": "Add Item to Cart", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "cartId": "ID", "serviceId": "ID", "quantity": 1, "price": 20 } }, "url": "{{baseUrl}}/cartitem" } },
+        { "name": "Add Favourite", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "serviceId": "ID" } }, "url": "{{baseUrl}}/favouriteservice" } }
+      ]
+    },
+    {
+      "name": "Support & Ads",
+      "item": [
+        { "name": "Create Ticket", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{userAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "subject": "Payment issue", "description": "Details here" } }, "url": "{{baseUrl}}/supportticket" } },
+        { "name": "Create Ad", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{operatorAccessToken}}", "type": "string" }] }, "method": "POST", "body": { "mode": "json", "json": { "subscriptionId": "ID", "serviceId": "ID" } }, "url": "{{baseUrl}}/ad" } }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:5000/api/v1", "type": "string" },
+    { "key": "adminAccessToken", "value": "", "type": "string" },
+    { "key": "userAccessToken", "value": "", "type": "string" },
+    { "key": "operatorAccessToken", "value": "", "type": "string" }
+  ]
+}

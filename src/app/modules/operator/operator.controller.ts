@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { OperatorService } from './operator.service.js';
+import pick from '../../../helpers.ts/pick.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const result = await OperatorService.create(req.body);
@@ -14,12 +15,15 @@ const create = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const result = await OperatorService.getAll(req.query);
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); 
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  const result = await OperatorService.getAll(filters, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: 'Operator fetched successfully',
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
@@ -29,6 +33,16 @@ const getById = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: 200,
     message: 'Operator fetched successfully',
+    data: result,
+  });
+});
+
+const setupConnectAccount = catchAsync(async (req: Request, res: Response) => {
+  const result = await OperatorService.setupConnectAccount(req.params.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Stripe Connect setup initiated successfully',
     data: result,
   });
 });
@@ -59,4 +73,5 @@ export const OperatorController = {
   getById,
   update,
   deleteById,
+  setupConnectAccount,
 };

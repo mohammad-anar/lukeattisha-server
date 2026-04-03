@@ -1,12 +1,13 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  // Add validation fields here
+  userId: z.string({ message: 'User ID is required' }),
 });
 
 const updateSchema = z.object({
-  // Add validation fields here
-}).partial();
+  approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
+  onboardingComplete: z.boolean().optional(),
+});
 
 export const OperatorValidation = {
   createSchema,

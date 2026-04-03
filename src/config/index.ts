@@ -29,6 +29,19 @@ export const config = {
     stripe_webhook_secret: process.env.STRIPE_WEBHOOK_SECRET,
     premium_product_id: process.env.STRIPE_PREMIUM_PRODUCT_ID,
     premium_price_id: process.env.STRIPE_PREMIUM_PRICE_ID,
+    ad_product_id: process.env.STRIPE_AD_PRODUCT_ID,
+    ad_price_id: process.env.STRIPE_AD_PRICE_ID,
+    connect_return_url: process.env.STRIPE_CONNECT_RETURN_URL,
+    connect_refresh_url: process.env.STRIPE_CONNECT_REFRESH_URL,
+  },
+  economics: {
+    platform_fee_percent: Number(process.env.PLATFORM_FEE_PERCENT) || 10,
+    min_payout: Number(process.env.MINIMUM_PAYOUT_AMOUNT) || 50,
+  },
+  cloudinary: {
+    name: process.env.CLOUDINARY_CLOUD_NAME,
+    key: process.env.CLOUDINARY_API_KEY,
+    secret: process.env.CLOUDINARY_API_SECRET,
   },
   admin: {
     name: process.env.NAME,

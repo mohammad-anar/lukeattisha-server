@@ -6,42 +6,42 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const models = [
-  { name: 'user', pascalName: 'User' },
-  { name: 'operator', pascalName: 'Operator' },
-  { name: 'address', pascalName: 'Address' },
-  { name: 'category', pascalName: 'Category' },
-  { name: 'operatorCategory', pascalName: 'OperatorCategory' },
-  { name: 'service', pascalName: 'Service' },
-  { name: 'serviceAddon', pascalName: 'ServiceAddon' },
-  { name: 'addon', pascalName: 'Addon' },
-  { name: 'favouriteService', pascalName: 'FavouriteService' },
-  { name: 'store', pascalName: 'Store' },
-  { name: 'storeService', pascalName: 'StoreService' },
-  { name: 'bundle', pascalName: 'Bundle' },
-  { name: 'cart', pascalName: 'Cart' },
-  { name: 'cartItem', pascalName: 'CartItem' },
-  { name: 'order', pascalName: 'Order' },
-  { name: 'orderItem', pascalName: 'OrderItem' },
-  { name: 'payment', pascalName: 'Payment' },
-  { name: 'userPaymentCard', pascalName: 'UserPaymentCard' },
-  { name: 'operatorWallet', pascalName: 'OperatorWallet' },
-  { name: 'withdrawal', pascalName: 'Withdrawal' },
-  { name: 'operatorWalletTransaction', pascalName: 'OperatorWalletTransaction' },
-  { name: 'adminWallet', pascalName: 'AdminWallet' },
-  { name: 'adminWalletTransaction', pascalName: 'AdminWalletTransaction' },
-  { name: 'review', pascalName: 'Review' },
-  { name: 'supportTicket', pascalName: 'SupportTicket' },
-  { name: 'chatRoom', pascalName: 'ChatRoom' },
-  { name: 'chatParticipant', pascalName: 'ChatParticipant' },
-  { name: 'chatMessage', pascalName: 'ChatMessage' },
-  { name: 'adminSetting', pascalName: 'AdminSetting' },
-  { name: 'banner', pascalName: 'Banner' },
-  { name: 'notification', pascalName: 'Notification' },
-  { name: 'adSubscriptionPlan', pascalName: 'AdSubscriptionPlan' },
-  { name: 'adSubscription', pascalName: 'AdSubscription' },
-  { name: 'ad', pascalName: 'Ad' },
-  { name: 'userSubscriptionPlan', pascalName: 'UserSubscriptionPlan' },
-  { name: 'userSubscription', pascalName: 'UserSubscription' }
+  { name: 'user', pascalName: 'User', search: ['name', 'email', 'phone'] },
+  { name: 'operator', pascalName: 'Operator', search: [] },
+  { name: 'address', pascalName: 'Address', search: ['streetAddress', 'city', 'country'] },
+  { name: 'category', pascalName: 'Category', search: ['name'] },
+  { name: 'operatorCategory', pascalName: 'OperatorCategory', search: [] },
+  { name: 'service', pascalName: 'Service', search: ['name', 'description'] },
+  { name: 'serviceAddon', pascalName: 'ServiceAddon', search: [] },
+  { name: 'addon', pascalName: 'Addon', search: ['name'] },
+  { name: 'favouriteService', pascalName: 'FavouriteService', search: [] },
+  { name: 'store', pascalName: 'Store', search: ['name', 'address', 'city'] },
+  { name: 'storeService', pascalName: 'StoreService', search: [] },
+  { name: 'bundle', pascalName: 'Bundle', search: ['name', 'description'] },
+  { name: 'cart', pascalName: 'Cart', search: [] },
+  { name: 'cartItem', pascalName: 'CartItem', search: [] },
+  { name: 'order', pascalName: 'Order', search: ['orderNumber'] },
+  { name: 'orderItem', pascalName: 'OrderItem', search: ['serviceName'] },
+  { name: 'payment', pascalName: 'Payment', search: [] },
+  { name: 'userPaymentCard', pascalName: 'UserPaymentCard', search: ['last4', 'brand'] },
+  { name: 'operatorWallet', pascalName: 'OperatorWallet', search: [] },
+  { name: 'withdrawal', pascalName: 'Withdrawal', search: [] },
+  { name: 'operatorWalletTransaction', pascalName: 'OperatorWalletTransaction', search: [] },
+  { name: 'adminWallet', pascalName: 'AdminWallet', search: [] },
+  { name: 'adminWalletTransaction', pascalName: 'AdminWalletTransaction', search: [] },
+  { name: 'review', pascalName: 'Review', search: ['comment'] },
+  { name: 'supportTicket', pascalName: 'SupportTicket', search: ['ticketNumber', 'subject', 'description'] },
+  { name: 'chatRoom', pascalName: 'ChatRoom', search: ['name'] },
+  { name: 'chatParticipant', pascalName: 'ChatParticipant', search: [] },
+  { name: 'chatMessage', pascalName: 'ChatMessage', search: ['content'] },
+  { name: 'adminSetting', pascalName: 'AdminSetting', search: [] },
+  { name: 'banner', pascalName: 'Banner', search: ['title'] },
+  { name: 'notification', pascalName: 'Notification', search: ['title', 'message'] },
+  { name: 'adSubscriptionPlan', pascalName: 'AdSubscriptionPlan', search: ['name'] },
+  { name: 'adSubscription', pascalName: 'AdSubscription', search: [] },
+  { name: 'ad', pascalName: 'Ad', search: [] },
+  { name: 'userSubscriptionPlan', pascalName: 'UserSubscriptionPlan', search: ['name'] },
+  { name: 'userSubscription', pascalName: 'UserSubscription', search: [] }
 ];
 
 const modulesDir = path.join(__dirname, 'src', 'app', 'modules');
@@ -50,7 +50,8 @@ const getControllerTemplate = function(name, pascalName) {
   return "import { Request, Response } from 'express';\n" +
   "import catchAsync from '../../shared/catchAsync.js';\n" +
   "import sendResponse from '../../shared/sendResponse.js';\n" +
-  "import { " + pascalName + "Service } from './" + name + ".service.js';\n\n" +
+  "import { " + pascalName + "Service } from './" + name + ".service.js';\n" +
+  "import pick from '../../../helpers.ts/pick.js';\n\n" +
   "const create = catchAsync(async (req: Request, res: Response) => {\n" +
   "  const result = await " + pascalName + "Service.create(req.body);\n" +
   "  sendResponse(res, {\n" +
@@ -61,12 +62,15 @@ const getControllerTemplate = function(name, pascalName) {
   "  });\n" +
   "});\n\n" +
   "const getAll = catchAsync(async (req: Request, res: Response) => {\n" +
-  "  const result = await " + pascalName + "Service.getAll(req.query);\n" +
+  "  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed\n" +
+  "  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);\n" +
+  "  const result = await " + pascalName + "Service.getAll(filters, options);\n" +
   "  sendResponse(res, {\n" +
   "    success: true,\n" +
   "    statusCode: 200,\n" +
   "    message: '" + pascalName + " fetched successfully',\n" +
-  "    data: result,\n" +
+  "    meta: result.meta,\n" +
+  "    data: result.data,\n" +
   "  });\n" +
   "});\n\n" +
   "const getById = catchAsync(async (req: Request, res: Response) => {\n" +
@@ -105,18 +109,61 @@ const getControllerTemplate = function(name, pascalName) {
   "};\n";
 };
 
-const getServiceTemplate = function(name, pascalName) {
+const getServiceTemplate = function(name, pascalName, searchFields) {
+  const searchFieldsString = JSON.stringify(searchFields);
+  
   return "import { prisma } from '../../../helpers.ts/prisma.js';\n" +
-  "import ApiError from '../../../errors/ApiError.js';\n\n" +
+  "import ApiError from '../../../errors/ApiError.js';\n" +
+  "import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';\n" +
+  "import { Prisma } from '@prisma/client';\n\n" +
   "const create = async (payload: any) => {\n" +
   "  const result = await prisma." + name + ".create({\n" +
   "    data: payload,\n" +
   "  });\n" +
   "  return result;\n" +
   "};\n\n" +
-  "const getAll = async (query: any) => {\n" +
-  "  const result = await prisma." + name + ".findMany();\n" +
-  "  return result;\n" +
+  "const getAll = async (filters: any, options: any) => {\n" +
+  "  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);\n" +
+  "  const { searchTerm, ...filterData } = filters;\n\n" +
+  "  const andConditions = [];\n\n" +
+  "  if (searchTerm) {\n" +
+  "    andConditions.push({\n" +
+  "      OR: " + searchFieldsString + ".map((field) => ({\n" +
+  "        [field]: {\n" +
+  "          contains: searchTerm,\n" +
+  "          mode: 'insensitive',\n" +
+  "        },\n" +
+  "      })),\n" +
+  "    });\n" +
+  "  }\n\n" +
+  "  if (Object.keys(filterData).length > 0) {\n" +
+  "    andConditions.push({\n" +
+  "      AND: Object.keys(filterData).map((key) => ({\n" +
+  "        [key]: {\n" +
+  "          equals: (filterData as any)[key],\n" +
+  "        },\n" +
+  "      })),\n" +
+  "    });\n" +
+  "  }\n\n" +
+  "  const whereConditions: Prisma." + pascalName + "WhereInput = andConditions.length > 0 ? { AND: andConditions } : {};\n\n" +
+  "  const result = await prisma." + name + ".findMany({\n" +
+  "    where: whereConditions,\n" +
+  "    skip,\n" +
+  "    take: limit,\n" +
+  "    orderBy:\n" +
+  "      sortBy && sortOrder\n" +
+  "        ? { [sortBy]: sortOrder }\n" +
+  "        : { createdAt: 'desc' },\n" +
+  "  });\n" +
+  "  const total = await prisma." + name + ".count({ where: whereConditions });\n\n" +
+  "  return {\n" +
+  "    meta: {\n" +
+  "      total,\n" +
+  "      page,\n" +
+  "      limit,\n" +
+  "    },\n" +
+  "    data: result,\n" +
+  "  };\n" +
   "};\n\n" +
   "const getById = async (id: string) => {\n" +
   "  const result = await prisma." + name + ".findUnique({\n" +
@@ -187,7 +234,7 @@ models.forEach(model => {
   
   if (model.name !== 'auth') {
     fs.writeFileSync(path.join(dir, model.name + '.controller.ts'), getControllerTemplate(model.name, model.pascalName));
-    fs.writeFileSync(path.join(dir, model.name + '.service.ts'), getServiceTemplate(model.name, model.pascalName));
+    fs.writeFileSync(path.join(dir, model.name + '.service.ts'), getServiceTemplate(model.name, model.pascalName, model.search));
     fs.writeFileSync(path.join(dir, model.name + '.routes.ts'), getRoutesTemplate(model.name, model.pascalName));
     fs.writeFileSync(path.join(dir, model.name + '.validation.ts'), getValidationTemplate(model.name, model.pascalName));
   }

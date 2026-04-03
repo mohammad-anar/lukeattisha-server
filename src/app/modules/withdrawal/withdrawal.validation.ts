@@ -1,12 +1,13 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  // Add validation fields here
+  amount: z.number({ message: 'Amount is required' }).min(1),
 });
 
 const updateSchema = z.object({
-  // Add validation fields here
-}).partial();
+  status: z.enum(['HELD_IN_ESCROW', 'DISBURSED', 'RETAINED']).optional(),
+  stripeTransferId: z.string().optional(),
+});
 
 export const WithdrawalValidation = {
   createSchema,

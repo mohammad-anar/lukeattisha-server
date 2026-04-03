@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { AddonService } from './addon.service.js';
+import pick from '../../../helpers.ts/pick.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const result = await AddonService.create(req.body);
@@ -14,12 +15,15 @@ const create = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const result = await AddonService.getAll(req.query);
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  const result = await AddonService.getAll(filters, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: 'Addon fetched successfully',
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

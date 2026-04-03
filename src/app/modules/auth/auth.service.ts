@@ -11,7 +11,8 @@ import { emailHelper } from "../../../helpers.ts/emailHelper.js";
 import ApiError from "../../../errors/ApiError.js";
 import { jwtHelper } from "../../../helpers.ts/jwtHelper.js";
 import { config } from "config/index.js";
-import { generateCustomId } from "../../../helpers.ts/idGenerator.js";
+import { generateCustomId } from "helpers.ts/idGenerator.js";
+import { StripeHelpers } from "helpers.ts/stripeHelpers.js";
 
 /* ================= REGISTER ================= */
 const register = async (payload: Prisma.UserCreateInput & { address: string, city?: string, country?: string }) => {
@@ -64,8 +65,6 @@ const register = async (payload: Prisma.UserCreateInput & { address: string, cit
 
   return user;
 };
-/* ================= REGISTER OPERATOR ================= */
-import { createStripeAccount } from "../../../helpers.ts/stripeHelpers.js";
 
 const registerOperator = async (payload: Prisma.UserCreateInput & { address: string, storeName: string, city?: string, country?: string }) => {
   const hashedPassword = await bcrypt.hash(
@@ -75,7 +74,8 @@ const registerOperator = async (payload: Prisma.UserCreateInput & { address: str
 
   const { name, email, password, phone, address, storeName, city, country } = payload;
 
-  const stripeConnectId = await createStripeAccount(email);
+  const stripeConnectId = await StripeHelpers.createConnectAccount(email);
+  const onboardingLink = await StripeHelpers.generateAccountOnboardingLink(stripeConnectId);
 
   const user = await prisma.$transaction(async (tx) => {
     const customUserId = await generateCustomId('USER');
@@ -95,7 +95,8 @@ const registerOperator = async (payload: Prisma.UserCreateInput & { address: str
     const operator = await tx.operator.create({
       data: {
         userId: user.id,
-        stripeConnectedAccountId: stripeConnectId
+        stripeConnectedAccountId: stripeConnectId,
+        onboardingUrl: onboardingLink.url,
       },
     });
 

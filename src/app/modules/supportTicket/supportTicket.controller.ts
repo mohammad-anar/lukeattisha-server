@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { SupportTicketService } from './supportTicket.service.js';
+import pick from '../../../helpers.ts/pick.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const result = await SupportTicketService.create(req.body);
@@ -14,12 +15,15 @@ const create = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const result = await SupportTicketService.getAll(req.query);
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  const result = await SupportTicketService.getAll(filters, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: 'SupportTicket fetched successfully',
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

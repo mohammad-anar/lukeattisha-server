@@ -19,7 +19,7 @@ export const initSocket = (server: any) => {
     socket.on("register", (id: string) => {
       if (!socketMap.has(id)) socketMap.set(id, new Set());
       socketMap.get(id)!.add(socket.id);
-      
+
       // Also join a personal room for this user
       socket.join(`user:${id}`);
       console.log(colors.blue(`Registered socket ${socket.id} for ID ${id}`));
