@@ -1,3 +1,0 @@
-Failed to load config file "D:\Anar\WEB-STA\lukeattisha\lukeattisha-server\prisma.config.js" as a TypeScript/JavaScript module. Error: Error: Cannot find module 'dotenv/config'
-Require stack:
-- D:\Anar\WEB-STA\lukeattisha\lukeattisha-server\prisma.config.js
