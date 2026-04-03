@@ -1,0 +1,74 @@
+model Review {
+  id            String   @id @default(cuid())
+  reviewNumber  String?  @unique
+  userId        String
+  serviceId     String
+  rating        Int
+  comment       String?
+  operatorReply String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+}
+
+model SupportTicket {
+  id           String              @id @default(cuid())
+  ticketNumber String              @unique
+  userId       String
+  orderId      String?
+  subject      String
+  description  String
+  status       SupportTicketStatus @default(OPEN)
+  type         SupportTicketType   @default(GENERAL)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  user      User       @relation(fields: [userId], references: [id])
+  order     Order?     @relation(fields: [orderId], references: [id])
+  chatRooms ChatRoom[]
+}
+
+model ChatRoom {
+  id        String   @id @default(cuid())
+  name      String?
+  orderId   String?
+  ticketId  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order        Order?            @relation(fields: [orderId], references: [id])
+  ticket       SupportTicket?    @relation(fields: [ticketId], references: [id])
+  participants ChatParticipant[]
+  messages     ChatMessage[]
+}
+
+model ChatParticipant {
+  id         String    @id @default(cuid())
+  roomId     String
+  userId     String?
+  operatorId String?
+  joinedAt   DateTime  @default(now())
+  lastRead   DateTime?
+
+  room     ChatRoom  @relation(fields: [roomId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id])
+  operator Operator? @relation(fields: [operatorId], references: [id])
+}
+
+model ChatMessage {
+  id               String   @id @default(cuid())
+  roomId           String
+  senderUserId     String?
+  senderOperatorId String?
+  content          String
+  isDeleted        Boolean  @default(false)
+  isEdited         Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  room           ChatRoom  @relation(fields: [roomId], references: [id])
+  senderUser     User?     @relation("UserMessages", fields: [senderUserId], references: [id])
+  senderOperator Operator? @relation("OperatorMessages", fields: [senderOperatorId], references: [id])
+}

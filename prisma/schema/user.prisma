@@ -1,0 +1,73 @@
+model User {
+  id                 String   @id @default(cuid())
+  userId             String?  @unique
+  name               String
+  email              String   @unique
+  phone              String?
+  avatar             String?
+  password           String
+  role               UserRole @default(USER)
+  isVerified         Boolean  @default(false)
+  isDeleted          Boolean  @default(false)
+  lat                Float?
+  lng                Float?
+  stripeCustomerId   String?
+  isSubscribed       Boolean  @default(false)
+  isTwoFactorEnabled Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  // Creator Tracking (Super Admin creates Admins/Operators)
+  createdById  String?
+  createdBy    User?   @relation("AdminCreator", fields: [createdById], references: [id])
+  createdUsers User[]  @relation("AdminCreator")
+
+  // Profile Extensions
+  operatorProfile Operator?
+  adminWallet     AdminWallet?
+
+  // Relations
+  addresses         Address[]
+  cart              Cart[]
+  orders            Order[]
+  reviews           Review[]
+  favouriteServices FavouriteService[]
+  userSubscriptions UserSubscription[]
+  notifications     Notification[]
+  supportTickets    SupportTicket[]
+  chatParticipants  ChatParticipant[]
+  chatMessages      ChatMessage[]      @relation("UserMessages")
+  paymentCards      UserPaymentCard[]  @relation("UserCards")
+
+  @@index([createdById])
+}
+
+model Operator {
+  id         String  @id @default(cuid())
+  operatorId String? @unique
+
+  // Link to Auth User
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Business Logistics
+  approvalStatus           ApprovalStatus @default(PENDING)
+  stripeConnectedAccountId String?        @unique
+  onboardingUrl            String?
+  onboardingComplete       Boolean        @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stores           Store[]
+  services         Service[]
+  addons           Addon[]
+  bundles          Bundle[]
+  adSubscriptions  AdSubscription[]
+  ads              Ad[]
+  operatorWallet   OperatorWallet?
+  chatParticipants ChatParticipant[]
+  chatMessages     ChatMessage[]     @relation("OperatorMessages")
+  notifications    Notification[]
+  withdrawals      Withdrawal[]
+}

@@ -1,0 +1,90 @@
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String
+  storeId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User       @relation(fields: [userId], references: [id])
+  store Store      @relation(fields: [storeId], references: [id])
+  items CartItem[]
+}
+
+model CartItem {
+  id        String   @id @default(cuid())
+  cartId    String
+  serviceId String?
+  bundleId  String?
+  quantity  Int
+  price     Decimal  @db.Decimal(10, 2)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cart           Cart            @relation(fields: [cartId], references: [id])
+  service        Service?        @relation(fields: [serviceId], references: [id])
+  bundle         Bundle?         @relation(fields: [bundleId], references: [id])
+  selectedAddons SelectedAddon[]
+
+  @@unique([cartId, serviceId])
+  @@unique([cartId, bundleId])
+}
+
+model SelectedAddon {
+  cartItemId String
+  addonId    String
+
+  cartItem CartItem @relation(fields: [cartItemId], references: [id])
+  addon    Addon    @relation(fields: [addonId], references: [id])
+
+  @@id([cartItemId, addonId])
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  orderNumber     String        @unique
+  userId          String
+  storeId         String
+  totalAmount     Decimal       @db.Decimal(10, 2)
+  platformFee     Decimal       @db.Decimal(10, 2)
+  operatorAmount  Decimal       @db.Decimal(10, 2)
+  stripeSessionId String?
+  paymentStatus   PaymentStatus @default(UNPAID)
+  status          OrderStatus   @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  user             User                        @relation(fields: [userId], references: [id])
+  store            Store                       @relation(fields: [storeId], references: [id])
+  orderItems       OrderItem[]
+  payments         Payment[]
+  supportTickets   SupportTicket[]
+  chatRooms        ChatRoom[]
+  operatorWalletTx OperatorWalletTransaction[]
+  adminWalletTx    AdminWalletTransaction[]
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  serviceName String
+  quantity    Int
+  price       Decimal  @db.Decimal(10, 2)
+  serviceId   String?
+  bundleId    String?
+  createdAt   DateTime @default(now())
+
+  order       Order        @relation(fields: [orderId], references: [id])
+  service     Service?     @relation(fields: [serviceId], references: [id])
+  bundle      Bundle?      @relation(fields: [bundleId], references: [id])
+  orderAddons OrderAddon[]
+}
+
+model OrderAddon {
+  orderItemId String
+  addonId     String
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id])
+  addon     Addon     @relation(fields: [addonId], references: [id])
+
+  @@id([orderItemId, addonId])
+}

@@ -1,0 +1,76 @@
+model Store {
+  id         String   @id @default(cuid())
+  operatorId String
+  name       String
+  logo       String?
+  banner     String?
+  address    String?
+  country    String?
+  state      String?
+  city       String?
+  postalCode String?
+  lat        Float?
+  lng        Float?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  operator       Operator         @relation(fields: [operatorId], references: [id])
+  storeServices  StoreService[]
+  storeBundles   StoreBundle[]
+  bundleServices BundleServices[]
+  carts          Cart[]
+  orders         Order[]
+}
+
+model StoreService {
+  id        String   @id @default(cuid())
+  storeId   String
+  serviceId String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  store   Store   @relation(fields: [storeId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+}
+
+model Bundle {
+  id          String   @id @default(cuid())
+  operatorId  String
+  name        String
+  description String?
+  image       String?
+  bundlePrice Decimal  @db.Decimal(10, 2)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  operator       Operator         @relation(fields: [operatorId], references: [id])
+  bundleServices BundleServices[]
+  storeBundles   StoreBundle[]
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  ads            Ad[]
+}
+
+model BundleServices {
+  bundleId  String
+  serviceId String
+  storeId   String?
+
+  bundle  Bundle  @relation(fields: [bundleId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+  store   Store?  @relation(fields: [storeId], references: [id])
+
+  @@id([bundleId, serviceId])
+}
+
+model StoreBundle {
+  storeId  String
+  bundleId String
+
+  store  Store  @relation(fields: [storeId], references: [id])
+  bundle Bundle @relation(fields: [bundleId], references: [id])
+
+  @@id([storeId, bundleId])
+}

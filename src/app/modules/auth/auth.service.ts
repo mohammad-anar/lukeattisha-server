@@ -213,15 +213,25 @@ const verifyUser = async ({ email, otp }: IVerifyEmail) => {
 const resendOTP = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, name: true, isVerified: true },
+    select: { id: true, name: true, isVerified: true, email: true },
   });
-  if (!user) throw new Error("User not found");
-  if (user.isVerified) return { status: "already_verified" };
+
+  if (!user) {
+    console.error(`Resend-OTP: User not found for email: ${email}`);
+    throw new ApiError(404, "User not found");
+  }
+
+  if (user.isVerified) {
+    return { status: "already_verified" };
+  }
 
   const otp = generateOTP();
+  console.log(`Resend-OTP: Generated OTP ${otp} for ${email}`);
   await redisClient.set(`otp:${email}`, otp, { EX: 300 });
 
-  const otpTemplate = await emailTemplate.createAccount({ name: user.name, otp, email });
+  const otpTemplate = emailTemplate.createAccount({ name: user.name, otp, email: user.email! });
+  console.log(`Resend-OTP: Email template generated, sending to ${user.email}`);
+
   await emailHelper.sendEmail(otpTemplate);
 
   return { status: "OTP resent successfully" };

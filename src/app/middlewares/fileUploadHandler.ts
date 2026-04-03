@@ -60,6 +60,7 @@ const fileUploadHandler = () => {
         file.mimetype === "image/jpeg" ||
         file.mimetype === "image/png" ||
         file.mimetype === "image/webp" ||
+        file.mimetype === "image/avif" ||
         file.mimetype === "image/jpg"
       ) {
         cb(null, true);

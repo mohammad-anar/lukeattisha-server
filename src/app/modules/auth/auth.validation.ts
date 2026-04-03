@@ -1,10 +1,8 @@
 import { z } from "zod";
 
 const loginSchema = z.object({
-
     email: z.string().email(),
     password: z.string().min(1),
-
 });
 
 const verifyEmailSchema = z.object({
@@ -12,23 +10,17 @@ const verifyEmailSchema = z.object({
   otp: z.union([z.string(), z.number()]),
 });
 
-const forgetPasswordSchema = z.object({
- 
+const forgetPasswordSchema = z.object({ 
     email: z.string().email(),
-
 });
 
 const resetPasswordSchema = z.object({
-
     password: z.string().min(8),
-
 });
 
 const changePasswordSchema = z.object({
-
     oldPassword: z.string().min(1),
     newPassword: z.string().min(8),
-
 });
 
 const registerSchema = z.object({

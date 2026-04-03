@@ -3,9 +3,17 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { ServiceService } from './service.service.js';
 import pick from '../../../helpers.ts/pick.js';
+import { getSingleFilePath } from '../../shared/getFilePath.js';
+import { config } from '../../../config/index.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
-  const result = await ServiceService.create(req.body);
+  const payload = req.body;
+  const image = getSingleFilePath(req.files as any, "image");
+  if (image) {
+    payload.image = `http://${config.ip_address}:${config.port}${image}`;
+  }
+  
+  const result = await ServiceService.create(payload);
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -15,7 +23,7 @@ const create = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status', 'userLat', 'userLng']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   const result = await ServiceService.getAll(filters, options);
   sendResponse(res, {
@@ -28,7 +36,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await ServiceService.getById(req.params.id);
+  const result = await ServiceService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +46,13 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await ServiceService.update(req.params.id, req.body);
+  const payload = req.body;
+  const image = getSingleFilePath(req.files as any, "image");
+  if (image) {
+    payload.image = `http://${config.ip_address}:${config.port}${image}`;
+  }
+
+  const result = await ServiceService.update(req.params.id as string, payload);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +62,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await ServiceService.deleteById(req.params.id);
+  const result = await ServiceService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,

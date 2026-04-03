@@ -37,19 +37,13 @@ const create = async (payload: any) => {
 
 const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filters;
+  const { searchTerm, userLat, userLng, ...filterData } = filters;
 
   const andConditions = [];
 
   if (searchTerm) {
-    andConditions.push({
-      OR: [].map((field) => ({
-        [field]: {
-          contains: searchTerm,
-          mode: 'insensitive',
-        },
-      })),
-    });
+    // Ad usually doesn't have a name/description directly, but it might have links
+    // For now we skip searchTerm unless specific fields are added
   }
 
   if (Object.keys(filterData).length > 0) {
@@ -64,16 +58,45 @@ const getAll = async (filters: any, options: any) => {
 
   const whereConditions: Prisma.AdWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const result = await prisma.ad.findMany({
-    where: whereConditions,
-    skip,
-    take: limit,
-    orderBy:
-      sortBy && sortOrder
-        ? { [sortBy]: sortOrder }
-        : { createdAt: 'desc' },
-  });
-  const total = await prisma.ad.count({ where: whereConditions });
+  let result;
+  let total;
+
+  if (userLat && userLng) {
+    const lat = parseFloat(userLat);
+    const lng = parseFloat(userLng);
+
+    // Raw SQL to handle PostGIS distance sorting for Ads based on operator stores
+    result = await prisma.$queryRaw`
+      SELECT a.*, 
+             MIN(ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat))) as distance_meters,
+             MIN(ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat))) / 1609.34 as "distanceMile",
+             (MIN(ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat))) / 40000.0) * 60.0 as "estimatedTimeMinutes"
+      FROM "Ad" a
+      LEFT JOIN "Store" st ON a."operatorId" = st."operatorId"
+      WHERE a."status" = 'ACTIVE'
+      GROUP BY a.id
+      ORDER BY distance_meters ASC
+      LIMIT ${limit} OFFSET ${skip}
+    `;
+    
+    const totalResult: any = await prisma.$queryRaw`
+      SELECT COUNT(DISTINCT a.id)::int as count 
+      FROM "Ad" a
+      WHERE a."status" = 'ACTIVE'
+    `;
+    total = totalResult[0]?.count || 0;
+  } else {
+    result = await prisma.ad.findMany({
+      where: whereConditions,
+      skip,
+      take: limit,
+      orderBy:
+        sortBy && sortOrder
+          ? { [sortBy]: sortOrder }
+          : { createdAt: 'desc' },
+    });
+    total = await prisma.ad.count({ where: whereConditions });
+  }
 
   return {
     meta: {

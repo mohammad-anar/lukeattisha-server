@@ -12,6 +12,7 @@ router.post('/create-operator', auth(UserRole.SUPER_ADMIN), validateRequest(User
 
 router.get('/admins', auth(UserRole.SUPER_ADMIN), UserController.getAllAdmins);
 router.get('/operators', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), UserController.getAllOperators);
+router.get('/get-me', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), UserController.getMe);
 router.get('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), UserController.getAll);
 router.get('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), UserController.getById);
 router.patch('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), validateRequest(UserValidation.updateSchema), UserController.update);

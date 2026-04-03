@@ -95,6 +95,17 @@ const update = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMe = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await UserService.getMe(user.id, user.role);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User profile fetched successfully',
+    data: result,
+  });
+});
+
 const deleteById = catchAsync(async (req: Request, res: Response) => {
   const result = await UserService.deleteById(req.params.id as string);
   sendResponse(res, {
@@ -113,6 +124,7 @@ export const UserController = {
   getAllAdmins,
   getAllOperators,
   getById,
+  getMe,
   update,
   deleteById,
 };

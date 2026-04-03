@@ -151,6 +151,50 @@ const update = async (id: string, payload: any) => {
   return result;
 };
 
+const getMe = async (id: string, role: string) => {
+  let result;
+  if (role === 'USER') {
+    result = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        addresses: true,
+        userSubscriptions: {
+          include: { plan: true },
+          where: { status: 'ACTIVE' },
+        },
+      },
+    });
+  } else if (role === 'OPERATOR') {
+    result = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        operatorProfile: {
+          include: {
+            stores: true,
+            operatorWallet: true,
+          },
+        },
+      },
+    });
+  } else if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+    result = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        adminWallet: true,
+      },
+    });
+  } else {
+    result = await prisma.user.findUnique({
+      where: { id },
+    });
+  }
+
+  if (!result) {
+    throw new ApiError(404, 'User not found');
+  }
+  return result;
+};
+
 const deleteById = async (id: string) => {
   await getById(id);
   const result = await prisma.user.delete({
@@ -165,6 +209,7 @@ export const UserService = {
   createOperator,
   getAll,
   getById,
+  getMe,
   update,
   deleteById,
 };

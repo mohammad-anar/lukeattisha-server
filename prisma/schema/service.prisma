@@ -1,0 +1,97 @@
+model Address {
+  id            String   @id @default(cuid())
+  userId        String
+  streetAddress String
+  city          String
+  state         String?
+  country       String
+  postalCode    String?
+  isDefault     Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  services           Service[]
+  operatorCategories OperatorCategory[]
+}
+
+model OperatorCategory {
+  id         String   @id @default(cuid())
+  operatorId String
+  categoryId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
+}
+
+model Service {
+  id          String   @id @default(cuid())
+  serviceId   String?  @unique
+  operatorId  String
+  categoryId  String
+  name        String
+  basePrice   Decimal  @db.Decimal(10, 2)
+  description String?
+  image       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  operator       Operator           @relation(fields: [operatorId], references: [id])
+  category       Category           @relation(fields: [categoryId], references: [id])
+  serviceAddons  ServiceAddon[]
+  storeServices  StoreService[]
+  bundleServices BundleServices[]
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  reviews        Review[]
+  favourites     FavouriteService[]
+  ads            Ad[]
+}
+
+model ServiceAddon {
+  id        String   @id @default(cuid())
+  serviceId String
+  addonId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  service Service @relation(fields: [serviceId], references: [id])
+  addon   Addon   @relation(fields: [addonId], references: [id])
+}
+
+model Addon {
+  id          String   @id @default(cuid())
+  operatorId  String
+  name        String
+  description String?
+  price       Decimal  @db.Decimal(10, 2)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  operator       Operator        @relation(fields: [operatorId], references: [id])
+  serviceAddons  ServiceAddon[]
+  selectedAddons SelectedAddon[]
+  orderAddons    OrderAddon[]
+}
+
+model FavouriteService {
+  id        String   @id @default(cuid())
+  userId    String
+  serviceId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id])
+  service Service @relation(fields: [serviceId], references: [id])
+}

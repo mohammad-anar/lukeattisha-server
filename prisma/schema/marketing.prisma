@@ -1,0 +1,96 @@
+model AdminSetting {
+  id                     String   @id @default(cuid())
+  platformCommissionRate Decimal  @default(0.1) @db.Decimal(5, 2)
+  payoutSchedule         String?  @default("weekly")
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model Banner {
+  id         String     @id @default(cuid())
+  title      String
+  image      String?
+  bannerType BannerType @default(FULL)
+  isActive   Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Notification {
+  id         String              @id @default(cuid())
+  userId     String?
+  operatorId String?
+  title      String
+  message    String
+  channel    NotificationChannel @default(IN_APP)
+  type       NotificationType    @default(SYSTEM)
+  isSent     Boolean             @default(false)
+  createdAt  DateTime            @default(now())
+
+  user     User?     @relation(fields: [userId], references: [id])
+  operator Operator? @relation(fields: [operatorId], references: [id])
+}
+
+model AdSubscriptionPlan {
+  id            String   @id @default(cuid())
+  name          String
+  durationMonth Int
+  price         Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions AdSubscription[]
+}
+
+model AdSubscription {
+  id              String             @id @default(cuid())
+  operatorId      String
+  planId          String
+  startDate       DateTime
+  endDate         DateTime
+  status          SubscriptionStatus @default(PENDING)
+  stripePaymentId String?
+
+  operator Operator           @relation(fields: [operatorId], references: [id])
+  plan     AdSubscriptionPlan @relation(fields: [planId], references: [id])
+  ads      Ad[]
+}
+
+model Ad {
+  id             String   @id @default(cuid())
+  operatorId     String
+  subscriptionId String
+  serviceId      String?
+  bundleId       String?
+  status         AdStatus @default(PENDING)
+  createdAt      DateTime @default(now())
+
+  operator     Operator       @relation(fields: [operatorId], references: [id])
+  subscription AdSubscription @relation(fields: [subscriptionId], references: [id])
+  service      Service?       @relation(fields: [serviceId], references: [id])
+  bundle       Bundle?        @relation(fields: [bundleId], references: [id])
+}
+
+model UserSubscriptionPlan {
+  id            String   @id @default(cuid())
+  name          String
+  durationMonth Int
+  price         Decimal  @db.Decimal(10, 2)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  subscriptions UserSubscription[]
+}
+
+model UserSubscription {
+  id              String             @id @default(cuid())
+  userId          String
+  planId          String
+  startDate       DateTime
+  endDate         DateTime
+  status          SubscriptionStatus @default(PENDING)
+  stripePaymentId String?
+
+  user User                 @relation(fields: [userId], references: [id])
+  plan UserSubscriptionPlan @relation(fields: [planId], references: [id])
+}

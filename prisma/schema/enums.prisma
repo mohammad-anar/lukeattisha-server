@@ -1,0 +1,89 @@
+enum UserRole {
+  USER
+  OPERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum OrderStatus {
+  PENDING
+  PICKED_UP
+  PROCESSING
+  READY_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  ESCROW_HELD
+  DISBURSED
+  REFUNDED
+}
+
+enum PayoutStatus {
+  NOT_APPLICABLE
+  HELD_IN_ESCROW
+  DISBURSED
+  RETAINED
+}
+
+enum AdStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+}
+
+enum SubscriptionStatus {
+  PENDING
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum TransactionType {
+  ORDER_REVENUE
+  SUBSCRIPTION_FEE
+  WITHDRAWAL
+  PLATFORM_COMMISSION
+  REFUND
+}
+
+enum BannerType {
+  FULL
+  HALF
+  SMALL
+}
+
+enum NotificationChannel {
+  EMAIL
+  SMS
+  PUSH
+  IN_APP
+}
+
+enum NotificationType {
+  ORDER_UPDATE
+  PROMOTION
+  SYSTEM
+}
+
+enum SupportTicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum SupportTicketType {
+  ORDER_ISSUE
+  PAYMENT_ISSUE
+  GENERAL
+}
