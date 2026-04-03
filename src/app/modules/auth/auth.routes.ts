@@ -1,10 +1,10 @@
 import express from "express";
-import { Role } from "@prisma/client";
 import { AuthController } from "./auth.controller.js";
 import { AuthValidation } from "./auth.validation.js";
 import fileUploadHandler from "../../middlewares/fileUploadHandler.js";
 import auth from "../../middlewares/auth.js";
 import validateRequest from "app/middlewares/validateRequest.js";
+import { UserRole } from "@prisma/client";
 
 const router = express.Router();
 
@@ -24,26 +24,26 @@ router.post("/forget-password-otp", validateRequest(AuthValidation.forgetPasswor
 router.post("/verify-otp", validateRequest(AuthValidation.verifyEmailSchema), AuthController.verifyOTP);
 router.post(
   "/reset-password",
-  auth(Role.USER, Role.ADMIN, Role.OPERATOR),
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR),
   validateRequest(AuthValidation.resetPasswordSchema),
   AuthController.resetPassword,
 );
 
 router.post(
   "/change-password",
-  auth(Role.USER, Role.ADMIN, Role.OPERATOR),
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR),
   AuthController.changePassword,
 );
 
 router.post(
   "/refresh",
-  auth(Role.USER, Role.ADMIN, Role.OPERATOR),
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR),
   AuthController.refreshToken,
 );
 
 router.post(
   "/logout",
-  auth(Role.USER, Role.ADMIN, Role.OPERATOR),
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR),
   AuthController.logout,
 );
 

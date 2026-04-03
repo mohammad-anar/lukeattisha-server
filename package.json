@@ -12,11 +12,12 @@
     "dev": "tsx watch ./src/server.ts",
     "start": "tsx ./src/server.ts",
     "build": "tsc",
+    "postinstall": "prisma generate",
     "start:prod": "node dist/server.js"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.1.0",
-    "@prisma/client": "^7.1.0",
+    "@prisma/client": "^6.19.2",
     "@types/colors": "^1.2.4",
     "@types/http-status": "^1.1.2",
     "@types/http-status-codes": "^1.2.0",
@@ -36,12 +37,12 @@
     "jsonwebtoken": "^9.0.3",
     "multer": "^2.0.2",
     "nodemailer": "^8.0.1",
+    "pdfkit": "^0.18.0",
     "pg": "^8.16.3",
     "postgis": "^1.0.6",
     "redis": "^5.11.0",
     "slugify": "^1.6.6",
     "socket.io": "^4.8.3",
-    "stripe": "^20.4.1",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -50,9 +51,10 @@
     "@types/dotenv": "^8.2.3",
     "@types/express": "^5.0.3",
     "@types/node": "^24.10.2",
+    "@types/pdfkit": "^0.17.5",
     "@types/pg": "^8.15.6",
     "dotenv": "^17.2.2",
-    "prisma": "^7.1.0",
+    "prisma": "^6.19.2",
     "ts-node-dev": "^2.0.0",
     "tsx": "^4.21.0",
     "typescript": "^5.9.2"

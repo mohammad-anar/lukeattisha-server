@@ -14,38 +14,43 @@ import { config } from "config/index.js";
 import { generateCustomId } from "../../../helpers.ts/idGenerator.js";
 
 /* ================= REGISTER ================= */
-const register = async (payload: Prisma.UserCreateInput & {address: string}) => {
+const register = async (payload: Prisma.UserCreateInput & { address: string, city?: string, country?: string }) => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
     Number(config.bcrypt_salt_round),
   );
 
-  const {address, ...userData} = payload;
+  const { address, city, country, ...userData } = payload;
 
-//  prisma transaction
+  const user = await prisma.$transaction(async (tx) => {
+    const customUserId = await generateCustomId('USER');
+    const user = await tx.user.create({
+      data: { ...userData, password: hashedPassword, userId: customUserId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        isVerified: true,
+        createdAt: true,
+      },
+    });
 
-const user = await prisma.$transaction(async (tx) => {
-  const customUserId = await generateCustomId('USER');
-  const user = await tx.user.create({
-    data: { ...userData, password: hashedPassword, userId: customUserId},
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      phone: true,
-      role: true,
-      status: true,
-      isVerified: true,
-      createdAt: true,
-    },
+    if (address) {
+      await tx.address.create({
+        data: {
+          userId: user.id,
+          streetAddress: address,
+          city: city || "Pending",
+          country: country || "Pending",
+          isDefault: true
+        },
+      });
+    }
+
+    return user;
   });
-
-  await tx.userAddress.create({
-    data: { userId: user.id, address },
-  });
-
-  return user;
-});
 
   const otp = generateOTP();
   await redisClient.set(`otp:${user.email}`, otp, { EX: 300 });
@@ -62,18 +67,16 @@ const user = await prisma.$transaction(async (tx) => {
 /* ================= REGISTER OPERATOR ================= */
 import { createStripeAccount } from "../../../helpers.ts/stripeHelpers.js";
 
-const registerOperator = async (payload: Prisma.UserCreateInput & {address: string, storeName: string}) => {
+const registerOperator = async (payload: Prisma.UserCreateInput & { address: string, storeName: string, city?: string, country?: string }) => {
   const hashedPassword = await bcrypt.hash(
     payload.password,
     Number(config.bcrypt_salt_round),
   );
 
-  const { name, email, password, phone, address, storeName } = payload;
+  const { name, email, password, phone, address, storeName, city, country } = payload;
 
-  // 1. Pre-create Stripe account to ensure it works before DB write
   const stripeConnectId = await createStripeAccount(email);
 
-  // use prisma transaction
   const user = await prisma.$transaction(async (tx) => {
     const customUserId = await generateCustomId('USER');
     const user = await tx.user.create({
@@ -81,27 +84,42 @@ const registerOperator = async (payload: Prisma.UserCreateInput & {address: stri
       select: {
         id: true,
         name: true,
-      email: true,
-      phone: true,
-      role: true,
-      status: true,
-      isVerified: true,
-      createdAt: true,
-    },
-  });
-
-  await tx.operatorProfile.create({
-    data: { 
-      userId: user.id, 
-      storeName, 
-      address,
-      stripeConnectId // ✅ Link Stripe Account Here
-    },
-  });
-
-    await tx.userAddress.create({
-      data: { userId: user.id, address },
+        email: true,
+        phone: true,
+        role: true,
+        isVerified: true,
+        createdAt: true,
+      },
     });
+
+    const operator = await tx.operator.create({
+      data: {
+        userId: user.id,
+        stripeConnectedAccountId: stripeConnectId
+      },
+    });
+
+    await tx.store.create({
+      data: {
+        operatorId: operator.id,
+        name: storeName,
+        address,
+        city: city || "Pending",
+        country: country || "Pending",
+      }
+    });
+
+    if (address) {
+      await tx.address.create({
+        data: {
+          userId: user.id,
+          streetAddress: address,
+          city: city || "Pending",
+          country: country || "Pending",
+          isDefault: true
+        },
+      });
+    }
 
     return user;
   });
@@ -122,7 +140,7 @@ const registerOperator = async (payload: Prisma.UserCreateInput & {address: stri
 /* ================= LOGIN ================= */
 const login = async (payload: ILogin) => {
   const user = await prisma.user.findFirstOrThrow({
-    where: { email: payload.email, status: "ACTIVE" },
+    where: { email: payload.email, isDeleted: false },
     select: {
       id: true,
       name: true,
@@ -170,7 +188,6 @@ const verifyUser = async ({ email, otp }: IVerifyEmail) => {
       email: true,
       phone: true,
       role: true,
-      status: true,
       isVerified: true,
       createdAt: true,
     },
@@ -213,7 +230,7 @@ const resendOTP = async (email: string) => {
 const forgetPassword = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, name: true, email: true, isVerified: true, isDeleted: true, role: true, phone: true, userAddresses: true, avatar: true, createdAt: true, updatedAt: true },
+    select: { id: true, name: true, email: true, isVerified: true, isDeleted: true, role: true, phone: true, addresses: true, avatar: true, createdAt: true, updatedAt: true },
   });
   if (!user) throw new ApiError(404, "User not found");
   if (!user.isVerified || user.isDeleted) {
@@ -301,7 +318,7 @@ const changePassword = async (email: string, oldPassword: string, newPassword: s
 const refreshToken = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, name: true, email: true, phone: true, role: true, isVerified: true, status: true },
+    select: { id: true, name: true, email: true, phone: true, role: true, isVerified: true },
   });
   if (!user) throw new ApiError(404, "User not found");
   if (!user.isVerified) throw new ApiError(403, "User is not verified");
