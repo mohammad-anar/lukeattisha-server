@@ -29,6 +29,7 @@ model OperatorCategory {
   id         String   @id @default(cuid())
   operatorId String
   categoryId String
+  isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

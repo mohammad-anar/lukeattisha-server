@@ -1,12 +1,12 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  // Add validation fields here
+  categoryIds: z.array(z.string()),
 });
 
 const updateSchema = z.object({
-  // Add validation fields here
-}).partial();
+  categoryId: z.string().optional(),
+});
 
 export const OperatorCategoryValidation = {
   createSchema,

@@ -4,17 +4,29 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
-  const result = await prisma.operatorCategory.create({
-    data: payload,
+  const operatorId = payload.operatorId;
+  const categoryIds = payload.categoryIds;
+  console.log(operatorId, categoryIds);
+
+  const result = categoryIds.map((categoryId: string) => {
+    return { operatorId, categoryId }
   });
-  return result;
+
+  const created = await prisma.operatorCategory.createMany({
+    data: result,
+  });
+  return created;
 };
 
-const getAll = async (filters: any, options: any) => {
+const getAll = async (operatorId: string, filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = filters;
 
   const andConditions = [];
+
+  andConditions.push({
+    operatorId: operatorId,
+  });
 
   if (searchTerm) {
     andConditions.push({
@@ -70,8 +82,20 @@ const getById = async (id: string) => {
   return result;
 };
 
-const update = async (id: string, payload: any) => {
-  await getById(id);
+const update = async (operatorId: string, id: string, payload: any) => {
+  console.log(operatorId, id, payload);
+
+  const isOperatorCategoryExist = await prisma.operatorCategory.findFirst({
+    where: {
+      operatorId: operatorId,
+      id: id,
+    },
+  });
+
+  if (!isOperatorCategoryExist) {
+    throw new ApiError(404, 'OperatorCategory not found');
+  }
+
   const result = await prisma.operatorCategory.update({
     where: { id },
     data: payload,

@@ -28,7 +28,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdminSettingService.getById(req.params.id);
+  const result = await AdminSettingService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +38,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdminSettingService.update(req.params.id, req.body);
+  const result = await AdminSettingService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +48,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdminSettingService.deleteById(req.params.id);
+  const result = await AdminSettingService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
