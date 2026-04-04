@@ -5,6 +5,8 @@ import { ServiceService } from './service.service.js';
 import pick from '../../../helpers.ts/pick.js';
 import { getSingleFilePath } from '../../shared/getFilePath.js';
 import { config } from '../../../config/index.js';
+import ApiError from 'errors/ApiError.js';
+import { prisma } from 'helpers.ts/prisma.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
@@ -12,7 +14,7 @@ const create = catchAsync(async (req: Request, res: Response) => {
   if (image) {
     payload.image = `http://${config.ip_address}:${config.port}${image}`;
   }
-  
+
   const result = await ServiceService.create(payload);
   sendResponse(res, {
     success: true,
@@ -45,6 +47,16 @@ const getById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
+  const result = await ServiceService.getByOperatorId(req.params.id as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Service fetched successfully',
+    data: result,
+  });
+});
+
 const update = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const image = getSingleFilePath(req.files as any, "image");
@@ -57,6 +69,24 @@ const update = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: 200,
     message: 'Service updated successfully',
+    data: result,
+  });
+});
+
+const assignAddons = catchAsync(async (req: Request, res: Response) => {
+  const operatorIdUserId = req.user?.id;
+  const operator = await prisma.operator.findUnique({
+    where: { userId: operatorIdUserId },
+  });
+  if (!operator) {
+    throw new ApiError(404, 'Operator not found');
+  }
+  const payload = req.body;
+  const result = await ServiceService.assignAddons(operator.id, payload);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Addons assigned successfully',
     data: result,
   });
 });
@@ -75,6 +105,8 @@ export const ServiceController = {
   create,
   getAll,
   getById,
+  getByOperatorId,
   update,
+  assignAddons,
   deleteById,
 };

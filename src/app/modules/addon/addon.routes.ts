@@ -7,10 +7,11 @@ import { UserRole } from '@prisma/client';
 
 const router = express.Router();
 
-router.post('/', auth(UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN), validateRequest(AddonValidation.createSchema), AddonController.create);
+router.post('/', auth(UserRole.OPERATOR), AddonController.create);
 router.get('/', AddonController.getAll);
+router.get('/my-addons', auth(UserRole.OPERATOR), AddonController.getByOperatorId);
 router.get('/:id', AddonController.getById);
-router.patch('/:id', auth(UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN), validateRequest(AddonValidation.updateSchema), AddonController.update);
-router.delete('/:id', auth(UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN), AddonController.deleteById);
+router.patch('/:id', auth(UserRole.OPERATOR), AddonController.update);
+router.delete('/:id', auth(UserRole.OPERATOR), AddonController.deleteById);
 
 export const AddonRouter = router;

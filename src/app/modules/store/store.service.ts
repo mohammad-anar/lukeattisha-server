@@ -18,7 +18,7 @@ const getAll = async (filters: any, options: any) => {
 
   if (searchTerm) {
     andConditions.push({
-      OR: ["name","address","city"].map((field) => ({
+      OR: ["name", "address", "city"].map((field) => ({
         [field]: {
           contains: searchTerm,
           mode: 'insensitive',
@@ -43,6 +43,9 @@ const getAll = async (filters: any, options: any) => {
     where: whereConditions,
     skip,
     take: limit,
+    include: {
+      operator: { select: { user: { select: { name: true, email: true, phone: true, avatar: true } } } },
+    },
     orderBy:
       sortBy && sortOrder
         ? { [sortBy]: sortOrder }
@@ -59,10 +62,19 @@ const getAll = async (filters: any, options: any) => {
     data: result,
   };
 };
+const getByOperatorId = async (operatorId: string) => {
+  const result = await prisma.store.findMany({
+    where: { operatorId },
+    include: { operator: { select: { user: { select: { name: true, email: true, phone: true, avatar: true } } } } }
+  });
+  return result;
+};
+
 
 const getById = async (id: string) => {
   const result = await prisma.store.findUnique({
     where: { id },
+    include: { operator: { select: { user: { select: { name: true, email: true, phone: true, avatar: true } } } } }
   });
   if (!result) {
     throw new ApiError(404, 'Store not found');
@@ -93,4 +105,5 @@ export const StoreService = {
   getById,
   update,
   deleteById,
+  getByOperatorId
 };

@@ -216,7 +216,36 @@ const getAllOperators = async (filters: any, options: any) => {
       stripeCustomerId: true,
       isSubscribed: true,
       userId: true,
-      operatorProfile: true,
+      operatorProfile: {
+        select: {
+          id: true,
+          stores: true,
+          userId: true,
+          operatorId: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              avatar: true,
+              role: true,
+              addresses: true,
+              isDeleted: true,
+              lat: true,
+              lng: true,
+              stripeCustomerId: true,
+              isSubscribed: true,
+              userId: true,
+              isTwoFactorEnabled: true,
+              isVerified: true,
+              createdAt: true,
+              updatedAt: true,
+            }
+          }
+        }
+      },
+
       isTwoFactorEnabled: true,
       isVerified: true,
       createdAt: true,
@@ -304,6 +333,44 @@ const createOperator = async (payload: any, creatorId: string) => {
     return user;
   });
 
+  return result;
+};
+
+// approve operator
+const approveOperator = async (id: string) => {
+  const result = await prisma.user.update({
+    where: { id },
+    data: {
+      operatorProfile: {
+        update: {
+          approvalStatus: 'APPROVED',
+        },
+      },
+    },
+    select: {
+      id: true,
+      userId: true,
+      name: true,
+      email: true,
+      phone: true,
+      avatar: true,
+      role: true,
+      addresses: true,
+      isDeleted: true,
+      lat: true,
+      lng: true,
+      isTwoFactorEnabled: true,
+      adminWallet: true,
+      operatorProfile: true,
+      createdBy: true,
+      createdById: true,
+      stripeCustomerId: true,
+      isSubscribed: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    }
+  });
   return result;
 };
 
@@ -484,6 +551,7 @@ export const UserService = {
   create,
   createAdmin,
   createOperator,
+  approveOperator,
   getAllUsers,
   getAllOperators,
   getAllAdmins,

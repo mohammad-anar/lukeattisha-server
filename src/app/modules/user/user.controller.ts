@@ -49,6 +49,16 @@ const createOperator = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const approveOperator = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.approveOperator(req.params.id as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Operator approved successfully',
+    data: result,
+  });
+});
+
 const getAll = catchAsync(async (req: Request, res: Response) => {
   const filters = pick(req.query, ['searchTerm', 'role', 'isVerified', 'isDeleted']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
@@ -167,6 +177,7 @@ export const UserController = {
   create,
   createAdmin,
   createOperator,
+  approveOperator,
   getAll,
   getAllAdmins,
   getAllOperators,

@@ -4,9 +4,23 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
+  const { serviceIds, ...bundleData } = payload;
+
   const result = await prisma.bundle.create({
-    data: payload,
+    data: {
+      ...bundleData,
+
+      bundleServices: {
+        create: serviceIds.map((serviceId: string) => ({
+          serviceId,
+        })),
+      },
+    },
+    include: {
+      bundleServices: true,
+    },
   });
+
   return result;
 };
 
@@ -60,7 +74,7 @@ const getAll = async (filters: any, options: any) => {
       ORDER BY distance_meters ASC
       LIMIT ${limit} OFFSET ${skip}
     `;
-    
+
     const totalResult: any = await prisma.$queryRaw`
       SELECT COUNT(DISTINCT b.id)::int as count 
       FROM "Bundle" b
@@ -72,6 +86,28 @@ const getAll = async (filters: any, options: any) => {
       where: whereConditions,
       skip,
       take: limit,
+      include: {
+        bundleServices: {
+          select: {
+            serviceId: true,
+            service: {
+              select: {
+                id: true,
+                name: true,
+                basePrice: true,
+                image: true,
+                description: true,
+                category: true,
+                operator: true,
+                reviews: true,
+                bundleServices: true,
+                storeServices: true,
+              }
+            },
+            store: true
+          }
+        }
+      },
       orderBy:
         sortBy && sortOrder
           ? { [sortBy]: sortOrder }

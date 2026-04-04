@@ -100,7 +100,8 @@ const registerOperator = async (payload: Prisma.UserCreateInput & { address: str
       },
     });
 
-    await tx.store.create({
+    if (storeName) {
+      await tx.store.create({
       data: {
         operatorId: operator.id,
         name: storeName,
@@ -109,6 +110,7 @@ const registerOperator = async (payload: Prisma.UserCreateInput & { address: str
         country: country || "Pending",
       }
     });
+    }
 
     if (address) {
       await tx.address.create({

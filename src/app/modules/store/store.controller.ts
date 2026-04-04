@@ -3,9 +3,29 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { StoreService } from './store.service.js';
 import pick from '../../../helpers.ts/pick.js';
+import { getSingleFilePath } from 'app/shared/getFilePath.js';
+import { config } from 'config/index.js';
+import { prisma } from 'helpers.ts/prisma.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
-  const result = await StoreService.create(req.body);
+  const userId = (req as any).user.id;
+  const operator = await prisma.operator.findUnique({
+    where: {
+      userId: userId,
+    },
+  });
+  if (!operator) {
+    throw new Error('Operator not found');
+  }
+  const image = getSingleFilePath(req.files, "image");
+  const banner = getSingleFilePath(req.files, "banner");
+
+  const payload = req.body;
+
+  if (image) payload.logo = `http://${config.ip_address}:${config.port}${image}`;
+  if (banner) payload.banner = `http://${config.ip_address}:${config.port}${banner}`;
+
+  const result = await StoreService.create({ ...payload, operatorId: operator.id });
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -27,8 +47,27 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.params.operatorId as string;
+  const operator = await prisma.operator.findUnique({
+    where: {
+      userId: userId,
+    },
+  });
+  if (!operator) {
+    throw new Error('Operator not found');
+  }
+  const result = await StoreService.getByOperatorId(operator.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Store fetched successfully',
+    data: result,
+  });
+});
+
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await StoreService.getById(req.params.id);
+  const result = await StoreService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +77,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await StoreService.update(req.params.id, req.body);
+  const result = await StoreService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +87,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await StoreService.deleteById(req.params.id);
+  const result = await StoreService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -63,4 +102,5 @@ export const StoreController = {
   getById,
   update,
   deleteById,
+  getByOperatorId
 };

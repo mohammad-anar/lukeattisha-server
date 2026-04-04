@@ -38,7 +38,7 @@ const registerOperatorSchema = z.object({
   phone: z.string().optional(),
   password: z.string({ message: "Password is required" }).min(8, "Password must be at least 8 characters"),
   address: z.string({ message: "Address is required" }),
-  storeName: z.string({ message: "Store name is required" }),
+  storeName: z.string().optional(),
   city: z.string().optional(),
   country: z.string().optional(),
 });

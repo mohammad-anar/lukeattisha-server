@@ -10,6 +10,7 @@ const router = express.Router();
 
 router.post('/create-admin', auth(UserRole.SUPER_ADMIN), fileUploadHandler(), validateRequest(UserValidation.createAdminSchema), UserController.createAdmin);
 router.post('/create-operator', auth(UserRole.SUPER_ADMIN), fileUploadHandler(), validateRequest(UserValidation.createOperatorSchema), UserController.createOperator);
+router.patch('/approve-operator/:id', auth(UserRole.SUPER_ADMIN), UserController.approveOperator);
 
 router.get('/admins', auth(UserRole.SUPER_ADMIN), UserController.getAllAdmins);
 router.get('/operators', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), UserController.getAllOperators);

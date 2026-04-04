@@ -2,11 +2,47 @@ import { prisma } from '../../../helpers.ts/prisma.js';
 import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
+import { CLIENT_RENEG_LIMIT } from 'tls';
+
+const generateServiceId = async () => {
+  const lastService = await prisma.service.findFirst({
+    orderBy: { createdAt: "desc" },
+    select: { serviceId: true },
+  });
+
+  let nextNumber = 1;
+
+  if (lastService?.serviceId) {
+    const match = lastService.serviceId.match(/\d+$/);
+    if (match) {
+      nextNumber = parseInt(match[0], 10) + 1;
+    }
+  }
+
+  return `SRV-${String(nextNumber).padStart(3, "0")}`;
+};
 
 const create = async (payload: any) => {
+  const addonIds = payload.addonIds;
+  const serviceId = await generateServiceId();
+
   const result = await prisma.service.create({
-    data: payload,
+    data: {
+      ...payload,
+      serviceId,
+    },
   });
+
+  if (addonIds && addonIds.length > 0) {
+    const addons = addonIds.map((addonId: string) => ({
+      serviceId: result.id,
+      addonId: addonId,
+    }));
+    await prisma.serviceAddon.createMany({
+      data: addons,
+    });
+  }
+
   return result;
 };
 
@@ -46,6 +82,8 @@ const getAll = async (filters: any, options: any) => {
     const lat = parseFloat(userLat);
     const lng = parseFloat(userLng);
 
+    console.log(lat, lng);
+
     // Raw SQL to handle PostGIS distance sorting
     // We join with StoreService and Store to find the minimum distance to any store offering this service
     result = await prisma.$queryRaw`
@@ -61,7 +99,9 @@ const getAll = async (filters: any, options: any) => {
       ORDER BY distance_meters ASC
       LIMIT ${limit} OFFSET ${skip}
     `;
-    
+
+    console.log(result);
+
     const totalResult: any = await prisma.$queryRaw`
       SELECT COUNT(DISTINCT s.id)::int as count 
       FROM "Service" s
@@ -73,6 +113,23 @@ const getAll = async (filters: any, options: any) => {
       where: whereConditions,
       skip,
       take: limit,
+      include: {
+        operator: true,
+        category: true,
+        ads: true,
+        storeServices: true,
+        serviceAddons: {
+          select: {
+            addon: true,
+            addonId: true,
+            createdAt: true,
+            id: true,
+            serviceId: true,
+            updatedAt: true
+          }
+        },
+
+      },
       orderBy:
         sortBy && sortOrder
           ? { [sortBy]: sortOrder }
@@ -94,10 +151,83 @@ const getAll = async (filters: any, options: any) => {
 const getById = async (id: string) => {
   const result = await prisma.service.findUnique({
     where: { id },
+    select: {
+      id: true,
+      serviceId: true,
+      name: true,
+      description: true,
+      basePrice: true,
+      image: true,
+      operatorId: true,
+      categoryId: true,
+      createdAt: true,
+      updatedAt: true,
+      operator: true,
+      category: true,
+      ads: true,
+      storeServices: true,
+      serviceAddons: {
+        select: {
+          addon: true,
+          addonId: true,
+          createdAt: true,
+          id: true,
+          serviceId: true,
+          updatedAt: true
+        }
+      },
+    }
   });
   if (!result) {
     throw new ApiError(404, 'Service not found');
   }
+  return result;
+};
+
+const getByOperatorId = async (id: string) => {
+  const result = await prisma.service.findMany({
+    where: { operatorId: id },
+    select: {
+      id: true,
+      serviceId: true,
+      name: true,
+      description: true,
+      basePrice: true,
+      image: true,
+      operatorId: true,
+      categoryId: true,
+      createdAt: true,
+      updatedAt: true,
+      operator: true,
+      category: true,
+      ads: true,
+      storeServices: true,
+      serviceAddons: true,
+    }
+  });
+  if (!result) {
+    throw new ApiError(404, 'Service not found');
+  }
+  return result;
+};
+
+// assign addons to service
+const assignAddons = async (operatorId: string, payload: any) => {
+  console.log(operatorId, payload);
+  const service = await prisma.service.findUnique({
+    where: { id: payload.serviceId, operatorId: operatorId },
+  });
+  if (!service) {
+    throw new ApiError(401, 'You are not authorized to assign addons to this service');
+  }
+
+  const addons = payload.addonIds.map((addonId: string) => ({
+    serviceId: payload.serviceId,
+    addonId: addonId,
+  }));
+  const result = await prisma.serviceAddon.createMany({
+    data: addons,
+  });
   return result;
 };
 
@@ -122,6 +252,8 @@ export const ServiceService = {
   create,
   getAll,
   getById,
+  getByOperatorId,
   update,
+  assignAddons,
   deleteById,
 };

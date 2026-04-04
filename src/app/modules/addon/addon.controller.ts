@@ -3,9 +3,22 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { AddonService } from './addon.service.js';
 import pick from '../../../helpers.ts/pick.js';
+import { prisma } from 'helpers.ts/prisma.js';
+import ApiError from 'errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
-  const result = await AddonService.create(req.body);
+  console.log(req.body)
+  const operatorIdUserId = req.user?.id;
+  console.log(operatorIdUserId)
+  const operator = await prisma.operator.findUnique({
+    where: { userId: operatorIdUserId },
+  });
+  if (!operator) {
+    throw new ApiError(404, 'Operator not found');
+  }
+
+
+  const result = await AddonService.create({ ...req.body, operatorId: operator.id });
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -27,8 +40,25 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
+  const operatorIdUserId = req.user?.id;
+  const operator = await prisma.operator.findUnique({
+    where: { userId: operatorIdUserId },
+  });
+  if (!operator) {
+    throw new ApiError(404, 'Operator not found');
+  }
+  const result = await AddonService.getByOperatorId(operator.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Addon fetched successfully',
+    data: result,
+  });
+});
+
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AddonService.getById(req.params.id);
+  const result = await AddonService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +68,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await AddonService.update(req.params.id, req.body);
+  const result = await AddonService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +78,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AddonService.deleteById(req.params.id);
+  const result = await AddonService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -63,4 +93,5 @@ export const AddonController = {
   getById,
   update,
   deleteById,
+  getByOperatorId,
 };

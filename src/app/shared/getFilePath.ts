@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-type IFolderName = "image" | "media" | "doc";
+type IFolderName = "image" | "media" | "doc" | "banner";
 
 //single file
 export const getSingleFilePath = (files: any, folderName: IFolderName) => {

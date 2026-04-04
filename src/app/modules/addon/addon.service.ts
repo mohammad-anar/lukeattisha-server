@@ -4,6 +4,7 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
+  console.log(payload);
   const result = await prisma.addon.create({
     data: payload,
   });
@@ -60,6 +61,13 @@ const getAll = async (filters: any, options: any) => {
   };
 };
 
+const getByOperatorId = async (operatorId: string) => {
+  const result = await prisma.addon.findMany({
+    where: { operatorId },
+  });
+  return result;
+};
+
 const getById = async (id: string) => {
   const result = await prisma.addon.findUnique({
     where: { id },
@@ -93,4 +101,5 @@ export const AddonService = {
   getById,
   update,
   deleteById,
+  getByOperatorId,
 };
