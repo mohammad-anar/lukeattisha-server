@@ -3,9 +3,44 @@ import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
-const create = async (payload: any) => {
-  const result = await prisma.storeService.create({
-    data: payload,
+const create = async (operatorId: string, payload: any) => {
+  const { storeId, serviceIds } = payload;
+
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+  });
+  if (!store) {
+    throw new ApiError(404, 'Store not found');
+  }
+  if (store.operatorId !== operatorId) {
+    throw new ApiError(403, 'You are not authorized to perform this action');
+  }
+
+  const services = await prisma.service.findMany({
+    where: { id: { in: serviceIds } },
+  });
+  if (services.length !== serviceIds.length) {
+    throw new ApiError(404, 'One or more services not found');
+  }
+
+  const existingServices = await prisma.storeService.findMany({
+    where: {
+      storeId,
+      serviceId: { in: serviceIds },
+    },
+  });
+
+  if (existingServices.length > 0) {
+    throw new ApiError(400, 'One or more services already exist in the store');
+  }
+
+  const data = serviceIds.map((serviceId: string) => ({
+    storeId,
+    serviceId,
+  }));
+
+  const result = await prisma.storeService.createMany({
+    data,
   });
   return result;
 };
@@ -43,6 +78,11 @@ const getAll = async (filters: any, options: any) => {
     where: whereConditions,
     skip,
     take: limit,
+    include: {
+      service: true,
+      store: true,
+
+    },
     orderBy:
       sortBy && sortOrder
         ? { [sortBy]: sortOrder }
@@ -58,6 +98,28 @@ const getAll = async (filters: any, options: any) => {
     },
     data: result,
   };
+};
+
+const getAllByStoreId = async (storeId: string) => {
+  const result = await prisma.storeService.findMany({
+    where: { storeId },
+    include: {
+      service: true,
+      store: true,
+    },
+  });
+  return result;
+};
+
+const getAllByOperatorId = async (operatorId: string) => {
+  const result = await prisma.storeService.findMany({
+    where: { store: { operatorId } },
+    include: {
+      service: true,
+      store: true,
+    },
+  });
+  return result;
 };
 
 const getById = async (id: string) => {
@@ -93,4 +155,6 @@ export const StoreServiceService = {
   getById,
   update,
   deleteById,
+  getAllByStoreId,
+  getAllByOperatorId,
 };
