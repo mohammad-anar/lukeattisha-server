@@ -7,10 +7,11 @@ import { UserRole } from '@prisma/client';
 
 const router = express.Router();
 
-router.post('/', auth(UserRole.USER), validateRequest(AddressValidation.createSchema), AddressController.create);
-router.get('/', auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN), AddressController.getAll);
+router.post('/', auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPER_ADMIN), validateRequest(AddressValidation.createSchema), AddressController.create);
+router.get('/my-addresses', auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPER_ADMIN), AddressController.getMyAddresses);
 router.get('/:id', auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN), AddressController.getById);
-router.patch('/:id', auth(UserRole.USER), validateRequest(AddressValidation.updateSchema), AddressController.update);
-router.delete('/:id', auth(UserRole.USER), AddressController.deleteById);
+router.patch('/:id', auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPER_ADMIN), validateRequest(AddressValidation.updateSchema), AddressController.update);
+router.patch('/:id/set-default', auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPER_ADMIN), AddressController.setDefault);
+router.delete('/:id', auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPER_ADMIN), AddressController.deleteById);
 
 export const AddressRouter = router;

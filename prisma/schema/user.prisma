@@ -16,7 +16,7 @@ model User {
   isTwoFactorEnabled Boolean  @default(false)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
-
+  status             UserStatus  @default(ACTIVE)
   // Creator Tracking (Super Admin creates Admins/Operators)
   createdById  String?
   createdBy    User?   @relation("AdminCreator", fields: [createdById], references: [id])

@@ -9,8 +9,12 @@ model AdminSetting {
 model Banner {
   id         String     @id @default(cuid())
   title      String
+  description String?
   image      String?
-  bannerType BannerType @default(FULL)
+  buttonText String?
+  backgroundColor String? @default("#FFFFFF")
+  textColor       String? @default("#000000") 
+  bannerType BannerType @default(PROMOTION)
   isActive   Boolean    @default(true)
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt

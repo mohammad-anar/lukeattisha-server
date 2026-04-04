@@ -4,6 +4,11 @@ enum UserRole {
   ADMIN
   SUPER_ADMIN
 }
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  BANNED
+}
 
 enum ApprovalStatus {
   PENDING
@@ -57,9 +62,10 @@ enum TransactionType {
 }
 
 enum BannerType {
-  FULL
-  HALF
-  SMALL
+  PROMOTION
+  MEMBERSHIP
+  SESSIONAL
+  OFFER
 }
 
 enum NotificationChannel {

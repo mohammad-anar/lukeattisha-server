@@ -14,7 +14,7 @@ const create = async (payload: any) => {
   return result;
 };
 
-const getAll = async (filters: any, options: any) => {
+const getAllUsers = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
   const { searchTerm, role, ...filterData } = filters;
 
@@ -51,6 +51,26 @@ const getAll = async (filters: any, options: any) => {
     where: whereConditions,
     skip,
     take: limit,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      avatar: true,
+      role: true,
+      addresses: true,
+      isDeleted: true,
+      lat: true,
+      lng: true,
+      stripeCustomerId: true,
+      isSubscribed: true,
+      userId: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: true,
+
+    },
+
     orderBy:
       sortBy && sortOrder
         ? { [sortBy]: sortOrder }
@@ -67,6 +87,161 @@ const getAll = async (filters: any, options: any) => {
     data: result,
   };
 };
+const getAllAdmins = async (filters: any, options: any) => {
+  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+  const { searchTerm, role, ...filterData } = filters;
+
+  const andConditions = [];
+
+  // Default to USER role if no role is specifically provided in filters
+  const targetRole = role || 'USER';
+  andConditions.push({ role: targetRole });
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ["name", "email", "phone"].map((field) => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.user.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      avatar: true,
+      role: true,
+      addresses: true,
+      isDeleted: true,
+      lat: true,
+      lng: true,
+      isTwoFactorEnabled: true,
+      adminWallet: true,
+      createdBy: true,
+
+      createdById: true,
+      stripeCustomerId: true,
+      isSubscribed: true,
+      userId: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: true,
+
+    },
+
+    orderBy:
+      sortBy && sortOrder
+        ? { [sortBy]: sortOrder }
+        : { createdAt: 'desc' },
+  });
+  const total = await prisma.user.count({ where: whereConditions });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+const getAllOperators = async (filters: any, options: any) => {
+  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+  const { searchTerm, role, ...filterData } = filters;
+
+  const andConditions = [];
+
+  // Default to USER role if no role is specifically provided in filters
+  const targetRole = role || 'USER';
+  andConditions.push({ role: targetRole });
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ["name", "email", "phone"].map((field) => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.UserWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.user.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
+      avatar: true,
+      role: true,
+      addresses: true,
+      isDeleted: true,
+      lat: true,
+      lng: true,
+      stripeCustomerId: true,
+      isSubscribed: true,
+      userId: true,
+      operatorProfile: true,
+      isTwoFactorEnabled: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: true,
+
+    },
+
+    orderBy:
+      sortBy && sortOrder
+        ? { [sortBy]: sortOrder }
+        : { createdAt: 'desc' },
+  });
+  const total = await prisma.user.count({ where: whereConditions });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+
+
 
 const createAdmin = async (payload: any, creatorId: string) => {
   const hashedPassword = await bcrypt.hash(payload.password, Number(config.bcrypt_salt_round));
@@ -135,6 +310,28 @@ const createOperator = async (payload: any, creatorId: string) => {
 const getById = async (id: string) => {
   const result = await prisma.user.findUnique({
     where: { id },
+    select: {
+      id: true,
+      userId: true,
+      name: true,
+      email: true,
+      phone: true,
+      avatar: true,
+      role: true,
+      addresses: true,
+      isDeleted: true,
+      lat: true,
+      lng: true,
+      isTwoFactorEnabled: true,
+      adminWallet: true,
+      createdBy: true,
+      createdById: true,
+      stripeCustomerId: true,
+      isSubscribed: true,
+      isVerified: true,
+      createdAt: true,
+      updatedAt: true,
+    }
   });
   if (!result) {
     throw new ApiError(404, 'User not found');
@@ -151,37 +348,108 @@ const update = async (id: string, payload: any) => {
   return result;
 };
 
+const banUser = async (id: string) => {
+  const user = await getById(id);
+  const result = await prisma.user.update({
+    where: { id },
+    data: { status: 'BANNED' },
+  });
+  return result;
+};
+
+const unbanUser = async (id: string) => {
+  const user = await getById(id);
+  const result = await prisma.user.update({
+    where: { id },
+    data: { status: 'ACTIVE' },
+  });
+  return result;
+};
+
 const getMe = async (id: string, role: string) => {
   let result;
   if (role === 'USER') {
     result = await prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        role: true,
         addresses: true,
+        isDeleted: true,
+        lat: true,
+        lng: true,
+        isTwoFactorEnabled: true,
         userSubscriptions: {
           include: { plan: true },
           where: { status: 'ACTIVE' },
         },
-      },
+        stripeCustomerId: true,
+        isSubscribed: true,
+        userId: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      }
     });
   } else if (role === 'OPERATOR') {
     result = await prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        role: true,
+        addresses: true,
+        isDeleted: true,
+        lat: true,
+        lng: true,
+        isTwoFactorEnabled: true,
         operatorProfile: {
           include: {
             stores: true,
             operatorWallet: true,
           },
         },
-      },
+        stripeCustomerId: true,
+        isSubscribed: true,
+        userId: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      }
     });
   } else if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
     result = await prisma.user.findUnique({
       where: { id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        role: true,
+        addresses: true,
+        isDeleted: true,
+        lat: true,
+        lng: true,
+        isTwoFactorEnabled: true,
         adminWallet: true,
-      },
+        createdBy: true,
+        createdById: true,
+        stripeCustomerId: true,
+        isSubscribed: true,
+        userId: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true,
+      }
+
     });
   } else {
     result = await prisma.user.findUnique({
@@ -197,8 +465,17 @@ const getMe = async (id: string, role: string) => {
 
 const deleteById = async (id: string) => {
   await getById(id);
-  const result = await prisma.user.delete({
+  const result = await prisma.user.update({
     where: { id },
+    data: { isDeleted: true },
+  });
+  return result;
+};
+const revertDelete = async (id: string) => {
+  await getById(id);
+  const result = await prisma.user.update({
+    where: { id },
+    data: { isDeleted: false },
   });
   return result;
 };
@@ -207,9 +484,14 @@ export const UserService = {
   create,
   createAdmin,
   createOperator,
-  getAll,
+  getAllUsers,
+  getAllOperators,
+  getAllAdmins,
   getById,
   getMe,
   update,
+  banUser,
+  unbanUser,
   deleteById,
+  revertDelete,
 };

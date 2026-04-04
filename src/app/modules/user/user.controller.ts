@@ -3,9 +3,14 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { UserService } from './user.service.js';
 import pick from '../../../helpers.ts/pick.js';
-
+import { getSingleFilePath } from '../../shared/getFilePath.js';
+import { config } from 'config/index.js';
 const create = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserService.create(req.body);
+  const payload = req.body;
+  const image = getSingleFilePath(req.files as any, "image") as string;
+  if (image) payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
+
+  const result = await UserService.create(payload);
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -16,7 +21,11 @@ const create = catchAsync(async (req: Request, res: Response) => {
 
 const createAdmin = catchAsync(async (req: Request, res: Response) => {
   const creatorId = (req as any).user.id;
-  const result = await UserService.createAdmin(req.body, creatorId);
+  const payload = req.body;
+  const image = getSingleFilePath(req.files as any, "image") as string;
+  if (image) payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
+
+  const result = await UserService.createAdmin(payload, creatorId);
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -27,7 +36,11 @@ const createAdmin = catchAsync(async (req: Request, res: Response) => {
 
 const createOperator = catchAsync(async (req: Request, res: Response) => {
   const creatorId = (req as any).user.id;
-  const result = await UserService.createOperator(req.body, creatorId);
+  const payload = req.body;
+  const image = getSingleFilePath(req.files as any, "image") as string;
+  if (image) payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
+
+  const result = await UserService.createOperator(payload, creatorId);
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -37,9 +50,9 @@ const createOperator = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']);
+  const filters = pick(req.query, ['searchTerm', 'role', 'isVerified', 'isDeleted']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
-  const result = await UserService.getAll(filters, options);
+  const result = await UserService.getAllUsers(filters, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -50,9 +63,9 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllAdmins = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'status']);
+  const filters = pick(req.query, ['searchTerm', 'isVerified', 'isDeleted']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
-  const result = await UserService.getAll({ ...filters, role: 'ADMIN' }, options);
+  const result = await UserService.getAllAdmins({ ...filters, role: 'ADMIN' }, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -63,9 +76,9 @@ const getAllAdmins = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllOperators = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'status']);
+  const filters = pick(req.query, ['searchTerm', 'isVerified', 'isDeleted']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
-  const result = await UserService.getAll({ ...filters, role: 'OPERATOR' }, options);
+  const result = await UserService.getAllOperators({ ...filters, role: 'OPERATOR' }, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -86,11 +99,35 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserService.update(req.params.id as string, req.body);
+  const payload = req.body;
+  const image = getSingleFilePath(req.files as any, "image") as string;
+  if (image) payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
+  
+  const result = await UserService.update(req.params.id as string, payload);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: 'User updated successfully',
+    data: result,
+  });
+});
+
+const banUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.banUser(req.params.id as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User banned successfully',
+    data: result,
+  });
+});
+
+const unbanUser = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.unbanUser(req.params.id as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User unbanned successfully',
     data: result,
   });
 });
@@ -116,6 +153,16 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const revertDelete = catchAsync(async (req: Request, res: Response) => {
+  const result = await UserService.revertDelete(req.params.id as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User reverted successfully',
+    data: result,
+  });
+});
+
 export const UserController = {
   create,
   createAdmin,
@@ -127,4 +174,7 @@ export const UserController = {
   getMe,
   update,
   deleteById,
+  banUser,
+  unbanUser,
+  revertDelete,
 };
