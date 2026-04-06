@@ -23,14 +23,10 @@ import { CLIENT_RENEG_LIMIT } from 'tls';
 // };
 
 const create = async (payload: any) => {
-  const addonIds = payload.addonIds;
-  // const serviceId = await generateServiceId();
+  const { addonIds, ...serviceData } = payload;
 
   const result = await prisma.service.create({
-    data: {
-      ...payload,
-      // serviceId,
-    },
+    data: serviceData,
   });
 
   if (addonIds && addonIds.length > 0) {
