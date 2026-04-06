@@ -121,7 +121,7 @@ export const createOrderPaymentSession = async (
     },
   });
 
-  return session.url;
+  return session;
 };
 
 /**

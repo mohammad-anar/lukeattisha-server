@@ -134,7 +134,7 @@ const create = async (payload: { cartId: string }) => {
   });
 
   // 7. Generate Stripe Payment URL
-  const paymentUrl = await StripeHelpers.createOrderPaymentSession(
+  const session = await StripeHelpers.createOrderPaymentSession(
     result.id,
     totalAmount, // full subtotal
     0, // delivery fee if not in subtotal
@@ -143,7 +143,28 @@ const create = async (payload: { cartId: string }) => {
     store.operator.stripeConnectedAccountId
   );
 
-  return { order: result, paymentUrl };
+  // 8. Update Order and create Payment with the session details
+  const updatedOrder = await prisma.$transaction(async (tx) => {
+    const order = await tx.order.update({
+      where: { id: result.id },
+      data: { stripeSessionId: session.id }
+    });
+
+    await tx.payment.create({
+      data: {
+        orderId: result.id,
+        stripeSessionId: session.id,
+        amount: totalAmount,
+        platformFee,
+        operatorAmount,
+        status: "UNPAID",
+      }
+    });
+
+    return order;
+  });
+
+  return { order: updatedOrder, paymentUrl: session.url };
 };
 
 const getAll = async (filters: any, options: any) => {

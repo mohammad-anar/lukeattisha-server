@@ -17,16 +17,23 @@ const create = async (payload: any) => {
  * Logs every event and delegates to specific handlers
  */
 const handleWebhook = async (signature: string, payload: any) => {
+  const secret = (config.stripe.stripe_webhook_secret as string || "").trim();
+  console.log(`[STRIPE WEBHOOK] Incoming Request...`);
+  console.log(`[STRIPE WEBHOOK] Secret Prefix: ${secret.slice(0, 7)}... (Length: ${secret.length})`);
+  console.log(`[STRIPE WEBHOOK] Signature Present: ${!!signature}`);
+  console.log(`[STRIPE WEBHOOK] Payload type: ${typeof payload}, Is Buffer: ${Buffer.isBuffer(payload)}`);
+
   let event;
   try {
     event = stripe.webhooks.constructEvent(
       payload,
       signature,
-      config.stripe.stripe_webhook_secret as string
+      secret
     );
-    console.log(`[STRIPE WEBHOOK] Event Received: ${event.type} [ID: ${event.id}]`);
+    console.log(`[STRIPE WEBHOOK] ✅ Verification SUCCESS: ${event.type}`);
   } catch (err: any) {
-    console.error(`[STRIPE WEBHOOK ERROR] Verification Failed: ${err.message}`);
+    console.error(`[STRIPE WEBHOOK ❌ ERROR] Verification Failed: ${err.message}`);
+    // Common local error: whsec_ mismatch between CLI and .env
     throw new ApiError(400, `Webhook Error: ${err.message}`);
   }
 
@@ -35,6 +42,7 @@ const handleWebhook = async (signature: string, payload: any) => {
   try {
     switch (event.type) {
       case "checkout.session.completed":
+        console.log(`[STRIPE WEBHOOK] Handling checkout.session.completed for ${session.id}`);
         await handleCheckoutSessionCompleted(session);
         break;
       case "customer.subscription.deleted":
@@ -48,8 +56,7 @@ const handleWebhook = async (signature: string, payload: any) => {
     }
   } catch (error: any) {
     console.error(`[STRIPE WEBHOOK ERROR] Processing Failed [Type: ${event.type}]:`, error.message);
-    // Note: We don't throw here so Stripe doesn't keep retrying if it's a logic error, 
-    // but in production you might want to retry for DB issues.
+    console.error(error.stack);
   }
 
   return { received: true };
@@ -57,14 +64,25 @@ const handleWebhook = async (signature: string, payload: any) => {
 
 const handleCheckoutSessionCompleted = async (session: any) => {
   const metadata = session.metadata;
-  console.log(`[STRIPE WEBHOOK] Processing Checkout Session: ${session.id} [Type: ${metadata?.type}]`);
+  console.log(`[STRIPE WEBHOOK] Metadata:`, JSON.stringify(metadata, null, 2));
+
+  if (!metadata || !metadata.type) {
+    console.warn(`[STRIPE WEBHOOK] Warning: No metadata type found in session ${session.id}`);
+    return;
+  }
 
   if (metadata.type === "USER_SUBSCRIPTION") {
     await handleUserSubscriptionSuccess(metadata.userId, session);
   } else if (metadata.type === "ORDER_PAYMENT") {
+    if (!metadata.orderId) {
+      console.error(`[STRIPE WEBHOOK ERROR] Missing orderId in metadata for ORDER_PAYMENT session ${session.id}`);
+      return;
+    }
     await handleOrderPaymentSuccess(metadata.orderId, session);
   } else if (metadata.type === "OPERATOR_AD_SUBSCRIPTION") {
     await handleAdSubscriptionSuccess(metadata.operatorId, metadata.planId, session);
+  } else {
+    console.warn(`[STRIPE WEBHOOK] Unknown metadata type: ${metadata.type}`);
   }
 };
 
@@ -117,15 +135,17 @@ const handleUserSubscriptionSuccess = async (userId: string, session: any) => {
 };
 
 const handleOrderPaymentSuccess = async (orderId: string, session: any) => {
-  console.log(`[STRIPE WEBHOOK] Confirming Order Payment: ${orderId}`);
+  console.log(`[STRIPE WEBHOOK] handleOrderPaymentSuccess started for Order: ${orderId}, Session: ${session.id}`);
 
-  // Check if payment was already processed for this session
+  // 1. Find the payment record created during order creation
   const existingPayment = await prisma.payment.findFirst({
     where: { stripeSessionId: session.id },
   });
 
-  if (existingPayment) {
-    console.log(`[STRIPE WEBHOOK] Payment ${session.id} for order ${orderId} already processed. Skipping.`);
+  console.log(`[STRIPE WEBHOOK] Existing Payment Found: ${existingPayment ? existingPayment.id : 'NO'}`);
+
+  if (existingPayment && existingPayment.status === "PAID") {
+    console.log(`[STRIPE WEBHOOK] Payment ${session.id} already processed. Skipping.`);
     return;
   }
 
@@ -135,9 +155,11 @@ const handleOrderPaymentSuccess = async (orderId: string, session: any) => {
   });
 
   if (!order) {
-    console.error(`[STRIPE WEBHOOK ERROR] Order ${orderId} not found.`);
+    console.error(`[STRIPE WEBHOOK ERROR] Order ${orderId} not found in DB!`);
     return;
   }
+
+  console.log(`[STRIPE WEBHOOK] Order Found: ${order.orderNumber}. Processing updates...`);
 
   // Use the pre-calculated fees from the order record to ensure accuracy
   const platformFee = Number(order.platformFee);
@@ -154,19 +176,31 @@ const handleOrderPaymentSuccess = async (orderId: string, session: any) => {
       },
     });
 
-    // 2. Create Payment record
-    const payment = await tx.payment.create({
-      data: {
-        orderId,
-        stripeSessionId: session.id,
-        stripePaymentIntentId: session.payment_intent as string,
-        amount: order.totalAmount,
-        platformFee: platformFee,
-        operatorAmount: operatorAmount,
-        status: "PAID",
-        paidAt: new Date(),
-      },
-    });
+    // 2. Update or Create Payment record
+    let payment;
+    if (existingPayment) {
+      payment = await tx.payment.update({
+        where: { id: existingPayment.id },
+        data: {
+          stripePaymentIntentId: session.payment_intent as string,
+          status: "PAID",
+          paidAt: new Date(),
+        },
+      });
+    } else {
+      payment = await tx.payment.create({
+        data: {
+          orderId,
+          stripeSessionId: session.id,
+          stripePaymentIntentId: session.payment_intent as string,
+          amount: order.totalAmount,
+          platformFee: platformFee,
+          operatorAmount: operatorAmount,
+          status: "PAID",
+          paidAt: new Date(),
+        },
+      });
+    }
 
     // 3. Update Admin Wallet
     const admin = await tx.user.findFirst({ where: { role: "SUPER_ADMIN" } });
