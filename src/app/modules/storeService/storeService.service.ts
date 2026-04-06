@@ -47,7 +47,7 @@ const create = async (operatorId: string, payload: any) => {
 
 const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, userLat, userLng, ...filterData } = filters;
+  const { searchTerm, userLat, userLng, categoryId, ...filterData } = filters;
 
   const andConditions = [];
 
@@ -61,6 +61,14 @@ const getAll = async (filters: any, options: any) => {
           },
         },
       })),
+    });
+  }
+
+  if (categoryId) {
+    andConditions.push({
+      service: {
+        categoryId: categoryId,
+      },
     });
   }
 
@@ -95,6 +103,7 @@ const getAll = async (filters: any, options: any) => {
       LEFT JOIN "Store" st ON ss."storeId" = st.id
       WHERE 1 = 1
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
+      ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
       ORDER BY distance_meters ASC
       LIMIT ${limit} OFFSET ${skip}
     `;
@@ -105,6 +114,7 @@ const getAll = async (filters: any, options: any) => {
       LEFT JOIN "Store" st ON ss."storeId" = st.id
       WHERE 1 = 1
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
+      ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
     `;
     total = totalResult[0]?.count || 0;
   } else {
@@ -116,20 +126,20 @@ const getAll = async (filters: any, options: any) => {
         service: {
           select: {
             id: true,
-            serviceId:true,
+            serviceId: true,
             name: true,
             basePrice: true,
             description: true,
             image: true,
-            category:true,
-            categoryId:true,
-            serviceAddons:true,
-            storeServices:true,
-            isActive:true,
-            operatorId:true,
-            operator:true,          
-            createdAt:true,
-            updatedAt:true,          
+            category: true,
+            categoryId: true,
+            serviceAddons: true,
+            storeServices: true,
+            isActive: true,
+            operatorId: true,
+            operator: true,
+            createdAt: true,
+            updatedAt: true,
           }
         },
         store: true,

@@ -47,18 +47,28 @@ const create = async (operatorId: string, payload: any) => {
 
 const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filters;
+  const { searchTerm, userLat, userLng, categoryId, ...filterData } = filters;
 
-  const andConditions = [];
+  const andConditions: any[] = [];
 
   if (searchTerm) {
     andConditions.push({
-      OR: [].map((field) => ({
-        [field]: {
-          contains: searchTerm,
-          mode: 'insensitive',
+      OR: ['name', 'description'].map((field) => ({
+        bundle: {
+          [field]: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
         },
       })),
+    });
+  }
+
+  if (categoryId) {
+    andConditions.push({
+      bundle: {
+        categoryId: categoryId,
+      },
     });
   }
 
@@ -74,21 +84,91 @@ const getAll = async (filters: any, options: any) => {
 
   const whereConditions: Prisma.StoreBundleWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const result = await prisma.storeBundle.findMany({
-    where: whereConditions,
-    skip,
-    take: limit,
-    include: {
-      bundle: true,
-      store: true,
+  let result;
+  let total;
 
-    },
-    orderBy:
-      sortBy && sortOrder
-        ? { [sortBy]: sortOrder }
-        : { createdAt: 'desc' },
-  });
-  const total = await prisma.storeBundle.count({ where: whereConditions });
+  if (userLat && userLng) {
+    const lat = parseFloat(userLat);
+    const lng = parseFloat(userLng);
+    const searchString = searchTerm ? `%${searchTerm}%` : null;
+
+    result = await prisma.$queryRaw`
+      SELECT sb.*,
+             json_build_object(
+               'id', b.id,
+               'name', b.name,
+               'description', b.description,
+               'image', b.image,
+               'bundlePrice', b."bundlePrice",
+               'isActive', b."isActive",
+               'operatorId', b."operatorId",
+               'createdAt', b."createdAt",
+               'updatedAt', b."updatedAt",
+               'operator', row_to_json(op.*),
+               'bundleServices', (
+                 SELECT COALESCE(json_agg(json_build_object('service', row_to_json(svc.*))), '[]'::json)
+                 FROM "BundleServices" bs2
+                 LEFT JOIN "Service" svc ON bs2."serviceId" = svc.id
+                 WHERE bs2."bundleId" = b.id
+               )
+             ) as bundle,
+             row_to_json(st.*) as store,
+             ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) as distance_meters,
+             ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) / 1609.34 as "distanceMile"
+      FROM "StoreBundle" sb
+      LEFT JOIN "Bundle" b ON sb."bundleId" = b.id
+      LEFT JOIN "Store" st ON sb."storeId" = st.id
+      LEFT JOIN "Operator" op ON b."operatorId" = op.id
+      WHERE 1 = 1
+      ${searchTerm ? Prisma.sql`AND (b.name ILIKE ${searchString} OR b.description ILIKE ${searchString})` : Prisma.empty}
+      ${categoryId ? Prisma.sql`AND b."categoryId" = ${categoryId}` : Prisma.empty}
+      ORDER BY distance_meters ASC
+      LIMIT ${limit} OFFSET ${skip}
+    `;
+
+    const totalResult: any = await prisma.$queryRaw`
+      SELECT COUNT(sb.id)::int as count FROM "StoreBundle" sb
+      LEFT JOIN "Bundle" b ON sb."bundleId" = b.id
+      LEFT JOIN "Store" st ON sb."storeId" = st.id
+      WHERE 1 = 1
+      ${searchTerm ? Prisma.sql`AND (b.name ILIKE ${searchString} OR b.description ILIKE ${searchString})` : Prisma.empty}
+      ${categoryId ? Prisma.sql`AND b."categoryId" = ${categoryId}` : Prisma.empty}
+    `;
+    total = totalResult[0]?.count || 0;
+  } else {
+    result = await prisma.storeBundle.findMany({
+      where: whereConditions,
+      skip,
+      take: limit,
+      include: {
+        bundle: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            image: true,
+            bundlePrice: true,
+            bundleServices: {
+              select: {
+                service: true
+              }
+            },
+            isActive: true,
+            operatorId: true,
+            operator: true,
+            createdAt: true,
+            updatedAt: true,
+          }
+        },
+        store: true,
+      },
+      orderBy:
+        sortBy && sortOrder
+          ? { [sortBy]: sortOrder }
+          : { createdAt: 'desc' },
+    });
+    total = await prisma.storeBundle.count({ where: whereConditions });
+  }
 
   return {
     meta: {
