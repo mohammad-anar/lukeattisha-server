@@ -14,6 +14,7 @@ const updateSchema = z.object({
   description: z.string().optional(),
   image: z.string().optional(),
   isActive: z.boolean().optional(),
+  serviceIds: z.array(z.string()).optional(),
 });
 
 export const BundleValidation = {

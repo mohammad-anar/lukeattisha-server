@@ -36,6 +36,7 @@ import { OperatorRouter } from '../modules/operator/operator.routes.js';
 import { UserRouter } from '../modules/user/user.routes.js';
 import express from 'express';
 import { AuthRouter } from '../modules/auth/auth.routes.js';
+import { StoreBundleRouter } from 'app/modules/storeBundle/storeBundle.routes.js';
 
 const router = express.Router();
 
@@ -52,6 +53,7 @@ const moduleRoutes = [
   { path: '/favouriteservice', route: FavouriteServiceRouter },
   { path: '/store', route: StoreRouter },
   { path: '/storeservice', route: StoreServiceRouter },
+  { path: '/storebundle', route: StoreBundleRouter },
   { path: '/bundle', route: BundleRouter },
   { path: '/cart', route: CartRouter },
   { path: '/cartitem', route: CartItemRouter },

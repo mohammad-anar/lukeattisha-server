@@ -61,11 +61,55 @@ const getAll = async (filters: any, options: any) => {
   };
 };
 
-const getByOperatorId = async (operatorId: string) => {
+const getByOperatorId = async (operatorId: string, filters: any, options: any) => {
+  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+  const { searchTerm, ...filterData } = filters;
+
+  const andConditions: any[] = [];
+  andConditions.push({ operatorId });
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ["name"].map((field) => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.AddonWhereInput = { AND: andConditions };
+
   const result = await prisma.addon.findMany({
-    where: { operatorId },
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      sortBy && sortOrder
+        ? { [sortBy]: sortOrder }
+        : { createdAt: 'desc' },
   });
-  return result;
+  const total = await prisma.addon.count({ where: whereConditions });
+
+  return {
+    meta: {
+      total,
+      page,
+      limit,
+    },
+    data: result,
+  };
 };
 
 const getById = async (id: string) => {

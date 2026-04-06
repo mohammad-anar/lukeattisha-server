@@ -74,7 +74,7 @@ const getByOperatorId = async (operatorId: string) => {
 const getById = async (id: string) => {
   const result = await prisma.store.findUnique({
     where: { id },
-    include: { operator: { select: { user: { select: { name: true, email: true, phone: true, avatar: true } } } } }
+    include: { operator: { select: { user: { select: { name: true, email: true, phone: true, avatar: true } } } }, storeServices: true, storeBundles: true }
   });
   if (!result) {
     throw new ApiError(404, 'Store not found');

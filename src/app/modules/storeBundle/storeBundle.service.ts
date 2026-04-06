@@ -125,6 +125,10 @@ const getAllByOperatorId = async (operatorId: string) => {
 const getById = async (id: string) => {
   const result = await prisma.storeBundle.findUnique({
     where: { id },
+    include: {
+      bundle: true,
+      store: true,
+    },
   });
   if (!result) {
     throw new ApiError(404, 'StoreBundle not found');

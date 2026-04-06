@@ -79,7 +79,25 @@ const getAll = async (filters: any, options: any) => {
     skip,
     take: limit,
     include: {
-      service: true,
+      service: {
+        select: {
+          id: true,
+          serviceId:true,
+          name: true,
+          basePrice: true,
+          description: true,
+          image: true,
+          category:true,
+          categoryId:true,
+          serviceAddons:true,
+          storeServices:true,
+          isActive:true,
+          operatorId:true,
+          operator:true,          
+          createdAt:true,
+          updatedAt:true,          
+        }
+      },
       store: true,
 
     },

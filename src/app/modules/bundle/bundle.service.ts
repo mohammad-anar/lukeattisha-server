@@ -138,9 +138,22 @@ const getById = async (id: string) => {
 
 const update = async (id: string, payload: any) => {
   await getById(id);
+  const { serviceIds, ...bundleData } = payload;
+
+  const updateData: any = { ...bundleData };
+
+  if (serviceIds) {
+    updateData.bundleServices = {
+      deleteMany: {},
+      create: serviceIds.map((serviceId: string) => ({
+        serviceId,
+      })),
+    };
+  }
+
   const result = await prisma.bundle.update({
     where: { id },
-    data: payload,
+    data: updateData,
   });
   return result;
 };

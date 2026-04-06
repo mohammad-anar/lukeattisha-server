@@ -48,12 +48,17 @@ const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
   if (!operator) {
     throw new ApiError(404, 'Operator not found');
   }
-  const result = await AddonService.getByOperatorId(operator.id);
+
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'status']);
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+
+  const result = await AddonService.getByOperatorId(operator.id, filters, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: 'Addon fetched successfully',
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 
