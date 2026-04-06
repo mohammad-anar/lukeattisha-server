@@ -221,6 +221,80 @@ const getAll = async (filters: any, options: any) => {
   };
 };
 
+const getMyOrders = async (user: any, filters: any, options: any) => {
+  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+  const { searchTerm, ...filterData } = filters;
+
+  const andConditions: any[] = [];
+
+  // Role-based filtering
+  if (user.role === 'USER') {
+    andConditions.push({ userId: user.userId });
+  } else if (user.role === 'OPERATOR') {
+    // For operators, we filter by the operatorId of the store
+    andConditions.push({
+      store: {
+        operatorId: user.userId
+      }
+    });
+  }
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ["orderNumber"].map((field) => ({
+        [field]: {
+          contains: searchTerm,
+          mode: 'insensitive',
+        },
+      })),
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.OrderWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const result = await prisma.order.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    orderBy:
+      sortBy && sortOrder
+        ? { [sortBy]: sortOrder }
+        : { createdAt: 'desc' },
+    include: {
+      user: { select: { name: true, email: true } },
+      store: { select: { name: true } },
+      orderItems: true,
+      payments: true,
+    }
+  });
+
+  const total = await prisma.order.count({ where: whereConditions });
+
+  return {
+    meta: { total, page, limit },
+    data: result,
+  };
+};
+
+const updateOrderStatus = async (id: string, status: any) => {
+  await getById(id);
+  const result = await prisma.order.update({
+    where: { id },
+    data: { status },
+  });
+  return result;
+};
+
 const getById = async (id: string) => {
   const result = await prisma.order.findUnique({
     where: { id },
@@ -257,7 +331,9 @@ const deleteById = async (id: string) => {
 export const OrderService = {
   create,
   getAll,
+  getMyOrders,
   getById,
   update,
+  updateOrderStatus,
   deleteById,
 };

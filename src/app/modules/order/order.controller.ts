@@ -28,7 +28,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await OrderService.getById(req.params.id);
+  const result = await OrderService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +38,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await OrderService.update(req.params.id, req.body);
+  const result = await OrderService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +48,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await OrderService.deleteById(req.params.id);
+  const result = await OrderService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -57,10 +57,37 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyOrders = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const filters = pick(req.query, ['searchTerm', 'status', 'paymentStatus']);
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  
+  const result = await OrderService.getMyOrders(user, filters, options);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'My orders fetched successfully',
+    meta: (result as any).meta,
+    data: (result as any).data,
+  });
+});
+
+const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await OrderService.updateOrderStatus(req.params.id as string, req.body.status);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Order status updated successfully',
+    data: result,
+  });
+});
+
 export const OrderController = {
   create,
   getAll,
+  getMyOrders,
   getById,
   update,
+  updateOrderStatus,
   deleteById,
 };

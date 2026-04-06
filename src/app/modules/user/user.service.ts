@@ -222,25 +222,15 @@ const getAllOperators = async (filters: any, options: any) => {
           stores: true,
           userId: true,
           operatorId: true,
-          user: {
+          approvalStatus: true,
+          createdAt: true,
+          updatedAt: true,
+          _count: {
             select: {
-              id: true,
-              name: true,
-              email: true,
-              phone: true,
-              avatar: true,
-              role: true,
-              addresses: true,
-              isDeleted: true,
-              lat: true,
-              lng: true,
-              stripeCustomerId: true,
-              isSubscribed: true,
-              userId: true,
-              isTwoFactorEnabled: true,
-              isVerified: true,
-              createdAt: true,
-              updatedAt: true,
+              stores: true,
+              services: true,
+              bundles: true
+
             }
           }
         }

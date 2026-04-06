@@ -4,32 +4,32 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 import { CLIENT_RENEG_LIMIT } from 'tls';
 
-const generateServiceId = async () => {
-  const lastService = await prisma.service.findFirst({
-    orderBy: { createdAt: "desc" },
-    select: { serviceId: true },
-  });
+// const generateServiceId = async () => {
+//   const lastService = await prisma.service.findFirst({
+//     orderBy: { createdAt: "desc" },
+//     select: { serviceId: true },
+//   });
 
-  let nextNumber = 1;
+//   let nextNumber = 1;
 
-  if (lastService?.serviceId) {
-    const match = lastService.serviceId.match(/\d+$/);
-    if (match) {
-      nextNumber = parseInt(match[0], 10) + 1;
-    }
-  }
+//   if (lastService?.serviceId) {
+//     const match = lastService.serviceId.match(/\d+$/);
+//     if (match) {
+//       nextNumber = parseInt(match[0], 10) + 1;
+//     }
+//   }
 
-  return `SRV-${String(nextNumber).padStart(3, "0")}`;
-};
+//   return `SRV-${String(nextNumber).padStart(3, "0")}`;
+// };
 
 const create = async (payload: any) => {
   const addonIds = payload.addonIds;
-  const serviceId = await generateServiceId();
+  // const serviceId = await generateServiceId();
 
   const result = await prisma.service.create({
     data: {
       ...payload,
-      serviceId,
+      // serviceId,
     },
   });
 

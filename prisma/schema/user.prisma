@@ -52,6 +52,7 @@ model Operator {
 
   // Business Logistics
   approvalStatus           ApprovalStatus @default(PENDING)
+  status                   UserStatus     @default(ACTIVE)
   stripeConnectedAccountId String?        @unique
   onboardingUrl            String?
   onboardingComplete       Boolean        @default(false)

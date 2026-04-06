@@ -8,9 +8,11 @@ import { UserRole } from '@prisma/client';
 const router = express.Router();
 
 router.post('/', auth(UserRole.USER), validateRequest(OrderValidation.createSchema), OrderController.create);
-router.get('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), OrderController.getAll);
+router.get('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), OrderController.getAll);
+router.get('/my-orders', auth(UserRole.USER, UserRole.OPERATOR), OrderController.getMyOrders);
 router.get('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), OrderController.getById);
-router.patch('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), validateRequest(OrderValidation.updateSchema), OrderController.update);
+router.patch('/update-status/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATOR), validateRequest(OrderValidation.updateSchema), OrderController.updateOrderStatus);
+router.patch('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATOR), validateRequest(OrderValidation.updateSchema), OrderController.update);
 router.delete('/:id', auth(UserRole.SUPER_ADMIN), OrderController.deleteById);
 
 export const OrderRouter = router;
