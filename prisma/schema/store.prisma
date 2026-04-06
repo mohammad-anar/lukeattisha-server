@@ -66,11 +66,14 @@ model BundleServices {
 }
 
 model StoreBundle {
+  id       String @id @default(cuid())
   storeId  String
   bundleId String
 
   store  Store  @relation(fields: [storeId], references: [id])
   bundle Bundle @relation(fields: [bundleId], references: [id])
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@id([storeId, bundleId])
 }
