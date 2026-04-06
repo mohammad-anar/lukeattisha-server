@@ -156,11 +156,11 @@ const update = async (id: string, payload: any) => {
   }
 
   // Business Validation: Prevent store activation if onboarding is not complete
-  if (payload.isActive === true) {
-    if (!store.operator.onboardingComplete) {
-      throw new ApiError(400, "Cannot activate store. Please complete Stripe onboarding first.");
-    }
-  }
+  // if (payload.isActive === true) {
+  //   if (!store.operator.onboardingComplete) {
+  //     throw new ApiError(400, "Cannot activate store. Please complete Stripe onboarding first.");
+  //   }
+  // }
 
   const result = await prisma.store.update({
     where: { id },
