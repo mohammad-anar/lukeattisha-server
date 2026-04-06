@@ -48,21 +48,24 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.params.operatorId as string;
+  const operatorId = req.params.operatorId as string;
   const operator = await prisma.operator.findUnique({
     where: {
-      userId: userId,
+      id: operatorId,
     },
   });
   if (!operator) {
     throw new Error('Operator not found');
   }
-  const result = await StoreService.getByOperatorId(operator.id);
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'status']);
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  const result = await StoreService.getByOperatorId(filters, options, operator.id);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: 'Store fetched successfully',
-    data: result,
+    meta: result.meta,
+    data: result.data,
   });
 });
 

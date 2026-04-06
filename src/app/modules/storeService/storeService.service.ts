@@ -47,16 +47,18 @@ const create = async (operatorId: string, payload: any) => {
 
 const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filters;
+  const { searchTerm, userLat, userLng, ...filterData } = filters;
 
   const andConditions = [];
 
   if (searchTerm) {
     andConditions.push({
-      OR: [].map((field) => ({
-        [field]: {
-          contains: searchTerm,
-          mode: 'insensitive',
+      OR: ['name', 'description'].map((field) => ({
+        service: {
+          [field]: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
         },
       })),
     });
@@ -74,39 +76,72 @@ const getAll = async (filters: any, options: any) => {
 
   const whereConditions: Prisma.StoreServiceWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const result = await prisma.storeService.findMany({
-    where: whereConditions,
-    skip,
-    take: limit,
-    include: {
-      service: {
-        select: {
-          id: true,
-          serviceId:true,
-          name: true,
-          basePrice: true,
-          description: true,
-          image: true,
-          category:true,
-          categoryId:true,
-          serviceAddons:true,
-          storeServices:true,
-          isActive:true,
-          operatorId:true,
-          operator:true,          
-          createdAt:true,
-          updatedAt:true,          
-        }
-      },
-      store: true,
+  let result;
+  let total;
 
-    },
-    orderBy:
-      sortBy && sortOrder
-        ? { [sortBy]: sortOrder }
-        : { createdAt: 'desc' },
-  });
-  const total = await prisma.storeService.count({ where: whereConditions });
+  if (userLat && userLng) {
+    const lat = parseFloat(userLat);
+    const lng = parseFloat(userLng);
+    let searchString = searchTerm ? `%${searchTerm}%` : null;
+
+    result = await prisma.$queryRaw`
+      SELECT ss.*, 
+             row_to_json(s.*) as service,
+             row_to_json(st.*) as store,
+             ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) as distance_meters,
+             ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) / 1609.34 as "distanceMile"
+      FROM "StoreService" ss
+      LEFT JOIN "Service" s ON ss."serviceId" = s.id
+      LEFT JOIN "Store" st ON ss."storeId" = st.id
+      WHERE 1 = 1
+      ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
+      ORDER BY distance_meters ASC
+      LIMIT ${limit} OFFSET ${skip}
+    `;
+
+    const totalResult: any = await prisma.$queryRaw`
+      SELECT COUNT(ss.id)::int as count FROM "StoreService" ss
+      LEFT JOIN "Service" s ON ss."serviceId" = s.id
+      LEFT JOIN "Store" st ON ss."storeId" = st.id
+      WHERE 1 = 1
+      ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
+    `;
+    total = totalResult[0]?.count || 0;
+  } else {
+    result = await prisma.storeService.findMany({
+      where: whereConditions,
+      skip,
+      take: limit,
+      include: {
+        service: {
+          select: {
+            id: true,
+            serviceId:true,
+            name: true,
+            basePrice: true,
+            description: true,
+            image: true,
+            category:true,
+            categoryId:true,
+            serviceAddons:true,
+            storeServices:true,
+            isActive:true,
+            operatorId:true,
+            operator:true,          
+            createdAt:true,
+            updatedAt:true,          
+          }
+        },
+        store: true,
+
+      },
+      orderBy:
+        sortBy && sortOrder
+          ? { [sortBy]: sortOrder }
+          : { createdAt: 'desc' },
+    });
+    total = await prisma.storeService.count({ where: whereConditions });
+  }
 
   return {
     meta: {
