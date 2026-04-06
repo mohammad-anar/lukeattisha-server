@@ -5,6 +5,7 @@ const handleValidationError = (err: any) => {
   const message = "Validation Error";
 
   // Parse the Prisma validation error message to make it user-readable
+  console.log(`[PRISMA VALIDATION ERROR RAW]:`, err.message);
   const parsedMessage = parsePrismaValidationError(err.message);
 
   const errorMessages = [
@@ -22,45 +23,31 @@ const handleValidationError = (err: any) => {
 };
 
 const parsePrismaValidationError = (errorMessage: string): string => {
-  // Extract the argument name, e.g., "status"
-  const argMatch = errorMessage.match(/Invalid value for argument `([^`]+)`/);
-  const argument = argMatch ? argMatch[1] : "field";
+  // Extract the field/argument name
+  const fieldMatch = errorMessage.match(/Invalid value for (?:argument|field) [`"]?([^`"]+)[`"]?/) || 
+                     errorMessage.match(/at\s+[`"]?([^`"]+)[`"]?/);
+  const field = fieldMatch ? fieldMatch[1] : "field";
 
-  // Extract the expected type, e.g., "UserStatus"
-  const typeMatch = errorMessage.match(/Expected ([^\.]+)\./);
-  const expectedType = typeMatch ? typeMatch[1] : "valid value";
+  // Extract the provided invalid value
+  const valueMatch = errorMessage.match(/got\s+[`"]?([^`"]+)[`"]?/) || 
+                     errorMessage.match(/:\s+[`"]?([^`"]+)[`"]?\./) ||
+                     errorMessage.match(/value:\s+[`"]?([^`"]+)[`"]?/);
+  const invalidValue = valueMatch ? valueMatch[1] : null;
 
-  // Extract the invalid value, e.g., "BANNEDd"
-  const valueMatch = errorMessage.match(/data:\s*{\s*[^}]*:\s*"([^"]+)"/);
-  const invalidValue = valueMatch ? valueMatch[1] : "provided value";
+  // Extract the expected type/logic
+  const typeMatch = errorMessage.match(/Expected\s+([^\.]+)\./);
+  const expected = typeMatch ? typeMatch[1] : "valid value";
 
-  // Map common types to their possible values
-  const typeValues: Record<string, string[]> = {
-    UserStatus: ["ACTIVE", "INACTIVE", "SUSPENDED", "BANNED"],
-    Role: ["USER", "OPERATOR", "ADMIN"],
-    OrderStatus: [
-      "PENDING",
-      "ACCEPTED",
-      "PROCESSING",
-      "READY_FOR_DELIVERY",
-      "OUT_FOR_DELIVERY",
-      "DELIVERED",
-      "CANCELLED",
-      "DISPUTED",
-      "REFUNDED",
-    ],
-    PaymentStatus: ["PENDING", "PAID", "FAILED", "REFUNDED", "PARTIAL"],
-    PaymentMethodType: ["CARD", "APPLE_PAY", "GOOGLE_PAY"],
-    TicketStatus: ["OPEN", "IN_PROGRESS", "RESOLVED"],
-  };
-
-  const possibleValues = typeValues[expectedType] || [];
-
-  if (possibleValues.length > 0) {
-    return `Invalid ${argument} value: "${invalidValue}". Expected one of: ${possibleValues.join(", ")}.`;
-  } else {
-    return `Invalid value for ${argument}: "${invalidValue}". Expected ${expectedType}.`;
+  if (invalidValue) {
+    return `Invalid value for ${field}: "${invalidValue}". Expected ${expected}.`;
   }
+  
+  // If parsing fails but the message is already somewhat clear
+  if (errorMessage.includes("Invalid value")) {
+    return errorMessage.split("\n")[0].replace(/  +/g, ' ').trim();
+  }
+
+  return "Validation failed. Please check your data.";
 };
 
 export default handleValidationError;

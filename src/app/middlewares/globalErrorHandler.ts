@@ -23,17 +23,17 @@ const globalErrorHandler = (
   if (err instanceof ZodError) {
     const simplifiedError = handleZodError(err);
     statusCode = simplifiedError.statusCode;
-    message = simplifiedError.message;
+    message = simplifiedError.errorMessages[0]?.message || simplifiedError.message;
     errorDetails = simplifiedError.errorMessages;
   } else if (err instanceof Prisma.PrismaClientKnownRequestError) {
     const simplifiedError = handlePrismaError(err);
     statusCode = simplifiedError.statusCode;
-    message = simplifiedError.message;
+    message = simplifiedError.errorMessages[0]?.message || simplifiedError.message;
     errorDetails = simplifiedError.errorMessages;
   } else if (err instanceof Prisma.PrismaClientValidationError) {
     const simplifiedError = handleValidationError(err);
     statusCode = simplifiedError.statusCode;
-    message = simplifiedError.message;
+    message = simplifiedError.errorMessages[0]?.message || simplifiedError.message;
     errorDetails = simplifiedError.errorMessages;
   } else if (err?.name === "TokenExpiredError") {
     statusCode = httpStatus.UNAUTHORIZED;
