@@ -37,6 +37,18 @@ const getById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+
+const update = catchAsync(async (req: Request, res: Response) => {
+  const result = await OperatorService.update(req.params.id as string, req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Operator updated successfully',
+    data: result,
+  });
+});
+
 const setupConnectAccount = catchAsync(async (req: Request, res: Response) => {
   const result = await OperatorService.setupConnectAccount(req.params.id as string);
   sendResponse(res, {
@@ -47,12 +59,12 @@ const setupConnectAccount = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await OperatorService.update(req.params.id as string, req.body);
+const verifyOnboardingStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await OperatorService.verifyOnboardingStatus(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'Operator updated successfully',
+    message: 'Onboarding status verified successfully',
     data: result,
   });
 });
@@ -74,4 +86,5 @@ export const OperatorController = {
   update,
   deleteById,
   setupConnectAccount,
+  verifyOnboardingStatus,
 };

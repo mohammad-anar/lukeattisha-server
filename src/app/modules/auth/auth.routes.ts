@@ -24,26 +24,26 @@ router.post("/forget-password-otp", validateRequest(AuthValidation.forgetPasswor
 router.post("/verify-otp", validateRequest(AuthValidation.verifyEmailSchema), AuthController.verifyOTP);
 router.post(
   "/reset-password",
-  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR),
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPER_ADMIN),
   validateRequest(AuthValidation.resetPasswordSchema),
   AuthController.resetPassword,
 );
 
 router.post(
   "/change-password",
-  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR),
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPER_ADMIN),
   AuthController.changePassword,
 );
 
 router.post(
   "/refresh",
-  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR),
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPER_ADMIN),
   AuthController.refreshToken,
 );
 
 router.post(
   "/logout",
-  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR),
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.OPERATOR, UserRole.SUPER_ADMIN),
   AuthController.logout,
 );
 

@@ -146,7 +146,22 @@ const getById = async (id: string) => {
 };
 
 const update = async (id: string, payload: any) => {
-  await getById(id);
+  const store = await prisma.store.findUnique({
+    where: { id },
+    include: { operator: true }
+  });
+
+  if (!store) {
+    throw new ApiError(404, 'Store not found');
+  }
+
+  // Business Validation: Prevent store activation if onboarding is not complete
+  if (payload.isActive === true) {
+    if (!store.operator.onboardingComplete) {
+      throw new ApiError(400, "Cannot activate store. Please complete Stripe onboarding first.");
+    }
+  }
+
   const result = await prisma.store.update({
     where: { id },
     data: payload,

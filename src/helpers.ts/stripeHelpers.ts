@@ -73,7 +73,7 @@ export const createOrderPaymentSession = async (
   deliveryFee: number,
   platformFeeAmount: number,
   userId: string,
-  operatorConnectId: string,
+  operatorConnectId: string | null,
   isSubscribed: boolean = false
 ) => {
   const lineItems: any[] = []; // Using any to bypass the type error while still functional
@@ -109,10 +109,6 @@ export const createOrderPaymentSession = async (
     mode: "payment",
     line_items: lineItems,
     payment_intent_data: {
-      application_fee_amount: Math.round(platformFeeAmount * 100),
-      transfer_data: {
-        destination: operatorConnectId,
-      },
       metadata: { orderId, userId, isSubscribed: String(isSubscribed) },
     },
     success_url: `${config.frontend_url}/payment-success?order_id=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
@@ -121,7 +117,7 @@ export const createOrderPaymentSession = async (
       type: "ORDER_PAYMENT",
       orderId,
       userId,
-      operatorConnectId,
+      operatorConnectId: operatorConnectId || "",
     },
   });
 
@@ -184,6 +180,20 @@ export const createConnectAccount = async (email: string) => {
   return account.id;
 };
 
+/**
+ * Retrieves a Connect Account details to check onboarding status
+ */
+export const getAccountStatus = async (accountId: string) => {
+  const account = await stripe.accounts.retrieve(accountId);
+  return {
+    id: account.id,
+    details_submitted: account.details_submitted,
+    charges_enabled: account.charges_enabled,
+    payouts_enabled: account.payouts_enabled,
+    requirements: account.requirements,
+  };
+};
+
 export const StripeHelpers = {
   createUserSubscriptionSession,
   createOperatorAdSubscriptionSession,
@@ -192,4 +202,5 @@ export const StripeHelpers = {
   createStripeCustomer,
   generateAccountOnboardingLink,
   createConnectAccount,
+  getAccountStatus,
 };

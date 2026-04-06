@@ -100,6 +100,26 @@ const setupConnectAccount = async (id: string) => {
   return { operator: result, onboardingLink: onboardingLink.url };
 };
 
+const verifyOnboardingStatus = async (id: string) => {
+  const operator = await getById(id);
+  if (!operator.stripeConnectedAccountId) {
+    throw new ApiError(400, "Stripe Connect account not created yet.");
+  }
+
+  // Fetch actual status from Stripe
+  const status = await StripeHelpers.getAccountStatus(operator.stripeConnectedAccountId);
+  
+  // Update local record
+  const result = await prisma.operator.update({
+    where: { id },
+    data: { 
+      onboardingComplete: status.details_submitted 
+    },
+  });
+
+  return { operator: result, stripeStatus: status };
+};
+
 const update = async (id: string, payload: any) => {
   await getById(id);
   const result = await prisma.operator.update({
@@ -124,4 +144,5 @@ export const OperatorService = {
   update,
   deleteById,
   setupConnectAccount,
+  verifyOnboardingStatus,
 };

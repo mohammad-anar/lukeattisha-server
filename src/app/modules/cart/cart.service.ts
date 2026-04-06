@@ -3,9 +3,54 @@ import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
+const calculateItemPrice = async (item: any) => {
+  let basePrice = 0;
+  if (item.serviceId) {
+    const service = await prisma.service.findUnique({ where: { id: item.serviceId } });
+    basePrice = Number(service?.basePrice || 0);
+  } else if (item.bundleId) {
+    const bundle = await prisma.bundle.findUnique({ where: { id: item.bundleId } });
+    basePrice = Number(bundle?.bundlePrice || 0);
+  }
+
+  const addonIds = (item.selectedAddons || []).map((sa: any) => sa.addonId);
+  const addons = await prisma.addon.findMany({ where: { id: { in: addonIds } } });
+  const addonsPrice = addons.reduce((sum, a) => sum + Number(a.price), 0);
+
+  return (basePrice + addonsPrice) * (item.quantity || 1);
+};
+
 const create = async (payload: any) => {
+  const { items, ...cartData } = payload;
+
+  const processedItems = await Promise.all(
+    (items || []).map(async (item: any) => {
+      const price = await calculateItemPrice(item);
+      const { selectedAddons, ...rest } = item;
+      return {
+        ...rest,
+        price,
+        selectedAddons: {
+          create: selectedAddons || [],
+        },
+      };
+    })
+  );
+
   const result = await prisma.cart.create({
-    data: payload,
+    data: {
+      ...cartData,
+      items: {
+        create: processedItems,
+      },
+    } as any,
+    include: {
+      items: {
+        include: {
+          selectedAddons: true,
+        },
+      },
+    },
   });
   return result;
 };
@@ -47,6 +92,15 @@ const getAll = async (filters: any, options: any) => {
       sortBy && sortOrder
         ? { [sortBy]: sortOrder }
         : { createdAt: 'desc' },
+    include: {
+      items: {
+        include: {
+          selectedAddons: true,
+          service: true,
+          bundle: true,
+        },
+      },
+    },
   });
   const total = await prisma.cart.count({ where: whereConditions });
 
@@ -63,6 +117,19 @@ const getAll = async (filters: any, options: any) => {
 const getById = async (id: string) => {
   const result = await prisma.cart.findUnique({
     where: { id },
+    include: {
+      items: {
+        include: {
+          selectedAddons: {
+             include: {
+               addon: true
+             }
+          },
+          service: true,
+          bundle: true,
+        },
+      },
+    }
   });
   if (!result) {
     throw new ApiError(404, 'Cart not found');
@@ -71,10 +138,62 @@ const getById = async (id: string) => {
 };
 
 const update = async (id: string, payload: any) => {
-  await getById(id);
+  const { items, ...cartData } = payload;
+
+  if (items) {
+    return await prisma.$transaction(async (tx) => {
+      const currentItems = await tx.cartItem.findMany({
+        where: { cartId: id },
+      });
+
+      for (const item of currentItems) {
+        await tx.selectedAddon.deleteMany({ where: { cartItemId: item.id } });
+      }
+      await tx.cartItem.deleteMany({ where: { cartId: id } });
+
+      const processedItems = await Promise.all(
+        items.map(async (item: any) => {
+          const price = await calculateItemPrice(item);
+          const { selectedAddons, ...rest } = item;
+          return {
+            ...rest,
+            price,
+            selectedAddons: {
+              create: selectedAddons || [],
+            },
+          };
+        })
+      );
+
+      return await tx.cart.update({
+        where: { id },
+        data: {
+          ...cartData,
+          items: {
+            create: processedItems,
+          },
+        } as any,
+        include: {
+          items: {
+            include: {
+              selectedAddons: true,
+            },
+          },
+        },
+      });
+    });
+  }
+
   const result = await prisma.cart.update({
     where: { id },
-    data: payload,
+    data: cartData,
+    include: {
+      items: {
+        include: {
+          selectedAddons: true,
+        },
+      },
+    },
   });
   return result;
 };

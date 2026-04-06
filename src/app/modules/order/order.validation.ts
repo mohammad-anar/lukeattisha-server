@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  storeId: z.string({ message: 'Store ID is required' }),
-  addressId: z.string({ message: 'Address ID is required' }),
+  cartId: z.string({ message: 'Cart ID is required' })
 });
 
 const updateSchema = z.object({

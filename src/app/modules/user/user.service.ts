@@ -281,7 +281,7 @@ const createAdmin = async (payload: any, creatorId: string) => {
       ...payload,
       password: hashedPassword,
       role: 'ADMIN',
-      isVerified: true, // Manual creation by Super Admin
+      isVerified: true,
       createdById: creatorId,
       userId: customUserId,
     },
@@ -304,7 +304,7 @@ const createOperator = async (payload: any, creatorId: string) => {
         ...userData,
         password: hashedPassword,
         role: 'OPERATOR',
-        isVerified: true, // Manual creation by Super Admin
+        isVerified: true,
         createdById: creatorId,
         userId: customUserId,
       }
@@ -314,6 +314,7 @@ const createOperator = async (payload: any, creatorId: string) => {
       data: {
         userId: user.id,
         stripeConnectedAccountId: stripeConnectId,
+        approvalStatus: 'APPROVED',
         onboardingUrl: onboardingLink.url,
       }
     });

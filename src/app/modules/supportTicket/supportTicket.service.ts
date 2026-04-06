@@ -4,9 +4,31 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
-  const result = await prisma.supportTicket.create({
-    data: payload,
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Create the support ticket
+    const ticket = await tx.supportTicket.create({
+      data: payload,
+    });
+
+    // 2. Create a ChatRoom linked to this ticket
+    const chatRoom = await tx.chatRoom.create({
+      data: {
+        name: `Support - ${ticket.ticketNumber}`,
+        ticketId: ticket.id,
+      },
+    });
+
+    // 3. Add the ticket creator as a participant
+    await tx.chatParticipant.create({
+      data: {
+        roomId: chatRoom.id,
+        userId: ticket.userId,
+      },
+    });
+
+    return { ...ticket, chatRoom };
   });
+
   return result;
 };
 
@@ -18,7 +40,7 @@ const getAll = async (filters: any, options: any) => {
 
   if (searchTerm) {
     andConditions.push({
-      OR: ["ticketNumber","subject","description"].map((field) => ({
+      OR: ["ticketNumber", "subject", "description"].map((field) => ({
         [field]: {
           contains: searchTerm,
           mode: 'insensitive',
@@ -81,8 +103,16 @@ const update = async (id: string, payload: any) => {
 
 const deleteById = async (id: string) => {
   await getById(id);
+
   const result = await prisma.supportTicket.delete({
     where: { id },
+  });
+  // delete room and participants
+  await prisma.chatRoom.deleteMany({
+    where: { ticketId: id },
+  });
+  await prisma.chatParticipant.deleteMany({
+    where: { roomId: id },
   });
   return result;
 };

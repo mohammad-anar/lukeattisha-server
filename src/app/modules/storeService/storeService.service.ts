@@ -165,7 +165,7 @@ const getAll = async (filters: any, options: any) => {
 
 const getAllByStoreId = async (storeId: string) => {
   const result = await prisma.storeService.findMany({
-    where: { storeId },
+    where: { storeId: storeId },
     include: {
       service: true,
       store: true,

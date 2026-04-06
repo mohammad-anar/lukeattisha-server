@@ -5,12 +5,38 @@ import { Prisma } from '@prisma/client';
 import { StripeHelpers } from '../../../helpers.ts/stripeHelpers.js';
 import { config } from '../../../config/index.js';
 
-const create = async (payload: any) => {
-  const { userId, storeId, totalAmount, ...rest } = payload;
+const create = async (payload: { cartId: string }) => {
+  const { cartId } = payload;
 
-  // 1. Fetch Store and verify operator connection status
+  // 1. Fetch Cart with all related details for price calculation
+  const cart = await prisma.cart.findUnique({
+    where: { id: cartId },
+    include: {
+      items: {
+        include: {
+          service: true,
+          bundle: true,
+          selectedAddons: {
+            include: {
+              addon: true
+            }
+          }
+        }
+      }
+    }
+  });
+
+  if (!cart) {
+    throw new ApiError(404, "Cart not found.");
+  }
+
+  if (!cart.items || cart.items.length === 0) {
+    throw new ApiError(400, "Cart is empty.");
+  }
+
+  // 2. Fetch Store and verify operator connection status
   const store = await prisma.store.findUnique({
-    where: { id: storeId },
+    where: { id: cart.storeId },
     include: { operator: true }
   });
 
@@ -18,43 +44,102 @@ const create = async (payload: any) => {
     throw new ApiError(404, "Store not found.");
   }
 
-  // STRICT CHECK: Prevent order if operator hasn't connected Stripe
-  if (!store.operator.stripeConnectedAccountId || !store.operator.onboardingComplete) {
-    throw new ApiError(400, "Store is currently not accepting payments. (Operator Stripe onboarding incomplete).");
-  }
 
-  // 2. ECONOMICS: Calculate platform fee and operator amount using config
+
+  // 3. Recalculate Prices based on current data
+  let totalAmount = 0;
+  const processedItems = cart.items.map(item => {
+    let basePrice = 0;
+    let name = "";
+
+    if (item.service) {
+      basePrice = Number(item.service.basePrice);
+      name = item.service.name;
+    } else if (item.bundle) {
+      basePrice = Number(item.bundle.bundlePrice);
+      name = item.bundle.name;
+    }
+
+    const addonsPrice = item.selectedAddons.reduce((sum, sa) => sum + Number(sa.addon.price), 0);
+    const itemUnitPrice = basePrice + addonsPrice;
+    const itemTotalPrice = itemUnitPrice * item.quantity;
+    
+    totalAmount += itemTotalPrice;
+
+    return {
+      serviceName: name,
+      quantity: item.quantity,
+      price: itemTotalPrice, // Total price for this line item (unit price * qty)
+      serviceId: item.serviceId,
+      bundleId: item.bundleId,
+      addons: item.selectedAddons.map(sa => ({ addonId: sa.addonId }))
+    };
+  });
+
+  // 4. ECONOMICS: Calculate platform fee and operator amount
   const feePercent = config.economics.platform_fee_percent;
-  const totalInCents = Math.round(Number(totalAmount) * 100);
+  const totalInCents = Math.round(totalAmount * 100);
   const platformFeeInCents = Math.round(totalInCents * (feePercent / 100));
   const operatorAmountInCents = totalInCents - platformFeeInCents;
 
   const platformFee = platformFeeInCents / 100;
   const operatorAmount = operatorAmountInCents / 100;
 
-  // 3. Create local Order record
+  // 5. Create local Order record and items within a transaction
   const orderNumber = `ORD-${Date.now()}`;
-  const result = await prisma.order.create({
-    data: {
-      ...rest,
-      orderNumber,
-      userId,
-      storeId,
-      totalAmount,
-      platformFee,
-      operatorAmount,
-      status: "PENDING",
-      paymentStatus: "UNPAID",
-    },
+  
+  const result = await prisma.$transaction(async (tx) => {
+    const order = await tx.order.create({
+      data: {
+        orderNumber,
+        userId: cart.userId,
+        storeId: cart.storeId,
+        totalAmount,
+        platformFee,
+        operatorAmount,
+        status: "PENDING",
+        paymentStatus: "UNPAID",
+      },
+    });
+
+    // Create Order Items and their Addons
+    for (const item of processedItems) {
+      const { addons, ...itemData } = item;
+      const orderItem = await tx.orderItem.create({
+        data: {
+          ...itemData,
+          orderId: order.id,
+        }
+      });
+
+      if (addons.length > 0) {
+        await tx.orderAddon.createMany({
+          data: addons.map(a => ({
+            orderItemId: orderItem.id,
+            addonId: a.addonId
+          }))
+        });
+      }
+    }
+
+    // 6. Cleanup: Clear the Cart
+    // First delete addons, then items, then cart to avoid FK violations (if no cascade)
+    for (const item of cart.items) {
+      await tx.selectedAddon.deleteMany({ where: { cartItemId: item.id } });
+    }
+    await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+    await tx.cart.delete({ where: { id: cart.id } });
+
+    return order;
   });
 
-  // 4. Generate Stripe Payment URL
+  // 7. Generate Stripe Payment URL
   const paymentUrl = await StripeHelpers.createOrderPaymentSession(
     result.id,
-    Number(totalAmount), // full subtotal
+    totalAmount, // full subtotal
     0, // delivery fee if not in subtotal
     platformFee, // our commission
-    userId,
+    cart.userId,
     store.operator.stripeConnectedAccountId
   );
 
