@@ -60,6 +60,7 @@ const getAllUsers = async (filters: any, options: any) => {
       role: true,
       addresses: true,
       isDeleted: true,
+      status: true,
       lat: true,
       lng: true,
       stripeCustomerId: true,
@@ -68,7 +69,23 @@ const getAllUsers = async (filters: any, options: any) => {
       isVerified: true,
       createdAt: true,
       updatedAt: true,
-
+      _count: {
+        select: {
+          orders: true,
+        },
+      },
+      orders: {
+        select: {
+          payments: {
+            where: {
+              status: 'PAID',
+            },
+            select: {
+              amount: true,
+            },
+          },
+        },
+      },
     },
 
     orderBy:
@@ -76,6 +93,30 @@ const getAllUsers = async (filters: any, options: any) => {
         ? { [sortBy]: sortOrder }
         : { createdAt: 'desc' },
   });
+
+  const userData = result.map((user: any) => {
+    const totalOrders = user._count?.orders || 0;
+    const totalSpent = user.orders?.reduce((acc: number, order: any) => {
+      const orderPaidAmount = order.payments?.reduce(
+        (pAcc: number, payment: any) => pAcc + Number(payment.amount),
+        0
+      ) || 0;
+      return acc + orderPaidAmount;
+    }, 0) || 0;
+
+    const avgOrderValue = totalOrders > 0 ? Number((totalSpent / totalOrders).toFixed(2)) : 0;
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { orders, _count, ...userWithoutRelations } = user;
+
+    return {
+      ...userWithoutRelations,
+      totalSpent: Number(totalSpent.toFixed(2)),
+      totalOrders,
+      avgOrderValue,
+    };
+  });
+
   const total = await prisma.user.count({ where: whereConditions });
 
   return {
@@ -84,7 +125,7 @@ const getAllUsers = async (filters: any, options: any) => {
       page,
       limit,
     },
-    data: result,
+    data: userData,
   };
 };
 const getAllAdmins = async (filters: any, options: any) => {
