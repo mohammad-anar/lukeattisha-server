@@ -5,8 +5,9 @@ model AdminSetting {
   bookingLeadTimeHours Int @default(24)
   requirePaymentUpFront Boolean @default(false)
   allowPartialPayment Boolean @default(false)
-  fixedTransactionFee Decimal @default(0) @db.Decimal(10, 2)
-  paymentProcessingFee Decimal @default(0) @db.Decimal(5, 2)
+  fixedTransactionFee   Decimal @default(0)    @db.Decimal(10, 2)
+  paymentProcessingFee  Decimal @default(0)    @db.Decimal(5, 2)
+  pickupAndDeliveryFee  Decimal @default(4.99) @db.Decimal(10, 2)
   payoutSchedule         String?  @default("weekly")
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt

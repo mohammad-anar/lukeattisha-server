@@ -3,14 +3,13 @@ import { CartController } from './cart.controller.js';
 import validateRequest from '../../middlewares/validateRequest.js';
 import auth from '../../middlewares/auth.js';
 import { UserRole } from '@prisma/client';
-import { createCartSchema, updateCartSchema } from './cart.validation.js';
+import { CartValidation } from './cart.validation.js';
 
 const router = express.Router();
 
-router.post('/', auth(UserRole.USER), validateRequest(createCartSchema), CartController.create);
-router.get('/', auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN), CartController.getAll);
-router.get('/:id', auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN), CartController.getById);
-router.patch('/:id', auth(UserRole.USER), validateRequest(updateCartSchema), CartController.update);
-router.delete('/:id', auth(UserRole.USER), CartController.deleteById);
+router.post('/add', auth(UserRole.USER), validateRequest(CartValidation.addItemSchema), CartController.addItem);
+router.get('/my-cart', auth(UserRole.USER), CartController.getMyCart);
+router.delete('/item/:cartItemId', auth(UserRole.USER), CartController.removeItem);
+router.delete('/clear', auth(UserRole.USER), CartController.clearCart);
 
 export const CartRouter = router;

@@ -9,6 +9,11 @@ const router = express.Router();
 
 router.post('/', auth(UserRole.USER), validateRequest(ReviewValidation.createSchema), ReviewController.create);
 router.get('/', ReviewController.getAll);
+router.get('/operator/:operatorId', ReviewController.getByOperatorId);
+router.get('/user/:userId', ReviewController.getByUserId);
+router.get('/store/:storeId', ReviewController.getByStoreId);
+router.get('/store-service/:storeServiceId', ReviewController.getByStoreServiceId);
+router.get('/store-bundle/:storeBundleId', ReviewController.getByStoreBundleId);
 router.get('/:id', ReviewController.getById);
 router.patch('/:id', auth(UserRole.USER, UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN), validateRequest(ReviewValidation.updateSchema), ReviewController.update);
 router.delete('/:id', auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN), ReviewController.deleteById);

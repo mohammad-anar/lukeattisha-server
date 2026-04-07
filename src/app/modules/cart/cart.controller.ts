@@ -2,33 +2,21 @@ import { Request, Response } from 'express';
 import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { CartService } from './cart.service.js';
-import pick from '../../../helpers.ts/pick.js';
 
-const create = catchAsync(async (req: Request, res: Response) => {
-  const result = await CartService.create(req.body);
+const addItem = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await CartService.addItem(user.id, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 201,
-    message: 'Cart created successfully',
+    message: 'Item added to cart successfully',
     data: result,
   });
 });
 
-const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
-  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
-  const result = await CartService.getAll(filters, options);
-  sendResponse(res, {
-    success: true,
-    statusCode: 200,
-    message: 'Cart fetched successfully',
-    meta: result.meta,
-    data: result.data,
-  });
-});
-
-const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await CartService.getById(req.params.id);
+const getMyCart = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await CartService.getMyCart(user.id);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -37,30 +25,31 @@ const getById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await CartService.update(req.params.id, req.body);
+const removeItem = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await CartService.removeItem(user.id, req.params.cartItemId as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'Cart updated successfully',
+    message: 'Item removed from cart successfully',
     data: result,
   });
 });
 
-const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await CartService.deleteById(req.params.id);
+const clearCart = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await CartService.clearCart(user.id);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'Cart deleted successfully',
+    message: 'Cart cleared successfully',
     data: result,
   });
 });
 
 export const CartController = {
-  create,
-  getAll,
-  getById,
-  update,
-  deleteById,
+  addItem,
+  getMyCart,
+  removeItem,
+  clearCart,
 };

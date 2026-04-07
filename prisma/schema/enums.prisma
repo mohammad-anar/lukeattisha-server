@@ -60,12 +60,14 @@ enum TransactionType {
   WITHDRAWAL
   PLATFORM_COMMISSION
   REFUND
+  CREDIT
+  DEBIT
 }
 
 enum BannerType {
   PROMOTION
   MEMBERSHIP
-  SESSIONAL
+  SEASONAL
   OFFER
 }
 
@@ -93,4 +95,17 @@ enum SupportTicketType {
   ORDER_ISSUE
   PAYMENT_ISSUE
   GENERAL
+}
+
+enum TransferStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum StripeAccountStatus {
+  PENDING
+  ONBOARDING
+  ACTIVE
+  RESTRICTED
 }

@@ -1,20 +1,32 @@
 model Payment {
   id                    String        @id @default(cuid())
-  orderId               String
-  stripeSessionId       String?
-  stripePaymentIntentId String?
+  orderId               String        @unique
+  stripePaymentIntentId String        @unique
+  stripeTransferGroup   String
   amount                Decimal       @db.Decimal(10, 2)
   currency              String        @default("usd")
-  platformFee           Decimal       @db.Decimal(10, 2)
-  operatorAmount        Decimal       @db.Decimal(10, 2)
-  paymentMethod         String?
   status                PaymentStatus @default(UNPAID)
-  payoutStatus          PayoutStatus  @default(NOT_APPLICABLE)
+  paymentUrl            String?
   paidAt                DateTime?
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id])
+  order     Order      @relation(fields: [orderId], references: [id])
+  transfers Transfer[]
+}
+
+model Transfer {
+  id                   String         @id @default(cuid())
+  paymentId            String
+  operatorId           String
+  stripeConnectedAccId String
+  amount               Decimal        @db.Decimal(10, 2)
+  stripeTransferId     String?
+  status               TransferStatus @default(PENDING)
+  createdAt            DateTime       @default(now())
+
+  payment  Payment  @relation(fields: [paymentId], references: [id])
+  operator Operator @relation(fields: [operatorId], references: [id])
 }
 
 model UserPaymentCard {
@@ -52,18 +64,20 @@ model Withdrawal {
 }
 
 model OperatorWalletTransaction {
-  id              String          @id @default(cuid())
-  walletId        String
-  amount          Decimal         @db.Decimal(10, 2)
-  transactionType TransactionType
-  orderId         String?
-  withdrawalId    String?
-  note            String?
-  createdAt       DateTime        @default(now())
+  id        String          @id @default(cuid())
+  walletId  String
+  amount    Decimal         @db.Decimal(10, 2)
+  type      TransactionType
+  operatorId String?
+  orderId   String?
+  withdrawalId String?
+  note      String?
+  createdAt DateTime        @default(now())
 
   wallet     OperatorWallet @relation(fields: [walletId], references: [id])
   order      Order?         @relation(fields: [orderId], references: [id])
   withdrawal Withdrawal?    @relation(fields: [withdrawalId], references: [id])
+  operator   Operator?      @relation(fields: [operatorId], references: [id])
 }
 
 model AdminWallet {
@@ -76,13 +90,13 @@ model AdminWallet {
 }
 
 model AdminWalletTransaction {
-  id              String          @id @default(cuid())
-  walletId        String
-  amount          Decimal         @db.Decimal(10, 2)
-  transactionType TransactionType
-  orderId         String?
-  note            String?
-  createdAt       DateTime        @default(now())
+  id        String          @id @default(cuid())
+  walletId  String
+  amount    Decimal         @db.Decimal(10, 2)
+  type      TransactionType
+  orderId   String?
+  note      String?
+  createdAt DateTime        @default(now())
 
   wallet AdminWallet @relation(fields: [walletId], references: [id])
   order  Order?      @relation(fields: [orderId], references: [id])

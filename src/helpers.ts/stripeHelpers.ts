@@ -149,6 +149,66 @@ export const createStripeCustomer = async (email: string, name: string, userId: 
 };
 
 /**
+ * Creates a standard Laundry Order Session with multi-vendor support (transfer_group)
+ */
+export const createMultiVendorOrderPaymentSession = async (
+  orderId: string,
+  totalAmount: number,
+  userId: string,
+  transferGroup: string
+) => {
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+    line_items: [
+      {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `Order #${orderId.slice(0, 8)}`,
+            description: "Multi-vendor Laundry Service",
+          },
+          unit_amount: Math.round(totalAmount * 100),
+        },
+        quantity: 1,
+      },
+    ],
+    payment_intent_data: {
+      transfer_group: transferGroup,
+      metadata: { orderId, userId },
+    },
+    success_url: `${config.frontend_url}/payment-success?order_id=${orderId}&session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${config.frontend_url}/payment-cancelled?order_id=${orderId}`,
+    metadata: {
+      type: "ORDER_PAYMENT",
+      orderId,
+      userId,
+    },
+  });
+
+  return session;
+};
+
+/**
+ * Creates a transfer to a connected account
+ */
+export const createTransfer = async (
+  amountInCents: number,
+  destinationAccountId: string,
+  transferGroup: string,
+  metadata: any
+) => {
+  const transfer = await stripe.transfers.create({
+    amount: amountInCents,
+    currency: "usd",
+    destination: destinationAccountId,
+    transfer_group: transferGroup,
+    metadata,
+  });
+  return transfer;
+};
+
+/**
  * Generates an Account Link for an Express Connect account
  */
 export const generateAccountOnboardingLink = async (
@@ -198,9 +258,11 @@ export const StripeHelpers = {
   createUserSubscriptionSession,
   createOperatorAdSubscriptionSession,
   createOrderPaymentSession,
+  createMultiVendorOrderPaymentSession,
   createSetupIntent,
   createStripeCustomer,
   generateAccountOnboardingLink,
   createConnectAccount,
   getAccountStatus,
+  createTransfer,
 };

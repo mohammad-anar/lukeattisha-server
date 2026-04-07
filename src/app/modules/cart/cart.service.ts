@@ -1,215 +1,124 @@
-import { prisma } from '../../../helpers.ts/prisma.js';
 import ApiError from '../../../errors/ApiError.js';
-import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
-import { Prisma } from '@prisma/client';
+import { prisma } from '../../../helpers.ts/prisma.js';
 
-const calculateItemPrice = async (item: any) => {
-  let basePrice = 0;
-  if (item.serviceId) {
-    const service = await prisma.service.findUnique({ where: { id: item.serviceId } });
-    basePrice = Number(service?.basePrice || 0);
-  } else if (item.bundleId) {
-    const bundle = await prisma.bundle.findUnique({ where: { id: item.bundleId } });
-    basePrice = Number(bundle?.bundlePrice || 0);
+const getOrCreateCart = async (userId: string) => {
+  if (!userId) {
+    throw new ApiError(400, 'User ID is required for cart operations');
   }
-
-  const addonIds = (item.selectedAddons || []).map((sa: any) => sa.addonId);
-  const addons = await prisma.addon.findMany({ where: { id: { in: addonIds } } });
-  const addonsPrice = addons.reduce((sum, a) => sum + Number(a.price), 0);
-
-  return (basePrice + addonsPrice) * (item.quantity || 1);
-};
-
-const create = async (payload: any) => {
-  const { items, ...cartData } = payload;
-
-  const processedItems = await Promise.all(
-    (items || []).map(async (item: any) => {
-      const price = await calculateItemPrice(item);
-      const { selectedAddons, ...rest } = item;
-      return {
-        ...rest,
-        price,
-        selectedAddons: {
-          create: selectedAddons || [],
-        },
-      };
-    })
-  );
-
-  const result = await prisma.cart.create({
-    data: {
-      ...cartData,
-      items: {
-        create: processedItems,
-      },
-    } as any,
-    include: {
-      items: {
-        include: {
-          selectedAddons: true,
-        },
-      },
-    },
-  });
-  return result;
-};
-
-const getAll = async (filters: any, options: any) => {
-  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filters;
-
-  const andConditions = [];
-
-  if (searchTerm) {
-    andConditions.push({
-      OR: [].map((field) => ({
-        [field]: {
-          contains: searchTerm,
-          mode: 'insensitive',
-        },
-      })),
-    });
-  }
-
-  if (Object.keys(filterData).length > 0) {
-    andConditions.push({
-      AND: Object.keys(filterData).map((key) => ({
-        [key]: {
-          equals: (filterData as any)[key],
-        },
-      })),
-    });
-  }
-
-  const whereConditions: Prisma.CartWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
-
-  const result = await prisma.cart.findMany({
-    where: whereConditions,
-    skip,
-    take: limit,
-    orderBy:
-      sortBy && sortOrder
-        ? { [sortBy]: sortOrder }
-        : { createdAt: 'desc' },
-    include: {
-      items: {
-        include: {
-          selectedAddons: true,
-          service: true,
-          bundle: true,
-        },
-      },
-    },
-  });
-  const total = await prisma.cart.count({ where: whereConditions });
-
-  return {
-    meta: {
-      total,
-      page,
-      limit,
-    },
-    data: result,
-  };
-};
-
-const getById = async (id: string) => {
-  const result = await prisma.cart.findUnique({
-    where: { id },
-    include: {
-      items: {
-        include: {
+  return await prisma.cart.upsert({
+    where: { userId },
+    create: { userId },
+    update: { userId },
+    include: { 
+      items: { 
+        include: { 
+          service: true, 
+          bundle: true, 
           selectedAddons: {
-             include: {
-               addon: true
-             }
-          },
-          service: true,
-          bundle: true,
-        },
-      },
-    }
-  });
-  if (!result) {
-    throw new ApiError(404, 'Cart not found');
-  }
-  return result;
-};
-
-const update = async (id: string, payload: any) => {
-  const { items, ...cartData } = payload;
-
-  if (items) {
-    return await prisma.$transaction(async (tx) => {
-      const currentItems = await tx.cartItem.findMany({
-        where: { cartId: id },
-      });
-
-      for (const item of currentItems) {
-        await tx.selectedAddon.deleteMany({ where: { cartItemId: item.id } });
-      }
-      await tx.cartItem.deleteMany({ where: { cartId: id } });
-
-      const processedItems = await Promise.all(
-        items.map(async (item: any) => {
-          const price = await calculateItemPrice(item);
-          const { selectedAddons, ...rest } = item;
-          return {
-            ...rest,
-            price,
-            selectedAddons: {
-              create: selectedAddons || [],
-            },
-          };
-        })
-      );
-
-      return await tx.cart.update({
-        where: { id },
-        data: {
-          ...cartData,
-          items: {
-            create: processedItems,
-          },
-        } as any,
-        include: {
-          items: {
             include: {
-              selectedAddons: true,
-            },
-          },
-        },
-      });
-    });
-  }
-
-  const result = await prisma.cart.update({
-    where: { id },
-    data: cartData,
-    include: {
-      items: {
-        include: {
-          selectedAddons: true,
-        },
-      },
+              addon: true
+            }
+          } 
+        } 
+      } 
     },
   });
-  return result;
 };
 
-const deleteById = async (id: string) => {
-  await getById(id);
-  const result = await prisma.cart.delete({
-    where: { id },
+const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: string, quantity: number, addonIds?: string[] }) => {
+  const cart = await getOrCreateCart(userId);
+
+  let storeId: string;
+  let operatorId: string;
+  let price: number;
+
+  if (dto.serviceId) {
+    const service = await prisma.service.findUnique({
+      where: { id: dto.serviceId },
+      include: { 
+        operator: true,
+        storeServices: { take: 1 } 
+      },
+    });
+    if (!service) throw new ApiError(404, 'Service not found');
+    // if (service.operator.stripeAccountStatus !== 'ACTIVE') {
+    //   throw new ApiError(400, 'This service is not available for purchase (Operator not active).');
+    // }
+    storeId = service.storeServices[0]?.storeId;
+    if (!storeId) throw new ApiError(400, 'This service is not assigned to any store');
+    operatorId = service.operatorId;
+    price = Number(service.basePrice);
+  } else if (dto.bundleId) {
+    const bundle = await prisma.bundle.findUnique({
+      where: { id: dto.bundleId },
+      include: { 
+        operator: true,
+        storeBundles: { take: 1 }
+      },
+    });
+    if (!bundle) throw new ApiError(404, 'Bundle not found');
+    // if (bundle.operator.stripeAccountStatus !== 'ACTIVE') {
+    //   throw new ApiError(400, 'This bundle is not available for purchase (Operator not active).');
+    // }
+    storeId = bundle.storeBundles[0]?.storeId;
+    if (!storeId) throw new ApiError(400, 'This bundle is not assigned to any store');
+    operatorId = bundle.operatorId;
+    price = Number(bundle.bundlePrice);
+  } else {
+    throw new ApiError(400, 'serviceId or bundleId is required.');
+  }
+
+  // Calculate price with addons
+  if (dto.addonIds && dto.addonIds.length > 0) {
+    const addons = await prisma.addon.findMany({
+      where: { id: { in: dto.addonIds } }
+    });
+    const addonsPrice = addons.reduce((sum, a) => sum + Number(a.price), 0);
+    price += addonsPrice;
+  }
+
+  return await prisma.cartItem.upsert({
+    where: dto.serviceId
+      ? { cartId_serviceId: { cartId: cart.id, serviceId: dto.serviceId } }
+      : { cartId_bundleId: { cartId: cart.id, bundleId: dto.bundleId! } },
+    create: {
+      cartId: cart.id,
+      storeId,
+      operatorId,
+      serviceId: dto.serviceId,
+      bundleId: dto.bundleId,
+      quantity: dto.quantity,
+      price: price,
+      selectedAddons: dto.addonIds?.length
+        ? { create: dto.addonIds.map((addonId) => ({ addonId })) }
+        : undefined,
+    },
+    update: { quantity: dto.quantity },
   });
-  return result;
+};
+
+const removeItem = async (userId: string, cartItemId: string) => {
+  const cart = await prisma.cart.findUnique({ where: { userId } });
+  if (!cart) throw new ApiError(404, 'Cart not found');
+  return await prisma.cartItem.delete({
+    where: { id: cartItemId, cartId: cart.id },
+  });
+};
+
+const clearCart = async (userId: string) => {
+  const cart = await prisma.cart.findUnique({ where: { userId } });
+  if (!cart) return;
+  return await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
+};
+
+const getMyCart = async (userId: string) => {
+  return await getOrCreateCart(userId);
 };
 
 export const CartService = {
-  create,
-  getAll,
-  getById,
-  update,
-  deleteById,
+  addItem,
+  removeItem,
+  clearCart,
+  getMyCart,
+  getOrCreateCart,
 };

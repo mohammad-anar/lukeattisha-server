@@ -63,6 +63,13 @@ const getAll = async (filters: any, options: any) => {
 const getById = async (id: string) => {
   const result = await prisma.cartItem.findUnique({
     where: { id },
+    include: {
+      selectedAddons: {
+        include: { addon: true }
+      },
+      service: true,
+      bundle: true
+    }
   });
   if (!result) {
     throw new ApiError(404, 'CartItem not found');
@@ -70,8 +77,28 @@ const getById = async (id: string) => {
   return result;
 };
 
+const getByCartId = async (cartId: string) => {
+  const result = await prisma.cartItem.findMany({
+    where: { cartId },
+    include: {
+      selectedAddons: {
+        include: { addon: true }
+      },
+      service: true,
+      bundle: true
+    }
+  });
+  return result;
+};
+
 const update = async (id: string, payload: any) => {
-  await getById(id);
+  const cartItem = await getById(id);
+  
+  if (payload.quantity !== undefined) {
+    const unitPrice = Number(cartItem.price) / cartItem.quantity;
+    payload.price = unitPrice * payload.quantity;
+  }
+
   const result = await prisma.cartItem.update({
     where: { id },
     data: payload,
@@ -91,6 +118,7 @@ export const CartItemService = {
   create,
   getAll,
   getById,
+  getByCartId,
   update,
   deleteById,
 };

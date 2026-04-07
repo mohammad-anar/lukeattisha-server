@@ -2,7 +2,8 @@ model Review {
   id            String   @id @default(cuid())
   reviewNumber  String?  @unique
   userId        String
-  serviceId     String
+  storeServiceId     String?
+  storeBundleId     String?
   rating        Int
   comment       String?
   operatorReply String?
@@ -10,7 +11,8 @@ model Review {
   updatedAt     DateTime @updatedAt
 
   user    User    @relation(fields: [userId], references: [id])
-  service Service @relation(fields: [serviceId], references: [id])
+  service StoreService? @relation(fields: [storeServiceId], references: [id])
+  bundle StoreBundle? @relation(fields: [storeBundleId], references: [id])
 }
 
 model SupportTicket {

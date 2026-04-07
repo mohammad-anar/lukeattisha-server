@@ -1,0 +1,56 @@
+warn The configuration property `package.json#prisma` is deprecated and will be removed in Prisma 7. Please migrate to a Prisma config file (e.g., `prisma.config.ts`).
+For more information, see: https://pris.ly/prisma-config
+
+Loaded Prisma config from prisma.config.ts.
+
+warn The Prisma config file in prisma.config.ts overrides the deprecated `package.json#prisma` property in package.json.
+  For more information, see: https://pris.ly/prisma-config
+
+Prisma config detected, skipping environment variable loading.
+Prisma schema loaded from prisma\schema
+
+Prisma schema warning:
+- Preview feature "prismaSchemaFolder" is deprecated. The functionality can be used without specifying it as a preview feature.
+
+Error: Prisma schema validation - (validate wasm)
+Error code: P1012
+[1;91merror[0m: [1mError validating field `store` in model `CartItem`: The relation field `store` on model `CartItem` is missing an opposite relation field on the model `Store`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema\order.prisma:24[0m
+[1;94m   | [0m
+[1;94m23 | [0m  cart           Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+[1;94m24 | [0m  [1;91mstore          Store           @relation(fields: [storeId], references: [id])[0m
+[1;94m25 | [0m  operator       Operator        @relation(fields: [operatorId], references: [id])
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating field `store` in model `OperatorOrder`: The relation field `store` on model `OperatorOrder` is missing an opposite relation field on the model `Store`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema\order.prisma:92[0m
+[1;94m   | [0m
+[1;94m91 | [0m  operator Operator  @relation(fields: [operatorId], references: [id])
+[1;94m92 | [0m  [1;91mstore    Store     @relation(fields: [storeId], references: [id])[0m
+[1;94m93 | [0m  items    OrderItem[]
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating field `operator` in model `OperatorWalletTransaction`: The relation field `operator` on model `OperatorWalletTransaction` is missing an opposite relation field on the model `Operator`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema\payment.prisma:80[0m
+[1;94m   | [0m
+[1;94m79 | [0m  withdrawal Withdrawal?    @relation(fields: [withdrawalId], references: [id])
+[1;94m80 | [0m  [1;91moperator   Operator?      @relation(fields: [operatorId], references: [id])[0m
+[1;94m81 | [0m}
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating field `carts` in model `Store`: The relation field `carts` on model `Store` is missing an opposite relation field on the model `Cart`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema\store.prisma:22[0m
+[1;94m   | [0m
+[1;94m21 | [0m  bundleServices BundleServices[]
+[1;94m22 | [0m  [1;91mcarts          Cart[][0m
+[1;94m23 | [0m  orders         Order[]
+[1;94m   | [0m
+[1;91merror[0m: [1mError validating field `orders` in model `Store`: The relation field `orders` on model `Store` is missing an opposite relation field on the model `Order`. Either run `prisma format` or add it manually.[0m
+  [1;94m-->[0m  [4mprisma\schema\store.prisma:23[0m
+[1;94m   | [0m
+[1;94m22 | [0m  carts          Cart[]
+[1;94m23 | [0m  [1;91morders         Order[][0m
+[1;94m24 | [0m}
+[1;94m   | [0m
+
+Validation Error Count: 5
+[Context: validate]
+
+Prisma CLI Version : 6.19.3

@@ -4,24 +4,25 @@ import sendResponse from '../../shared/sendResponse.js';
 import { OrderService } from './order.service.js';
 import pick from '../../../helpers.ts/pick.js';
 
-const create = catchAsync(async (req: Request, res: Response) => {
-  const result = await OrderService.create(req.body);
+const checkout = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await OrderService.checkout(user.id, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 201,
-    message: 'Order created successfully',
+    message: 'Checkout initiated successfully',
     data: result,
   });
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); 
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   const result = await OrderService.getAll(filters, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'Order fetched successfully',
+    message: 'Orders fetched successfully',
     meta: result.meta,
     data: result.data,
   });
@@ -83,7 +84,7 @@ const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const OrderController = {
-  create,
+  checkout,
   getAll,
   getMyOrders,
   getById,

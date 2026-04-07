@@ -28,7 +28,7 @@ model User {
 
   // Relations
   addresses         Address[]
-  cart              Cart[]
+  cart              Cart?
   orders            Order[]
   reviews           Review[]
   favouriteServices FavouriteService[]
@@ -51,11 +51,10 @@ model Operator {
   user   User   @relation(fields: [userId], references: [id])
 
   // Business Logistics
-  approvalStatus           ApprovalStatus @default(PENDING)
-  status                   UserStatus     @default(ACTIVE)
-  stripeConnectedAccountId String?        @unique
-  onboardingUrl            String?
-  onboardingComplete       Boolean        @default(false)
+  approvalStatus      ApprovalStatus      @default(PENDING)
+  status              UserStatus          @default(ACTIVE)
+  stripeAccountId     String?             @unique
+  stripeAccountStatus StripeAccountStatus @default(PENDING)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -68,7 +67,11 @@ model Operator {
   ads              Ad[]
   operatorWallet   OperatorWallet?
   chatParticipants ChatParticipant[]
-  chatMessages     ChatMessage[]     @relation("OperatorMessages")
+  chatMessages     ChatMessage[]             @relation("OperatorMessages")
   notifications    Notification[]
   withdrawals      Withdrawal[]
+  operatorOrders   OperatorOrder[]
+  transfers        Transfer[]
+  cartItems        CartItem[]
+  walletTransactions OperatorWalletTransaction[]
 }

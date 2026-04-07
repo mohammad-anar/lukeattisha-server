@@ -155,6 +155,7 @@ const getAll = async (filters: any, options: any) => {
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },
@@ -191,19 +192,22 @@ const getById = async (id: string) => {
       service: {
         include: {
           category: true,
-          serviceAddons: true,
+          serviceAddons: {
+            include: {
+              addon: true,
+            }
+          },
           storeServices: true,
           operator: true,
-          reviews:true,
-          _count:{
-            select:{
-              reviews:true
-            }
-          }
+        }
+      },
+      reviews: true,
+      _count: {
+        select: {
+          reviews: true
         }
       },
       store: true,
-
     }
   });
   if (!result) {

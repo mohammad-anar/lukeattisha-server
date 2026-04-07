@@ -5,166 +5,213 @@ import { Prisma } from '@prisma/client';
 import { StripeHelpers } from '../../../helpers.ts/stripeHelpers.js';
 import { config } from '../../../config/index.js';
 
-const create = async (payload: { cartId: string }) => {
-  const { cartId } = payload;
-
-  // 1. Fetch Cart with all related details for price calculation
+const checkout = async (userId: string, dto: {
+  pickupAddress: {
+    pickupTime?: string;
+    pickupDate?: string;
+    streetAddress: string;
+    city: string;
+    state?: string;
+    country: string;
+    postalCode?: string;
+  },
+  deliveryAddress: {
+    streetAddress: string;
+    city: string;
+    state?: string;
+    country: string;
+    postalCode?: string;
+  },
+  scheduledDate: string
+}) => {
+  // 1. Load cart with all items
   const cart = await prisma.cart.findUnique({
-    where: { id: cartId },
+    where: { userId },
     include: {
       items: {
         include: {
           service: true,
           bundle: true,
-          selectedAddons: {
-            include: {
-              addon: true
-            }
-          }
-        }
-      }
+          selectedAddons: { include: { addon: true } },
+          operator: true,
+          store: true,
+        },
+      },
+    },
+  });
+
+  if (!cart || !cart.items.length) throw new ApiError(400, 'Cart is empty.');
+
+  // 2. Check subscription
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { userSubscriptions: { where: { status: 'ACTIVE' } } },
+  });
+  const isSubscription = (user?.userSubscriptions.length || 0) > 0;
+
+  // 3. Group items by operator
+  const operatorMap = new Map<string, { items: any[]; operatorId: string; storeId: string }>();
+  for (const item of cart.items) {
+    const key = item.operatorId;
+    if (!operatorMap.has(key)) {
+      operatorMap.set(key, { items: [], operatorId: item.operatorId, storeId: item.storeId });
     }
-  });
-
-  if (!cart) {
-    throw new ApiError(404, "Cart not found.");
+    operatorMap.get(key)!.items.push(item);
   }
 
-  if (!cart.items || cart.items.length === 0) {
-    throw new ApiError(400, "Cart is empty.");
-  }
-
-  // 2. Fetch Store and verify operator connection status
-  const store = await prisma.store.findUnique({
-    where: { id: cart.storeId },
-    include: { operator: true }
+  // 4. Fetch fee settings from AdminSetting (use latest row, fall back to defaults)
+  const adminSetting = await prisma.adminSetting.findFirst({
+    orderBy: { updatedAt: 'desc' },
   });
 
-  if (!store) {
-    throw new ApiError(404, "Store not found.");
+  const PLATFORM_FEE_PERCENT = adminSetting
+    ? Number(adminSetting.platformCommissionRate)
+    : (config.economics.platform_fee_percent / 100);
+  const BASE_PICKUP_AND_DELIVERY_FEE = adminSetting
+    ? Number(adminSetting.pickupAndDeliveryFee)
+    : 4.99;
+  const FIXED_TRANSACTION_FEE = adminSetting
+    ? Number(adminSetting.fixedTransactionFee)
+    : 0;
+
+  let subtotal = 0;
+  for (const item of cart.items) {
+    subtotal += Number(item.price) * item.quantity;
   }
 
+  const platformFee = subtotal * PLATFORM_FEE_PERCENT;
+  const pickupAndDeliveryFee = isSubscription ? 0 : BASE_PICKUP_AND_DELIVERY_FEE;
+  const fixedTransactionFee = FIXED_TRANSACTION_FEE;
+  const totalAmount = subtotal + platformFee + pickupAndDeliveryFee + fixedTransactionFee;
 
-
-  // 3. Recalculate Prices based on current data
-  let totalAmount = 0;
-  const processedItems = cart.items.map(item => {
-    let basePrice = 0;
-    let name = "";
-
-    if (item.service) {
-      basePrice = Number(item.service.basePrice);
-      name = item.service.name;
-    } else if (item.bundle) {
-      basePrice = Number(item.bundle.bundlePrice);
-      name = item.bundle.name;
-    }
-
-    const addonsPrice = item.selectedAddons.reduce((sum, sa) => sum + Number(sa.addon.price), 0);
-    const itemUnitPrice = basePrice + addonsPrice;
-    const itemTotalPrice = itemUnitPrice * item.quantity;
-    
-    totalAmount += itemTotalPrice;
-
-    return {
-      serviceName: name,
-      quantity: item.quantity,
-      price: itemTotalPrice, // Total price for this line item (unit price * qty)
-      serviceId: item.serviceId,
-      bundleId: item.bundleId,
-      addons: item.selectedAddons.map(sa => ({ addonId: sa.addonId }))
-    };
-  });
-
-  // 4. ECONOMICS: Calculate platform fee and operator amount
-  const feePercent = config.economics.platform_fee_percent;
-  const totalInCents = Math.round(totalAmount * 100);
-  const platformFeeInCents = Math.round(totalInCents * (feePercent / 100));
-  const operatorAmountInCents = totalInCents - platformFeeInCents;
-
-  const platformFee = platformFeeInCents / 100;
-  const operatorAmount = operatorAmountInCents / 100;
-
-  // 5. Create local Order record and items within a transaction
+  // 5. Generate order number
   const orderNumber = `ORD-${Date.now()}`;
-  
-  const result = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.create({
+  const transferGroup = `TG-${orderNumber}`;
+
+  // 6. Create Order + OperatorOrders first, then create OrderItems with explicit orderId
+  const order = await prisma.$transaction(async (tx) => {
+    // Step 6a: Create Order + OperatorOrders (no items yet)
+    const newOrder = await tx.order.create({
       data: {
         orderNumber,
-        userId: cart.userId,
-        storeId: cart.storeId,
-        totalAmount,
+        userId,
+        subtotal,
+        pickupAndDeliveryFee,
         platformFee,
-        operatorAmount,
-        status: "PENDING",
-        paymentStatus: "UNPAID",
+        fixedTransactionFee,
+        totalAmount,
+        isSubscription,
+        pickupAddress: {
+          create: dto.pickupAddress
+        },
+        deliveryAddress: {
+          create: dto.deliveryAddress
+        },
+        scheduledDate: new Date(dto.scheduledDate),
+        stripeTransferGroup: transferGroup,
+        operatorOrders: {
+          create: Array.from(operatorMap.values()).map((group) => {
+            const groupSubtotal = group.items.reduce(
+              (sum: number, i: any) => sum + (Number(i.price) * i.quantity),
+              0,
+            );
+            const transferAmount = groupSubtotal * (1 - PLATFORM_FEE_PERCENT);
+            return {
+              operator: { connect: { id: group.operatorId } },
+              store: { connect: { id: group.storeId } },
+              subtotal: groupSubtotal,
+              transferAmount,
+            };
+          }),
+        },
       },
+      include: { operatorOrders: { include: { operator: true } } },
     });
 
-    // Create Order Items and their Addons
-    for (const item of processedItems) {
-      const { addons, ...itemData } = item;
-      const orderItem = await tx.orderItem.create({
-        data: {
-          ...itemData,
-          orderId: order.id,
+    // Step 6b: Create OrderItems now that we have both orderId and operatorOrderId
+    for (const opOrder of newOrder.operatorOrders) {
+      const group = operatorMap.get(opOrder.operatorId)!;
+      for (const item of group.items) {
+        const addons = item.selectedAddons ?? [];
+        const priceStr = String(item.price); // Pass as string for Prisma Decimal compatibility
+        try {
+          await tx.orderItem.create({
+            data: {
+              order: { connect: { id: newOrder.id } },
+              operatorOrder: { connect: { id: opOrder.id } },
+              serviceName: item.service?.name ?? item.bundle?.name ?? 'Unknown',
+              quantity: item.quantity,
+              price: priceStr,
+              ...(item.serviceId && { service: { connect: { id: item.serviceId } } }),
+              ...(item.bundleId && { bundle: { connect: { id: item.bundleId } } }),
+              ...(addons.length > 0 && {
+                orderAddons: {
+                  create: addons.map((sa: any) => ({
+                    addonId: sa.addonId,
+                  })),
+                },
+              }),
+            },
+          });
+        } catch (err: any) {
+          console.error('[OrderItem.create] Failed — item debug:', JSON.stringify({
+            orderId: newOrder.id,
+            operatorOrderId: opOrder.id,
+            price: priceStr,
+            serviceId: item.serviceId,
+            bundleId: item.bundleId,
+            addonCount: addons.length,
+          }));
+          console.error('[OrderItem.create] Raw Prisma error message:\n', err?.message);
+          // Re-throw with the full Prisma message so the API response shows it
+          throw new Error(`OrderItem creation failed: ${err?.message ?? err}`);
         }
-      });
-
-      if (addons.length > 0) {
-        await tx.orderAddon.createMany({
-          data: addons.map(a => ({
-            orderItemId: orderItem.id,
-            addonId: a.addonId
-          }))
-        });
       }
     }
 
-    // 6. Cleanup: Clear the Cart
-    // First delete addons, then items, then cart to avoid FK violations (if no cascade)
-    for (const item of cart.items) {
-      await tx.selectedAddon.deleteMany({ where: { cartItemId: item.id } });
-    }
-    await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
-    await tx.cart.delete({ where: { id: cart.id } });
-
-    return order;
+    return newOrder;
   });
 
   // 7. Generate Stripe Payment URL
-  const session = await StripeHelpers.createOrderPaymentSession(
-    result.id,
-    totalAmount, // full subtotal
-    0, // delivery fee if not in subtotal
-    platformFee, // our commission
-    cart.userId,
-    store.operator.stripeConnectedAccountId
+  const session = await StripeHelpers.createMultiVendorOrderPaymentSession(
+    order.id,
+    totalAmount,
+    userId,
+    transferGroup
   );
 
-  // 8. Update Order and create Payment with the session details
-  const updatedOrder = await prisma.$transaction(async (tx) => {
-    const order = await tx.order.update({
-      where: { id: result.id },
-      data: { stripeSessionId: session.id }
-    });
-
-    await tx.payment.create({
+  // 8. Save Payment record + update Order with paymentUrl
+  await prisma.$transaction([
+    prisma.payment.create({
       data: {
-        orderId: result.id,
-        stripeSessionId: session.id,
+        orderId: order.id,
+        stripePaymentIntentId: session.payment_intent as string || session.id, // checkout session id if PI not yet created
+        stripeTransferGroup: transferGroup,
         amount: totalAmount,
-        platformFee,
-        operatorAmount,
-        status: "UNPAID",
-      }
-    });
+        status: 'UNPAID',
+        paymentUrl: session.url,
+      },
+    }),
+    prisma.order.update({
+      where: { id: order.id },
+      data: {
+        stripePaymentIntentId: session.payment_intent as string || session.id,
+        paymentUrl: session.url,
+      },
+    }),
+  ]);
 
-    return order;
-  });
+  // 9. Clear cart
+  await txClearCart(userId);
 
-  return { order: updatedOrder, paymentUrl: session.url };
+  return { orderId: order.id, paymentUrl: session.url };
+};
+
+// Helper for transaction
+const txClearCart = async (userId: string) => {
+  const cart = await prisma.cart.findUnique({ where: { userId } });
+  if (!cart) return;
+  await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 };
 
 const getAll = async (filters: any, options: any) => {
@@ -206,7 +253,14 @@ const getAll = async (filters: any, options: any) => {
         : { createdAt: 'desc' },
     include: {
       user: { select: { name: true, email: true } },
-      store: { select: { name: true } },
+      deliveryAddress: true,
+      pickupAddress: true,
+      operatorOrders: {
+        include: {
+          store: { select: { name: true } },
+          operator: { select: { user: { select: { name: true } } } }
+        }
+      }
     }
   });
   const total = await prisma.order.count({ where: whereConditions });
@@ -227,14 +281,14 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
 
   const andConditions: any[] = [];
 
-  // Role-based filtering
   if (user.role === 'USER') {
     andConditions.push({ userId: user.userId });
   } else if (user.role === 'OPERATOR') {
-    // For operators, we filter by the operatorId of the store
     andConditions.push({
-      store: {
-        operatorId: user.userId
+      operatorOrders: {
+        some: {
+          operatorId: user.userId
+        }
       }
     });
   }
@@ -272,9 +326,13 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
         : { createdAt: 'desc' },
     include: {
       user: { select: { name: true, email: true } },
-      store: { select: { name: true } },
+      pickupAddress: true,
+      deliveryAddress: true,
       orderItems: true,
-      payments: true,
+      operatorOrders: {
+        include: { store: true }
+      },
+      payment: true,
     }
   });
 
@@ -286,23 +344,21 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
   };
 };
 
-const updateOrderStatus = async (id: string, status: any) => {
-  await getById(id);
-  const result = await prisma.order.update({
-    where: { id },
-    data: { status },
-  });
-  return result;
-};
-
 const getById = async (id: string) => {
   const result = await prisma.order.findUnique({
     where: { id },
-    include: { 
-      orderItems: true, 
-      payments: true,
+    include: {
+      orderItems: {
+        include: { orderAddons: { include: { addon: true } } }
+      },
+      deliveryAddress:true,
+      pickupAddress:true,
+      
+      operatorOrders: {
+        include: { store: true, operator: { include: { user: true } } }
+      },
+      payment: true,
       user: { select: { name: true, email: true, phone: true } },
-      store: { select: { name: true, address: true, lat: true, lng: true } }
     }
   });
   if (!result) {
@@ -312,7 +368,6 @@ const getById = async (id: string) => {
 };
 
 const update = async (id: string, payload: any) => {
-  await getById(id);
   const result = await prisma.order.update({
     where: { id },
     data: payload,
@@ -320,8 +375,15 @@ const update = async (id: string, payload: any) => {
   return result;
 };
 
+const updateOrderStatus = async (id: string, status: any) => {
+  const result = await prisma.order.update({
+    where: { id },
+    data: { status },
+  });
+  return result;
+};
+
 const deleteById = async (id: string) => {
-  await getById(id);
   const result = await prisma.order.delete({
     where: { id },
   });
@@ -329,7 +391,7 @@ const deleteById = async (id: string) => {
 };
 
 export const OrderService = {
-  create,
+  checkout,
   getAll,
   getMyOrders,
   getById,

@@ -19,8 +19,8 @@ model Store {
   storeServices  StoreService[]
   storeBundles   StoreBundle[]
   bundleServices BundleServices[]
-  carts          Cart[]
-  orders         Order[]
+  cartItems      CartItem[]
+  operatorOrders OperatorOrder[]
 }
 
 model StoreService {
@@ -34,6 +34,7 @@ model StoreService {
   store   Store   @relation(fields: [storeId], references: [id])
   service Service @relation(fields: [serviceId], references: [id])
   favouriteServices FavouriteService[]
+  reviews        Review[]
 }
 
 model Bundle {
@@ -79,4 +80,5 @@ model StoreBundle {
   updatedAt DateTime @updatedAt
   
   favouriteServices FavouriteService[]
+  reviews           Review[]
 }

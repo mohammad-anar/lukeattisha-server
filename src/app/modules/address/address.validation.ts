@@ -6,7 +6,6 @@ const createSchema = z.object({
   state: z.string().optional(),
   country: z.string({ message: 'Country is required' }),
   postalCode: z.string().optional(),
-  isDefault: z.boolean().optional(),
 });
 
 const updateSchema = z.object({
@@ -15,7 +14,6 @@ const updateSchema = z.object({
   state: z.string().optional(),
   country: z.string().optional(),
   postalCode: z.string().optional(),
-  isDefault: z.boolean().optional(),
 });
 
 export const AddressValidation = {

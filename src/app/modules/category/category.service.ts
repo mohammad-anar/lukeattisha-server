@@ -70,6 +70,20 @@ const getById = async (id: string) => {
   return result;
 };
 
+// get category by operator id from operatorCategories table
+const getByOperatorId = async (operatorId: string) => {
+  const result = await prisma.operatorCategory.findMany({
+    where: { operatorId },
+    include: {
+      category: true,
+    },
+  });
+  if (!result) {
+    throw new ApiError(404, 'Category not found');
+  }
+  return result;
+};
+
 const update = async (id: string, payload: any) => {
   await getById(id);
   const result = await prisma.category.update({
@@ -91,6 +105,7 @@ export const CategoryService = {
   create,
   getAll,
   getById,
+  getByOperatorId,
   update,
   deleteById,
 };

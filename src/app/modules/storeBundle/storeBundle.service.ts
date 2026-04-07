@@ -206,6 +206,20 @@ const getById = async (id: string) => {
   const result = await prisma.storeBundle.findUnique({
     where: { id },
     include: {
+      reviews: {
+        include: {
+          bundle: true,
+          service: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            }
+          }
+        }
+      },
       bundle: {
         include: {
           bundleServices: {

@@ -32,10 +32,10 @@ const auth =
 
       // EXTRA SECURE: Check if user exists and is active in DB
       const user = await prisma.user.findUnique({
-        where: { id: verifyUser.id, isDeleted: false },
+        where: { id: verifyUser.id },
       });
 
-      if (!user) {
+      if (!user || user.isDeleted) {
         throw new ApiError(StatusCodes.UNAUTHORIZED, "User not found or deleted");
       }
 

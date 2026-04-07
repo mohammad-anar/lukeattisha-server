@@ -10,6 +10,7 @@ const router = express.Router();
 router.post('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), validateRequest(CategoryValidation.createSchema), CategoryController.create);
 router.get('/', CategoryController.getAll);
 router.get('/:id', CategoryController.getById);
+router.get('/operator/:operatorId', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATOR), CategoryController.getByOperatorId);
 router.patch('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), validateRequest(CategoryValidation.updateSchema), CategoryController.update);
 router.delete('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), CategoryController.deleteById);
 

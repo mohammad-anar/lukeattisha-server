@@ -95,6 +95,21 @@ const getByOperatorId = async (operatorId: string, filters: any, options: any) =
     where: whereConditions,
     skip,
     take: limit,
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      description: true,
+      operatorId: true,
+      createdAt: true,
+      updatedAt: true,
+      operator: {
+        select: {
+          id: true,
+          addons: true,
+        },
+      }
+    },
     orderBy:
       sortBy && sortOrder
         ? { [sortBy]: sortOrder }

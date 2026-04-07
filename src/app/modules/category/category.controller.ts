@@ -37,6 +37,16 @@ const getById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
+  const result = await CategoryService.getByOperatorId(req.params.operatorId as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Category fetched successfully',
+    data: result,
+  });
+});
+
 const update = catchAsync(async (req: Request, res: Response) => {
   const result = await CategoryService.update(req.params.id, req.body);
   sendResponse(res, {
@@ -61,6 +71,7 @@ export const CategoryController = {
   create,
   getAll,
   getById,
+  getByOperatorId,
   update,
   deleteById,
 };

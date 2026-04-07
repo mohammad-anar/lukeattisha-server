@@ -44,6 +44,9 @@ const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
   const operatorIdUserId = req.user?.id;
   const operator = await prisma.operator.findUnique({
     where: { userId: operatorIdUserId },
+    include: {
+      addons: true,      
+    },
   });
   if (!operator) {
     throw new ApiError(404, 'Operator not found');

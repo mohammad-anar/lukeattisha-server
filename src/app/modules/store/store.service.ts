@@ -2,8 +2,12 @@ import { prisma } from '../../../helpers.ts/prisma.js';
 import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
+import { OperatorService } from '../operator/operator.service.js';
 
 const create = async (payload: any) => {
+  if (payload.operatorId) {
+    await OperatorService.assertPaymentActivated(payload.operatorId);
+  }
   const result = await prisma.store.create({
     data: payload,
   });
@@ -56,6 +60,7 @@ const getAll = async (filters: any, options: any) => {
   return {
     meta: {
       total,
+      totalPages: Math.ceil(total / limit),
       page,
       limit,
     },

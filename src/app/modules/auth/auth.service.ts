@@ -95,21 +95,20 @@ const registerOperator = async (payload: Prisma.UserCreateInput & { address: str
     const operator = await tx.operator.create({
       data: {
         userId: user.id,
-        stripeConnectedAccountId: stripeConnectId,
-        onboardingUrl: onboardingLink.url,
+        stripeAccountId: stripeConnectId,
       },
     });
 
     if (storeName) {
       await tx.store.create({
-      data: {
-        operatorId: operator.id,
-        name: storeName,
-        address,
-        city: city || "Pending",
-        country: country || "Pending",
-      }
-    });
+        data: {
+          operatorId: operator.id,
+          name: storeName,
+          address,
+          city: city || "Pending",
+          country: country || "Pending",
+        }
+      });
     }
 
     if (address) {

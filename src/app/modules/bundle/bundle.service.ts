@@ -2,14 +2,18 @@ import { prisma } from '../../../helpers.ts/prisma.js';
 import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
+import { OperatorService } from '../operator/operator.service.js';
 
 const create = async (payload: any) => {
   const { serviceIds, ...bundleData } = payload;
 
+  if (bundleData.operatorId) {
+    await OperatorService.assertPaymentActivated(bundleData.operatorId);
+  }
+
   const result = await prisma.bundle.create({
     data: {
       ...bundleData,
-
       bundleServices: {
         create: serviceIds.map((serviceId: string) => ({
           serviceId,
@@ -99,8 +103,6 @@ const getAll = async (filters: any, options: any) => {
                 description: true,
                 category: true,
                 operator: true,
-                reviews: true,
-                bundleServices: true,
                 storeServices: true,
               }
             },

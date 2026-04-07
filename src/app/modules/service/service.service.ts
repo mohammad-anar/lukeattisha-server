@@ -2,28 +2,14 @@ import { prisma } from '../../../helpers.ts/prisma.js';
 import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
-import { CLIENT_RENEG_LIMIT } from 'tls';
-
-// const generateServiceId = async () => {
-//   const lastService = await prisma.service.findFirst({
-//     orderBy: { createdAt: "desc" },
-//     select: { serviceId: true },
-//   });
-
-//   let nextNumber = 1;
-
-//   if (lastService?.serviceId) {
-//     const match = lastService.serviceId.match(/\d+$/);
-//     if (match) {
-//       nextNumber = parseInt(match[0], 10) + 1;
-//     }
-//   }
-
-//   return `SRV-${String(nextNumber).padStart(3, "0")}`;
-// };
+import { OperatorService } from '../operator/operator.service.js';
 
 const create = async (payload: any) => {
   const { addonIds, ...serviceData } = payload;
+
+  if (serviceData.operatorId) {
+    await OperatorService.assertPaymentActivated(serviceData.operatorId);
+  }
 
   const result = await prisma.service.create({
     data: serviceData,

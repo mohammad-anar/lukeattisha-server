@@ -1,26 +1,28 @@
 model Cart {
-  id        String   @id @default(cuid())
-  userId    String
-  storeId   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
   user  User       @relation(fields: [userId], references: [id])
-  store Store      @relation(fields: [storeId], references: [id])
   items CartItem[]
 }
 
 model CartItem {
-  id        String   @id @default(cuid())
-  cartId    String
-  serviceId String?
-  bundleId  String?
-  quantity  Int
-  price     Decimal  @db.Decimal(10, 2)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String  @id @default(cuid())
+  cartId     String
+  storeId    String
+  operatorId String
+  serviceId  String?
+  bundleId   String?
+  quantity   Int
+  price      Decimal  @db.Decimal(10, 2)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  cart           Cart            @relation(fields: [cartId], references: [id])
+  cart           Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  store          Store           @relation(fields: [storeId], references: [id])
+  operator       Operator        @relation(fields: [operatorId], references: [id])
   service        Service?        @relation(fields: [serviceId], references: [id])
   bundle         Bundle?         @relation(fields: [bundleId], references: [id])
   selectedAddons SelectedAddon[]
@@ -33,50 +35,80 @@ model SelectedAddon {
   cartItemId String
   addonId    String
 
-  cartItem CartItem @relation(fields: [cartItemId], references: [id])
+  cartItem CartItem @relation(fields: [cartItemId], references: [id], onDelete: Cascade)
   addon    Addon    @relation(fields: [addonId], references: [id])
 
   @@id([cartItemId, addonId])
 }
 
 model Order {
-  id              String        @id @default(cuid())
-  orderNumber     String        @unique
-  userId          String
-  storeId         String
-  totalAmount     Decimal       @db.Decimal(10, 2)
-  platformFee     Decimal       @db.Decimal(10, 2)
-  operatorAmount  Decimal       @db.Decimal(10, 2)
-  stripeSessionId String?
-  paymentStatus   PaymentStatus @default(UNPAID)
-  status          OrderStatus   @default(PENDING)
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id            String        @id @default(cuid())
+  orderNumber   String        @unique
+  userId        String
+  status        OrderStatus   @default(PENDING)
+  paymentStatus PaymentStatus @default(UNPAID)
+
+  subtotal             Decimal @db.Decimal(10, 2)
+  pickupAndDeliveryFee Decimal @db.Decimal(10, 2) @default(4.99)
+  platformFee          Decimal @db.Decimal(10, 2)
+  fixedTransactionFee  Decimal @db.Decimal(10, 2) @default(0)
+  totalAmount          Decimal @db.Decimal(10, 2)
+  isSubscription       Boolean @default(false)
+
+  pickupAddress   OrderPickupAddress?
+  deliveryAddress OrderDeliveryAddress?
+  scheduledDate   DateTime
+
+  stripePaymentIntentId String?
+  stripeTransferGroup   String?
+  paymentUrl            String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user             User                        @relation(fields: [userId], references: [id])
-  store            Store                       @relation(fields: [storeId], references: [id])
   orderItems       OrderItem[]
-  payments         Payment[]
+  operatorOrders   OperatorOrder[]
+  payment          Payment?
   supportTickets   SupportTicket[]
   chatRooms        ChatRoom[]
   operatorWalletTx OperatorWalletTransaction[]
   adminWalletTx    AdminWalletTransaction[]
 }
 
-model OrderItem {
-  id          String   @id @default(cuid())
-  orderId     String
-  serviceName String
-  quantity    Int
-  price       Decimal  @db.Decimal(10, 2)
-  serviceId   String?
-  bundleId    String?
-  createdAt   DateTime @default(now())
+model OperatorOrder {
+  id               String         @id @default(cuid())
+  orderId          String
+  operatorId       String
+  storeId          String
+  subtotal         Decimal        @db.Decimal(10, 2)
+  transferAmount   Decimal        @db.Decimal(10, 2)
+  transferStatus   TransferStatus @default(PENDING)
+  stripeTransferId String?
+  createdAt        DateTime       @default(now())
 
-  order       Order        @relation(fields: [orderId], references: [id])
-  service     Service?     @relation(fields: [serviceId], references: [id])
-  bundle      Bundle?      @relation(fields: [bundleId], references: [id])
-  orderAddons OrderAddon[]
+  order    Order     @relation(fields: [orderId], references: [id])
+  operator Operator  @relation(fields: [operatorId], references: [id])
+  store    Store     @relation(fields: [storeId], references: [id])
+  items    OrderItem[]
+}
+
+model OrderItem {
+  id              String  @id @default(cuid())
+  orderId         String
+  operatorOrderId String
+  serviceName     String
+  quantity        Int
+  price           Decimal  @db.Decimal(10, 2)
+  serviceId       String?
+  bundleId        String?
+  createdAt       DateTime @default(now())
+
+  order         Order         @relation(fields: [orderId], references: [id])
+  operatorOrder OperatorOrder @relation(fields: [operatorOrderId], references: [id])
+  service       Service?      @relation(fields: [serviceId], references: [id])
+  bundle        Bundle?       @relation(fields: [bundleId], references: [id])
+  orderAddons   OrderAddon[]
 }
 
 model OrderAddon {
@@ -87,4 +119,31 @@ model OrderAddon {
   addon     Addon     @relation(fields: [addonId], references: [id])
 
   @@id([orderItemId, addonId])
+}
+
+model OrderPickupAddress {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  pickupTime    String?  // Set by operator later
+  pickupDate    String?  // Set by operator later
+  streetAddress String
+  city          String
+  state         String?
+  country       String
+  postalCode    String?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model OrderDeliveryAddress {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  deliveryTime  String?  // Set by operator later
+  streetAddress String
+  city          String
+  state         String?
+  country       String
+  postalCode    String?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }

@@ -55,7 +55,6 @@ model Service {
   bundleServices BundleServices[]
   cartItems      CartItem[]
   orderItems     OrderItem[]
-  reviews        Review[]
   favourites     FavouriteService[]
   ads            Ad[]
 }

@@ -80,7 +80,7 @@ const setupConnectAccount = async (id: string) => {
   const user = operator.user;
 
   // 1. Create Connect Account in Stripe if they don't have one
-  let connectId = operator.stripeConnectedAccountId;
+  let connectId = operator.stripeAccountId;
   if (!connectId) {
     connectId = await StripeHelpers.createConnectAccount(user.email);
   }
@@ -88,12 +88,12 @@ const setupConnectAccount = async (id: string) => {
   // 2. Generate Link
   const onboardingLink = await StripeHelpers.generateAccountOnboardingLink(connectId);
 
-  // 3. Save Connect ID and Link locally
+  // 3. Save Connect ID locally and update status
   const result = await prisma.operator.update({
     where: { id },
     data: { 
-      stripeConnectedAccountId: connectId,
-      onboardingUrl: onboardingLink.url 
+      stripeAccountId: connectId,
+      stripeAccountStatus: "ONBOARDING"
     },
   });
 
@@ -102,22 +102,37 @@ const setupConnectAccount = async (id: string) => {
 
 const verifyOnboardingStatus = async (id: string) => {
   const operator = await getById(id);
-  if (!operator.stripeConnectedAccountId) {
+  if (!operator.stripeAccountId) {
     throw new ApiError(400, "Stripe Connect account not created yet.");
   }
 
   // Fetch actual status from Stripe
-  const status = await StripeHelpers.getAccountStatus(operator.stripeConnectedAccountId);
+  const status = await StripeHelpers.getAccountStatus(operator.stripeAccountId);
   
   // Update local record
+  const activationStatus = status.payouts_enabled ? "ACTIVE" : "ONBOARDING";
+
   const result = await prisma.operator.update({
     where: { id },
     data: { 
-      onboardingComplete: status.details_submitted 
+      stripeAccountStatus: activationStatus as any
     },
   });
 
   return { operator: result, stripeStatus: status };
+};
+
+const assertPaymentActivated = async (operatorId: string) => {
+  const operator = await prisma.operator.findUnique({
+    where: { id: operatorId },
+  });
+
+  if (!operator || operator.stripeAccountStatus !== 'ACTIVE') {
+    throw new ApiError(
+      403,
+      'You must activate your payment account before creating stores or services.'
+    );
+  }
 };
 
 const update = async (id: string, payload: any) => {
@@ -145,4 +160,5 @@ export const OperatorService = {
   deleteById,
   setupConnectAccount,
   verifyOnboardingStatus,
+  assertPaymentActivated,
 };

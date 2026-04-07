@@ -1,0 +1,14 @@
+
+model OrderPickupAddress {
+  id            String   @id @default(cuid())
+  orderId       String   @unique
+  pickupTime    String
+  pickupDate    String
+  streetAddress String
+  city          String
+  state         String?
+  country       String
+  postalCode    String?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
