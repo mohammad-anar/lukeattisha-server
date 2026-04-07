@@ -16,7 +16,7 @@ const create = async (payload: any) => {
 
 const getAllUsers = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, role, ...filterData } = filters;
+  const { searchTerm, role, minspent, maxspent, ...filterData } = filters;
 
   const andConditions = [];
 
@@ -33,6 +33,26 @@ const getAllUsers = async (filters: any, options: any) => {
         },
       })),
     });
+  }
+
+  if (minspent || maxspent) {
+    const minVal = parseFloat(minspent as string) || 0;
+    const maxVal = parseFloat(maxspent as string) || Number.MAX_VALUE;
+
+    if (minVal > 0 || maxVal < Number.MAX_VALUE) {
+      const matchingUsers: any = await prisma.$queryRaw`
+        SELECT u.id
+        FROM "User" u
+        LEFT JOIN "Order" o ON u.id = o."userId"
+        LEFT JOIN "Payment" p ON o.id = p."orderId" AND p.status = 'PAID'
+        WHERE u.role = ${targetRole}
+        GROUP BY u.id
+        HAVING COALESCE(SUM(p.amount), 0) >= ${minVal} AND COALESCE(SUM(p.amount), 0) <= ${maxVal}
+      `;
+
+      const userIds = matchingUsers.map((u: any) => u.id);
+      andConditions.push({ id: { in: userIds } });
+    }
   }
 
   if (Object.keys(filterData).length > 0) {

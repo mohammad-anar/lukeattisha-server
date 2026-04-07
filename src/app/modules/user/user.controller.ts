@@ -60,7 +60,7 @@ const approveOperator = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'role', 'isVerified', 'isDeleted']);
+  const filters = pick(req.query, ['searchTerm', 'role', 'isVerified', 'isDeleted', "status", "minspent", "maxspent", "minRating", "maxRating"]);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   const result = await UserService.getAllUsers(filters, options);
   sendResponse(res, {
@@ -112,7 +112,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const image = getSingleFilePath(req.files as any, "image") as string;
   if (image) payload.avatar = `http://${config.ip_address}:${config.port}${image}`;
-  
+
   const result = await UserService.update(req.params.id as string, payload);
   sendResponse(res, {
     success: true,
