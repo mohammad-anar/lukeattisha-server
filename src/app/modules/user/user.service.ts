@@ -419,6 +419,7 @@ const getById = async (id: string) => {
       role: true,
       addresses: true,
       isDeleted: true,
+      status: true,
       lat: true,
       lng: true,
       isTwoFactorEnabled: true,
@@ -430,13 +431,60 @@ const getById = async (id: string) => {
       isVerified: true,
       createdAt: true,
       updatedAt: true,
-    }
+      _count: {
+        select: {
+          orders: true,
+        },
+      },
+      orders: {
+        select: {
+          payments: {
+            where: {
+              status: 'PAID',
+            },
+            select: {
+              amount: true,
+            },
+          },
+        },
+      },
+    },
   });
+
+  // 1. Check if result exists FIRST
   if (!result) {
     throw new ApiError(404, 'User not found');
   }
-  return result;
+
+  // 2. Process the single object (No .map() needed)
+  const user = result as any;
+  const totalOrders = user._count?.orders || 0;
+  const totalSpent =
+    user.orders?.reduce((acc: number, order: any) => {
+      const orderPaidAmount =
+        order.payments?.reduce(
+          (pAcc: number, payment: any) => pAcc + Number(payment.amount),
+          0
+        ) || 0;
+      return acc + orderPaidAmount;
+    }, 0) || 0;
+
+  const avgOrderValue = totalOrders > 0 ? Number((totalSpent / totalOrders).toFixed(2)) : 0;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { orders, _count, ...userWithoutRelations } = user;
+
+  const userData = {
+    ...userWithoutRelations,
+    totalSpent: Number(totalSpent.toFixed(2)),
+    totalOrders,
+    avgOrderValue,
+  };
+
+  // 3. Return the transformed data
+  return userData;
 };
+
 
 const update = async (id: string, payload: any) => {
   await getById(id);

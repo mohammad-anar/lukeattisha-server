@@ -20,6 +20,10 @@ const updateSchema = z.object({
   avatar: z.string().optional(),
   lat: z.number().optional(),
   lng: z.number().optional(),
+  status: z.enum(['ACTIVE', 'INACTIVE', "BANNED", 'SUSPENDED']).optional(),
+  isVerified: z.boolean().optional(),
+  isTwoFactorEnabled: z.boolean().optional(),
+  isSubscribed: z.boolean().optional(),
 });
 
 export const UserValidation = {

@@ -19,7 +19,7 @@ router.get('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), UserController.getAl
 router.get('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), UserController.getById);
 router.patch('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), fileUploadHandler(), validateRequest(UserValidation.updateSchema), UserController.update);
 // ban user
-router.patch('/:id/ban', auth(UserRole.SUPER_ADMIN), fileUploadHandler(), UserController.banUser);
+router.patch('/:id/ban', auth(UserRole.SUPER_ADMIN), UserController.banUser);
 // unban user
 router.patch('/:id/unban', auth(UserRole.SUPER_ADMIN), UserController.unbanUser);
 // revert delete
