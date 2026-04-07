@@ -126,7 +126,6 @@ const getAll = async (filters: any, options: any) => {
         service: {
           select: {
             id: true,
-            serviceId: true,
             name: true,
             basePrice: true,
             description: true,
@@ -188,6 +187,24 @@ const getAllByOperatorId = async (operatorId: string) => {
 const getById = async (id: string) => {
   const result = await prisma.storeService.findUnique({
     where: { id },
+    include: {
+      service: {
+        include: {
+          category: true,
+          serviceAddons: true,
+          storeServices: true,
+          operator: true,
+          reviews:true,
+          _count:{
+            select:{
+              reviews:true
+            }
+          }
+        }
+      },
+      store: true,
+
+    }
   });
   if (!result) {
     throw new ApiError(404, 'StoreService not found');

@@ -119,9 +119,12 @@ const getAllUsers = async (filters: any, options: any) => {
 
   const total = await prisma.user.count({ where: whereConditions });
 
+
+
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },
