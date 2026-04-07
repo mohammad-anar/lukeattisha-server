@@ -5,7 +5,8 @@ import { SupportTicketService } from './supportTicket.service.js';
 import pick from '../../../helpers.ts/pick.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
-  const result = await SupportTicketService.create(req.body);
+  const { id } = req.user as { id: string };
+  const result = await SupportTicketService.create({ ...req.body, userId: id });
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -15,7 +16,7 @@ const create = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
+  const filters = pick(req.query, ['searchTerm', 'status', 'type']); // Customize filters as needed
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   const result = await SupportTicketService.getAll(filters, options);
   sendResponse(res, {
@@ -28,7 +29,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await SupportTicketService.getById(req.params.id);
+  const result = await SupportTicketService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -37,18 +38,18 @@ const getById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await SupportTicketService.update(req.params.id, req.body);
+const updateStatus = catchAsync(async (req: Request, res: Response) => {
+  const result = await SupportTicketService.updateStatus(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'SupportTicket updated successfully',
+    message: 'SupportTicket status updated successfully',
     data: result,
   });
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await SupportTicketService.deleteById(req.params.id);
+  const result = await SupportTicketService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -61,6 +62,6 @@ export const SupportTicketController = {
   create,
   getAll,
   getById,
-  update,
+  updateStatus,
   deleteById,
 };

@@ -10,7 +10,7 @@ const router = express.Router();
 router.post('/', auth(UserRole.USER), validateRequest(SupportTicketValidation.createSchema), SupportTicketController.create);
 router.get('/', auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.OPERATOR), SupportTicketController.getAll);
 router.get('/:id', auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.OPERATOR), SupportTicketController.getById);
-router.patch('/:id', auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN), validateRequest(SupportTicketValidation.updateSchema), SupportTicketController.update);
-router.delete('/:id', auth(UserRole.SUPER_ADMIN), SupportTicketController.deleteById);
+router.patch('/:id', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), validateRequest(SupportTicketValidation.updateSchema), SupportTicketController.updateStatus);
+router.delete('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), SupportTicketController.deleteById);
 
 export const SupportTicketRouter = router;

@@ -4,10 +4,14 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
+  const ticketNumber = `TKT-${Date.now()}`;
   const result = await prisma.$transaction(async (tx) => {
     // 1. Create the support ticket
     const ticket = await tx.supportTicket.create({
-      data: payload,
+      data: {
+        ...payload,
+        ticketNumber,
+      },
     });
 
     // 2. Create a ChatRoom linked to this ticket
@@ -92,11 +96,11 @@ const getById = async (id: string) => {
   return result;
 };
 
-const update = async (id: string, payload: any) => {
+const updateStatus = async (id: string, payload: { status: any }) => {
   await getById(id);
   const result = await prisma.supportTicket.update({
     where: { id },
-    data: payload,
+    data: { status: payload.status },
   });
   return result;
 };
@@ -104,16 +108,31 @@ const update = async (id: string, payload: any) => {
 const deleteById = async (id: string) => {
   await getById(id);
 
-  const result = await prisma.supportTicket.delete({
-    where: { id },
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Delete associated data in order to maintain integrity
+    // Deleting chat messages
+    await tx.chatMessage.deleteMany({
+      where: { room: { ticketId: id } },
+    });
+    
+    // Deleting chat participants
+    await tx.chatParticipant.deleteMany({
+      where: { room: { ticketId: id } },
+    });
+    
+    // Deleting chat rooms
+    await tx.chatRoom.deleteMany({
+      where: { ticketId: id },
+    });
+
+    // Finally delete the ticket
+    const deletedTicket = await tx.supportTicket.delete({
+      where: { id },
+    });
+    
+    return deletedTicket;
   });
-  // delete room and participants
-  await prisma.chatRoom.deleteMany({
-    where: { ticketId: id },
-  });
-  await prisma.chatParticipant.deleteMany({
-    where: { roomId: id },
-  });
+
   return result;
 };
 
@@ -121,6 +140,6 @@ export const SupportTicketService = {
   create,
   getAll,
   getById,
-  update,
+  updateStatus,
   deleteById,
 };

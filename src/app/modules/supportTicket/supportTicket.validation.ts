@@ -4,7 +4,7 @@ const createSchema = z.object({
   subject: z.string({ message: 'Subject is required' }),
   description: z.string({ message: 'Description is required' }),
   orderId: z.string().optional(),
-  type: z.enum(['ORDER_ISSUE', 'PAYMENT_ISSUE', 'GENERAL']).optional(),
+  type: z.enum(['ORDER_ISSUE', 'PAYMENT_ISSUE', 'GENERAL']).optional().default('ORDER_ISSUE'),
 });
 
 const updateSchema = z.object({
