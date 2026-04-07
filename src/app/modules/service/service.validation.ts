@@ -30,6 +30,10 @@ export const updateServiceSchema = z.object({
   name: z.string().min(1).optional(),
   basePrice: decimalField.optional(),
   description: z.string().optional(),
+  isActive: z.union([
+    z.boolean(),
+    z.string().transform((val) => val === 'true')
+  ]).optional(),
 }).partial();
 
 export const assignAddonsSchema = z.object({

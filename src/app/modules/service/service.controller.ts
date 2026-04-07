@@ -58,11 +58,14 @@ const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
+  console.log(req.body);
   const payload = req.body;
   const image = getSingleFilePath(req.files as any, "image");
   if (image) {
     payload.image = `http://${config.ip_address}:${config.port}${image}`;
   }
+
+  console.log(payload);
 
   const result = await ServiceService.update(req.params.id as string, payload);
   sendResponse(res, {

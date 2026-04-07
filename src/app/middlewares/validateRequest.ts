@@ -4,6 +4,7 @@ import { ZodObject } from "zod";
 const validateRequest =
   (schema: ZodObject<any>) =>
   async (req: Request, res: Response, next: NextFunction) => {
+    console.log(req.body);
     try {
       let parsedBody: any = {};
 
@@ -16,9 +17,9 @@ const validateRequest =
           parsedBody = req.body;
         }
       }
-      await schema.parseAsync(parsedBody);
-
-      req.body = parsedBody;
+      console.log(parsedBody);
+      const validatedData = await schema.parseAsync(parsedBody);
+      req.body = validatedData;
       next();
     } catch (error) {
       next(error);

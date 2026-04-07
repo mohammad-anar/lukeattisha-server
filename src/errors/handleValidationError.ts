@@ -4,9 +4,12 @@ const handleValidationError = (err: any) => {
   const statusCode = StatusCodes.BAD_REQUEST;
   const message = "Validation Error";
 
-  // Parse the Prisma validation error message to make it user-readable
+  // Extract the first 3 meaningful lines of the error (where the actual mistake is described)
+  const messageLines = err.message.split("\n").map((l: string) => l.trim()).filter((l: string) => l.length > 0 && !l.startsWith('In File:'));
+  const cleanErrorMessage = messageLines.slice(0, 3).join(" ");
+  
   console.log(`[PRISMA VALIDATION ERROR RAW]:`, err.message);
-  const parsedMessage = parsePrismaValidationError(err.message);
+  const parsedMessage = parsePrismaValidationError(cleanErrorMessage);
 
   const errorMessages = [
     {
@@ -23,31 +26,26 @@ const handleValidationError = (err: any) => {
 };
 
 const parsePrismaValidationError = (errorMessage: string): string => {
-  // Extract the field/argument name
-  const fieldMatch = errorMessage.match(/Invalid value for (?:argument|field) [`"]?([^`"]+)[`"]?/) || 
-                     errorMessage.match(/at\s+[`"]?([^`"]+)[`"]?/);
-  const field = fieldMatch ? fieldMatch[1] : "field";
+  // Extract the actual error message
+  if (!errorMessage) return "Validation failed.";
 
-  // Extract the provided invalid value
-  const valueMatch = errorMessage.match(/got\s+[`"]?([^`"]+)[`"]?/) || 
-                     errorMessage.match(/:\s+[`"]?([^`"]+)[`"]?\./) ||
-                     errorMessage.match(/value:\s+[`"]?([^`"]+)[`"]?/);
-  const invalidValue = valueMatch ? valueMatch[1] : null;
+  // Regex patterns for various Prisma Validation Errors
+  const patterns = [
+    { regex: /Invalid value for argument `([^`]+)`. Expected ([^,]+), got ([^.]+)./, format: (m: any) => `Invalid value for "${m[1]}". Expected ${m[2]} but got ${m[3]}.` },
+    { regex: /Invalid value for argument `([^`]+)`. Expected ([^.]+)./, format: (m: any) => `Invalid value for "${m[1]}". Expected ${m[2]}.` },
+    { regex: /Invalid value for field: "([^"]+)". Expected ([^.]+)./, format: (m: any) => `Invalid value for field "${m[1]}". Expected ${m[2]}.` },
+    { regex: /Expected ([^,]+), got ([^.]+)./, format: (m: any) => `Expected ${m[1]} but got ${m[2]}.` },
+    { regex: /Argument `([^`]+)` is missing./, format: (m: any) => `The field "${m[1]}" is required.` },
+    { regex: /Field `([^`]+)` is of an invalid type. Expected ([^,]+), got ([^.]+)./, format: (m: any) => `Field "${m[1]}" must be ${m[2]} (got ${m[3]}).` }
+  ];
 
-  // Extract the expected type/logic
-  const typeMatch = errorMessage.match(/Expected\s+([^\.]+)\./);
-  const expected = typeMatch ? typeMatch[1] : "valid value";
-
-  if (invalidValue) {
-    return `Invalid value for ${field}: "${invalidValue}". Expected ${expected}.`;
-  }
-  
-  // If parsing fails but the message is already somewhat clear
-  if (errorMessage.includes("Invalid value")) {
-    return errorMessage.split("\n")[0].replace(/  +/g, ' ').trim();
+  for (const pattern of patterns) {
+    const match = errorMessage.match(pattern.regex);
+    if (match) return pattern.format(match);
   }
 
-  return "Validation failed. Please check your data.";
+  // Fallback: Show the first meaningful line of the error
+  return errorMessage.split("\n")[0].replace(/  +/g, ' ').trim();
 };
 
 export default handleValidationError;

@@ -5,11 +5,23 @@ import { FavouriteServiceService } from './favouriteService.service.js';
 import pick from '../../../helpers.ts/pick.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
-  const result = await FavouriteServiceService.create(req.body);
+  const { id } = req.user as { id: string };
+  const result = await FavouriteServiceService.create({ ...req.body, userId: id });
   sendResponse(res, {
     success: true,
     statusCode: 201,
     message: 'FavouriteService created successfully',
+    data: result,
+  });
+});
+
+const getMyFavourites = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.user as { id: string };
+  const result = await FavouriteServiceService.getMyFavourites(id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'FavouriteServices fetched successfully',
     data: result,
   });
 });
@@ -28,7 +40,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await FavouriteServiceService.getById(req.params.id);
+  const result = await FavouriteServiceService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +50,8 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await FavouriteServiceService.update(req.params.id, req.body);
+  const { id } = req.user as { id: string };
+  const result = await FavouriteServiceService.update(req.params.id as string, { ...req.body, userId: id });
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +61,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await FavouriteServiceService.deleteById(req.params.id);
+  const result = await FavouriteServiceService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -59,6 +72,7 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
 
 export const FavouriteServiceController = {
   create,
+  getMyFavourites,
   getAll,
   getById,
   update,

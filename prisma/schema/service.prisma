@@ -90,10 +90,14 @@ model Addon {
 model FavouriteService {
   id        String   @id @default(cuid())
   userId    String
-  serviceId String
+  serviceId String?
+  storeServiceId String?
+  storeBundleId String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   user    User    @relation(fields: [userId], references: [id])
-  service Service @relation(fields: [serviceId], references: [id])
+  service Service? @relation(fields: [serviceId], references: [id])
+  storeService StoreService? @relation(fields: [storeServiceId], references: [id])
+  storeBundle StoreBundle? @relation(fields: [storeBundleId], references: [id])
 }

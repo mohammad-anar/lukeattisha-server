@@ -4,8 +4,49 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
+  const { userId, ...targetData } = payload;
+
+  // Build where clause dynamically based on what was provided
+  const where: any = { userId };
+  if (targetData.storeServiceId) where.storeServiceId = targetData.storeServiceId;
+  if (targetData.storeBundleId) where.storeBundleId = targetData.storeBundleId;
+  if (targetData.serviceId) where.serviceId = targetData.serviceId;
+
+  const existing = await prisma.favouriteService.findFirst({
+    where
+  });
+
+  if (existing) {
+    await prisma.favouriteService.delete({
+      where: { id: existing.id }
+    });
+    return { message: 'Removed from favorites', status: 'REMOVED' };
+  }
+
   const result = await prisma.favouriteService.create({
     data: payload,
+  });
+  return { message: 'Added to favorites', status: 'ADDED', data: result };
+};
+
+const getMyFavourites = async (userId: string) => {
+  const result = await prisma.favouriteService.findMany({
+    where: { userId },
+    include: {
+      service: true,
+      storeService: {
+        include: {
+          service: true,
+          store: true,
+        }
+      },
+      storeBundle: {
+        include: {
+          bundle: true,
+          store: true,
+        }
+      }
+    }
   });
   return result;
 };
@@ -89,6 +130,7 @@ const deleteById = async (id: string) => {
 
 export const FavouriteServiceService = {
   create,
+  getMyFavourites,
   getAll,
   getById,
   update,

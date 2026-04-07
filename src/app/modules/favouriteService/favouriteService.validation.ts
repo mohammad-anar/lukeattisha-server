@@ -1,11 +1,13 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  // Add validation fields here
+  storeServiceId: z.string().optional(),
+  storeBundleId: z.string().optional(),
 });
 
 const updateSchema = z.object({
-  // Add validation fields here
+  storeServiceId: z.string().optional(),
+  storeBundleId: z.string().optional(),
 }).partial();
 
 export const FavouriteServiceValidation = {

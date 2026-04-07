@@ -205,11 +205,34 @@ const assignAddons = async (operatorId: string, payload: any) => {
 };
 
 const update = async (id: string, payload: any) => {
-  await getById(id);
-  const result = await prisma.service.update({
-    where: { id },
-    data: payload,
+  const { addonIds, ...updateData } = payload;
+
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Update the core service data
+    const updatedService = await tx.service.update({
+      where: { id },
+      data: updateData,
+    });
+
+    // 2. If addonIds are provided, sync them
+    if (addonIds) {
+      await tx.serviceAddon.deleteMany({
+        where: { serviceId: id },
+      });
+
+      if (addonIds.length > 0) {
+        await tx.serviceAddon.createMany({
+          data: addonIds.map((addonId: string) => ({
+            serviceId: id,
+            addonId: addonId,
+          })),
+        });
+      }
+    }
+
+    return updatedService;
   });
+
   return result;
 };
 
