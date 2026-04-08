@@ -3,9 +3,14 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { AdService } from './ad.service.js';
 import pick from '../../../helpers.ts/pick.js';
+import { prisma } from 'helpers.ts/prisma.js';
+import ApiError from 'errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdService.create(req.body);
+  const user = (req as any).user;
+  const operator = await prisma.operator.findUnique({ where: { userId: user.id } });
+  if (!operator) throw new ApiError(404, 'Operator not found');
+  const result = await AdService.create({ ...req.body, operatorId: operator.id });
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -28,7 +33,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdService.getById(req.params.id);
+  const result = await AdService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +43,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdService.update(req.params.id, req.body);
+  const result = await AdService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +53,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdService.deleteById(req.params.id);
+  const result = await AdService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,

@@ -28,7 +28,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdSubscriptionService.getById(req.params.id);
+  const result = await AdSubscriptionService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +38,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdSubscriptionService.update(req.params.id, req.body);
+  const result = await AdSubscriptionService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,11 +48,22 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdSubscriptionService.deleteById(req.params.id);
+  const result = await AdSubscriptionService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: 'AdSubscription deleted successfully',
+    data: result,
+  });
+});
+
+const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
+  const { id: operatorId } = (req as any).user;
+  const result = await AdSubscriptionService.createCheckoutSession(operatorId, req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'AdSubscription checkout session created',
     data: result,
   });
 });
@@ -63,4 +74,5 @@ export const AdSubscriptionController = {
   getById,
   update,
   deleteById,
+  createCheckoutSession,
 };

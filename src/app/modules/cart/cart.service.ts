@@ -97,6 +97,16 @@ const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: str
   });
 };
 
+// update quqantity
+const updateQuantity = async (userId: string, cartItemId: string, quantity: number) => {
+  const cart = await prisma.cart.findUnique({ where: { userId } });
+  if (!cart) throw new ApiError(404, 'Cart not found');
+  return await prisma.cartItem.update({
+    where: { id: cartItemId, cartId: cart.id },
+    data: { quantity },
+  });
+};
+
 const removeItem = async (userId: string, cartItemId: string) => {
   const cart = await prisma.cart.findUnique({ where: { userId } });
   if (!cart) throw new ApiError(404, 'Cart not found');
@@ -121,4 +131,5 @@ export const CartService = {
   clearCart,
   getMyCart,
   getOrCreateCart,
+  updateQuantity,
 };

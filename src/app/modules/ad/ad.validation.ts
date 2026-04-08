@@ -1,9 +1,11 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  subscriptionId: z.string({ message: 'Subscription ID is required' }),
   serviceId: z.string().optional(),
   bundleId: z.string().optional(),
+}).refine((data) => data.serviceId || data.bundleId, {
+  message: 'serviceId or bundleId is required',
+  path: ['serviceId', 'bundleId'],
 });
 
 const updateSchema = z.object({

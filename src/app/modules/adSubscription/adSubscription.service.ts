@@ -2,6 +2,8 @@ import { prisma } from '../../../helpers.ts/prisma.js';
 import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
+import { config } from '../../../config/index.js';
+import { StripeHelpers } from '../../../helpers.ts/stripeHelpers.js';
 
 const create = async (payload: any) => {
   const result = await prisma.adSubscription.create({
@@ -87,10 +89,35 @@ const deleteById = async (id: string) => {
   return result;
 };
 
+const createCheckoutSession = async (operatorId: string, payload: { planId: string }) => {
+  const { planId } = payload;
+  
+  const plan = await prisma.adSubscriptionPlan.findUnique({
+    where: { id: planId },
+  });
+
+  if (!plan) {
+    throw new ApiError(404, 'Ad subscription plan not found');
+  }
+
+  const priceId = payload.planId === config.stripe.ad_price_id ? config.stripe.ad_price_id : config.stripe.ad_price_id; 
+  // For now using the config price id as the user provided only one.
+  // In a real scenario, each plan would have its own priceId.
+
+  const sessionUrl = await StripeHelpers.createOperatorAdSubscriptionSession(
+    operatorId,
+    plan.id,
+    config.stripe.ad_price_id as string
+  );
+
+  return { url: sessionUrl };
+};
+
 export const AdSubscriptionService = {
   create,
   getAll,
   getById,
   update,
   deleteById,
+  createCheckoutSession,
 };

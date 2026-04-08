@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const addItemSchema = z.object({
+const addItemSchema = z.object({
   serviceId: z.string().optional(),
   bundleId: z.string().optional(),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
@@ -13,7 +13,11 @@ export const addItemSchema = z.object({
   { message: "Provide only one of serviceId or bundleId" }
 )
 
+const updateQuantitySchema = z.object({
+  quantity: z.number().int().min(1, "Quantity must be at least 1"),
+})
 
 export const CartValidation = {
   addItemSchema,
+  updateQuantitySchema,
 };
