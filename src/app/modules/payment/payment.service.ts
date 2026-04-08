@@ -139,6 +139,7 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
   ]);
 
   // 2. Platform Revenue (Admin Wallet)
+  // The Admin should get the platformFee (commission)
   const admin = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
   if (admin) {
     const adminWallet = await prisma.adminWallet.upsert({
@@ -153,30 +154,29 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
         amount: order.platformFee,
         type: "PLATFORM_COMMISSION",
         orderId: order.id,
-        note: `Platform fee for multi-vendor order ${order.orderNumber}`,
+        note: `Platform commission for multi-vendor order ${order.orderNumber}`,
       },
     });
-  }
 
-  // 3. Subscription Fee Handling (If subscription, admin absorbs delivery fee)
-  if (order.isSubscription) {
-    const feeAmount = Number(order.pickupAndDeliveryFee); // correct field name
-    if (feeAmount > 0) {
-      const adminWallet = await prisma.adminWallet.findUnique({ where: { userId: admin?.id } });
-      if (adminWallet) {
+    // 3. Subscription Fee Handling (If subscription, admin absorbs delivery fee)
+    // The admin wallet gets the commission, but must pay the operator the delivery fee
+    if (order.isSubscription) {
+      const actualDeliveryFee = Number((order as any).actualPickupAndDeliveryFee);
+      if (actualDeliveryFee > 0) {
         await prisma.adminWallet.update({
           where: { id: adminWallet.id },
-          data: { balance: { decrement: feeAmount } }
+          data: { balance: { decrement: actualDeliveryFee } }
         });
         await prisma.adminWalletTransaction.create({
           data: {
             walletId: adminWallet.id,
-            amount: feeAmount,
+            amount: actualDeliveryFee,
             type: "DEBIT",
             orderId: order.id,
-            note: 'Subscription pickup/delivery fee absorbed by admin',
+            note: `Subscription delivery fee absorbed for order ${order.orderNumber}`,
           },
         });
+        console.log(`[STRIPE WEBHOOK] Admin Wallet DEBITED for subscription delivery: $${actualDeliveryFee}`);
       }
     }
   }

@@ -37,11 +37,13 @@ import { UserRouter } from '../modules/user/user.routes.js';
 import express from 'express';
 import { AuthRouter } from '../modules/auth/auth.routes.js';
 import { StoreBundleRouter } from 'app/modules/storeBundle/storeBundle.routes.js';
+import { RefundRoutes } from '../modules/refund/refund.routes.js';
 
 const router = express.Router();
 
 const moduleRoutes = [
   { path: '/auth', route: AuthRouter },
+  { path: '/refund', route: RefundRoutes },
   { path: '/user', route: UserRouter },
   { path: '/operator', route: OperatorRouter },
   { path: '/address', route: AddressRouter },

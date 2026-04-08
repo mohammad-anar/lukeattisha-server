@@ -9,50 +9,61 @@ const create = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     success: true,
     statusCode: 201,
-    message: 'UserSubscription created successfully',
+    message: 'User subscription created successfully',
     data: result,
   });
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
+  const filters = pick(req.query, ['searchTerm', 'userId', 'status', 'planId']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   const result = await UserSubscriptionService.getAll(filters, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'UserSubscription fetched successfully',
-    meta: result.meta,
-    data: result.data,
+    message: 'User subscriptions fetched successfully',
+    meta: (result as any).meta,
+    data: (result as any).data,
   });
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserSubscriptionService.getById(req.params.id);
+  const result = await UserSubscriptionService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'UserSubscription fetched successfully',
+    message: 'User subscription fetched successfully',
     data: result,
   });
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserSubscriptionService.update(req.params.id, req.body);
+  const result = await UserSubscriptionService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'UserSubscription updated successfully',
+    message: 'User subscription updated successfully',
     data: result,
   });
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await UserSubscriptionService.deleteById(req.params.id);
+  const result = await UserSubscriptionService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: 'UserSubscription deleted successfully',
+    message: 'User subscription deleted successfully',
+    data: result,
+  });
+});
+
+const activateIAP = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await UserSubscriptionService.activateIAP(user.id, req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Subscription activated successfully via IAP',
     data: result,
   });
 });
@@ -63,4 +74,5 @@ export const UserSubscriptionController = {
   getById,
   update,
   deleteById,
+  activateIAP,
 };

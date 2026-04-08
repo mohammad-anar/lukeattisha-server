@@ -87,10 +87,48 @@ const deleteById = async (id: string) => {
   return result;
 };
 
+const activateIAP = async (userId: string, payload: { planId: string, receiptData: string }) => {
+  const { planId, receiptData } = payload;
+
+  const plan = await prisma.userSubscriptionPlan.findUnique({
+    where: { id: planId }
+  });
+
+  if (!plan) throw new ApiError(404, 'Subscription plan not found');
+
+  // In a real app, you would validate the receipt with Apple/Google here.
+  // For now, we'll assume it's valid and activate the subscription.
+  
+  const startDate = new Date();
+  const endDate = new Date();
+  endDate.setMonth(endDate.getMonth() + plan.durationMonth);
+
+  const result = await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: userId },
+      data: { isSubscribed: true }
+    });
+
+    return await tx.userSubscription.create({
+      data: {
+        userId,
+        planId,
+        startDate,
+        endDate,
+        status: 'ACTIVE',
+        stripePaymentId: `iap_${Date.now()}` // Placeholder for IAP transaction ID
+      }
+    });
+  });
+
+  return result;
+};
+
 export const UserSubscriptionService = {
   create,
   getAll,
   getById,
   update,
   deleteById,
+  activateIAP
 };

@@ -64,9 +64,9 @@ const checkout = async (userId: string, dto: {
     orderBy: { updatedAt: 'desc' },
   });
 
-  const PLATFORM_FEE_PERCENT = adminSetting
+  const PLATFORM_COMMISSION_RATE = adminSetting
     ? Number(adminSetting.platformCommissionRate)
-    : (config.economics.platform_fee_percent / 100);
+    : 0.1; // 10% default
   const BASE_PICKUP_AND_DELIVERY_FEE = adminSetting
     ? Number(adminSetting.pickupAndDeliveryFee)
     : 4.99;
@@ -79,10 +79,15 @@ const checkout = async (userId: string, dto: {
     subtotal += Number(item.price) * item.quantity;
   }
 
-  const platformFee = subtotal * PLATFORM_FEE_PERCENT;
+  // platformFee is the total commission the platform takes from the subtotal
+  const platformFee = subtotal * PLATFORM_COMMISSION_RATE;
+  
+  // User pays 0 for delivery if subscribed
   const pickupAndDeliveryFee = isSubscription ? 0 : BASE_PICKUP_AND_DELIVERY_FEE;
   const fixedTransactionFee = FIXED_TRANSACTION_FEE;
-  const totalAmount = subtotal + platformFee + pickupAndDeliveryFee + fixedTransactionFee;
+  
+  // Total user pays: Subtotal + Delivery + Fixed Fee
+  const totalAmount = subtotal + pickupAndDeliveryFee + fixedTransactionFee;
 
   // 5. Generate order number
   const orderNumber = `ORD-${Date.now()}`;
@@ -97,6 +102,7 @@ const checkout = async (userId: string, dto: {
         userId,
         subtotal,
         pickupAndDeliveryFee,
+        actualPickupAndDeliveryFee: BASE_PICKUP_AND_DELIVERY_FEE,
         platformFee,
         fixedTransactionFee,
         totalAmount,
@@ -115,7 +121,12 @@ const checkout = async (userId: string, dto: {
               (sum: number, i: any) => sum + (Number(i.price) * i.quantity),
               0,
             );
-            const transferAmount = groupSubtotal * (1 - PLATFORM_FEE_PERCENT);
+            // Split delivery fee among all operators involved in the order
+            const deliveryFeeShare = BASE_PICKUP_AND_DELIVERY_FEE / operatorMap.size;
+            
+            // Transfer to operator: their share of subtotal (net of commission) + their share of delivery fee
+            const transferAmount = (groupSubtotal * (1 - PLATFORM_COMMISSION_RATE)) + deliveryFeeShare;
+            
             return {
               operator: { connect: { id: group.operatorId } },
               store: { connect: { id: group.storeId } },
@@ -129,7 +140,7 @@ const checkout = async (userId: string, dto: {
     });
 
     // Step 6b: Create OrderItems now that we have both orderId and operatorOrderId
-    for (const opOrder of newOrder.operatorOrders) {
+    for (const opOrder of (newOrder as any).operatorOrders) {
       const group = operatorMap.get(opOrder.operatorId)!;
       for (const item of group.items) {
         const addons = item.selectedAddons ?? [];

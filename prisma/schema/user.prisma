@@ -74,4 +74,5 @@ model Operator {
   transfers        Transfer[]
   cartItems        CartItem[]
   walletTransactions OperatorWalletTransaction[]
+  refunds          Refund[]
 }

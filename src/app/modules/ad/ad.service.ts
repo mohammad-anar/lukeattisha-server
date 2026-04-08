@@ -67,35 +67,54 @@ const getAll = async (filters: any, options: any) => {
 
     // Raw SQL to handle PostGIS distance sorting for Ads based on operator stores
     result = await prisma.$queryRaw`
-      SELECT a.*, 
-             MIN(ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat))) as distance_meters,
-             MIN(ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat))) / 1609.34 as "distanceMile",
-             (MIN(ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat))) / 40000.0) * 60.0 as "estimatedTimeMinutes"
-      FROM "Ad" a
-      LEFT JOIN "Store" st ON a."operatorId" = st."operatorId"
-      WHERE a."status" = 'ACTIVE'
-      GROUP BY a.id
-      ORDER BY distance_meters ASC
-      LIMIT ${limit} OFFSET ${skip}
-    `;
-    
-    const totalResult: any = await prisma.$queryRaw`
-      SELECT COUNT(DISTINCT a.id)::int as count 
-      FROM "Ad" a
-      WHERE a."status" = 'ACTIVE'
-    `;
+       SELECT a.*, 
+              MIN(ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat))) as distance_meters,
+              MIN(ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat))) / 1609.34 as "distanceMile",
+              (MIN(ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat))) / 40000.0) * 60.0 as "estimatedTimeMinutes"
+       FROM "Ad" a
+       JOIN "AdSubscription" ads ON a."subscriptionId" = ads.id
+       LEFT JOIN "Store" st ON a."operatorId" = st."operatorId"
+       WHERE a."status" = 'ACTIVE' 
+         AND ads."status" = 'ACTIVE' 
+         AND ads."endDate" > NOW()
+       GROUP BY a.id
+       ORDER BY distance_meters ASC
+       LIMIT ${limit} OFFSET ${skip}
+     `;
+     
+     const totalResult: any = await prisma.$queryRaw`
+       SELECT COUNT(DISTINCT a.id)::int as count 
+       FROM "Ad" a
+       JOIN "AdSubscription" ads ON a."subscriptionId" = ads.id
+       WHERE a."status" = 'ACTIVE'
+         AND ads."status" = 'ACTIVE' 
+         AND ads."endDate" > NOW()
+     `;
     total = totalResult[0]?.count || 0;
   } else {
+    const now = new Date();
+    const finalWhere: Prisma.AdWhereInput = {
+      ...whereConditions,
+      status: 'ACTIVE',
+      subscription: {
+        status: 'ACTIVE',
+        endDate: { gt: now }
+      }
+    };
     result = await prisma.ad.findMany({
-      where: whereConditions,
+      where: finalWhere,
       skip,
       take: limit,
       orderBy:
         sortBy && sortOrder
           ? { [sortBy]: sortOrder }
           : { createdAt: 'desc' },
+      include: {
+        subscription: true,
+        operator: true
+      }
     });
-    total = await prisma.ad.count({ where: whereConditions });
+    total = await prisma.ad.count({ where: finalWhere });
   }
 
   return {

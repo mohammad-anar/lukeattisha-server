@@ -53,6 +53,7 @@ model Order {
   platformFee          Decimal @db.Decimal(10, 2)
   fixedTransactionFee  Decimal @db.Decimal(10, 2) @default(0)
   totalAmount          Decimal @db.Decimal(10, 2)
+  actualPickupAndDeliveryFee Decimal @db.Decimal(10, 2) @default(0)
   isSubscription       Boolean @default(false)
 
   pickupAddress   OrderPickupAddress?
@@ -74,6 +75,7 @@ model Order {
   chatRooms        ChatRoom[]
   operatorWalletTx OperatorWalletTransaction[]
   adminWalletTx    AdminWalletTransaction[]
+  refunds          Refund[]
 }
 
 model OperatorOrder {
@@ -146,4 +148,23 @@ model OrderDeliveryAddress {
   postalCode    String?
 
   order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Refund {
+  id            String       @id @default(cuid())
+  orderId       String
+  operatorId    String
+  amount        Decimal      @db.Decimal(10, 2)
+  reason        String?
+  status        RefundStatus @default(PENDING)
+  isEscalated   Boolean      @default(false)
+  adminNote     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  operator Operator @relation(fields: [operatorId], references: [id])
+
+  operatorTransactions OperatorWalletTransaction[]
+  adminTransactions    AdminWalletTransaction[]
 }

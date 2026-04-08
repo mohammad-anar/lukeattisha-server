@@ -109,3 +109,11 @@ enum StripeAccountStatus {
   ACTIVE
   RESTRICTED
 }
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ESCALATED
+  PARTIALLY_REFUNDED
+}

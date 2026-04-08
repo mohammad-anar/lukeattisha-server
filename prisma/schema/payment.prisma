@@ -71,6 +71,7 @@ model OperatorWalletTransaction {
   operatorId String?
   orderId   String?
   withdrawalId String?
+  refundId     String?
   note      String?
   createdAt DateTime        @default(now())
 
@@ -78,6 +79,7 @@ model OperatorWalletTransaction {
   order      Order?         @relation(fields: [orderId], references: [id])
   withdrawal Withdrawal?    @relation(fields: [withdrawalId], references: [id])
   operator   Operator?      @relation(fields: [operatorId], references: [id])
+  refund     Refund?        @relation(fields: [refundId], references: [id])
 }
 
 model AdminWallet {
@@ -95,9 +97,11 @@ model AdminWalletTransaction {
   amount    Decimal         @db.Decimal(10, 2)
   type      TransactionType
   orderId   String?
+  refundId  String?
   note      String?
   createdAt DateTime        @default(now())
 
   wallet AdminWallet @relation(fields: [walletId], references: [id])
   order  Order?      @relation(fields: [orderId], references: [id])
+  refund Refund?     @relation(fields: [refundId], references: [id])
 }

@@ -15,7 +15,7 @@ export const createUserSubscriptionSession = async (
   planId: string
 ) => {
   const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
+    automatic_payment_methods: { enabled: true },
     mode: "subscription",
     line_items: [
       {
@@ -30,7 +30,7 @@ export const createUserSubscriptionSession = async (
     },
     success_url: `${config.frontend_url}/subscription-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${config.frontend_url}/subscription-cancelled`,
-  });
+  } as any);
 
   return session.url;
 };
@@ -44,7 +44,7 @@ export const createOperatorAdSubscriptionSession = async (
   priceId: string
 ) => {
   const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
+    automatic_payment_methods: { enabled: true },
     mode: "payment", // Ads might be one-time or subscription. Assuming one-time for now per metadata
     line_items: [
       {
@@ -59,7 +59,7 @@ export const createOperatorAdSubscriptionSession = async (
     },
     success_url: `${config.frontend_url}/operator/ad-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${config.frontend_url}/operator/ad-cancelled`,
-  });
+  } as any);
 
   return session.url;
 };
@@ -105,7 +105,7 @@ export const createOrderPaymentSession = async (
   }
 
   const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
+    automatic_payment_methods: { enabled: true },
     mode: "payment",
     line_items: lineItems,
     payment_intent_data: {
@@ -119,7 +119,7 @@ export const createOrderPaymentSession = async (
       userId,
       operatorConnectId: operatorConnectId || "",
     },
-  });
+  } as any);
 
   return session;
 };
@@ -130,9 +130,9 @@ export const createOrderPaymentSession = async (
 export const createSetupIntent = async (userId: string, customerId: string) => {
   const setupIntent = await stripe.setupIntents.create({
     customer: customerId,
-    payment_method_types: ["card"],
+    automatic_payment_methods: { enabled: true },
     metadata: { userId },
-  });
+  } as any);
   return setupIntent;
 };
 
@@ -158,7 +158,7 @@ export const createMultiVendorOrderPaymentSession = async (
   transferGroup: string
 ) => {
   const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
+    automatic_payment_methods: { enabled: true },
     mode: "payment",
     line_items: [
       {
@@ -184,7 +184,7 @@ export const createMultiVendorOrderPaymentSession = async (
       orderId,
       userId,
     },
-  });
+  } as any);
 
   return session;
 };
