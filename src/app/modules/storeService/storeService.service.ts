@@ -45,6 +45,7 @@ const create = async (operatorId: string, payload: any) => {
   return result;
 };
 
+// total rating, avg rating, pickupAndDeliveryFee
 const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
   const { searchTerm, userLat, userLng, categoryId, ...filterData } = filters;
@@ -90,17 +91,26 @@ const getAll = async (filters: any, options: any) => {
   if (userLat && userLng) {
     const lat = parseFloat(userLat);
     const lng = parseFloat(userLng);
-    let searchString = searchTerm ? `%${searchTerm}%` : null;
+    const searchString = searchTerm ? `%${searchTerm}%` : null;
 
     result = await prisma.$queryRaw`
       SELECT ss.*, 
              row_to_json(s.*) as service,
              row_to_json(st.*) as store,
              ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) as distance_meters,
-             ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) / 1609.34 as "distanceMile"
+             ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) / 1609.34 as "distanceMile",
+             COALESCE(r.total_reviews, 0) as "totalReviews",
+             COALESCE(r.avg_rating, 0) as "avgRating"
       FROM "StoreService" ss
       LEFT JOIN "Service" s ON ss."serviceId" = s.id
       LEFT JOIN "Store" st ON ss."storeId" = st.id
+      LEFT JOIN (
+        SELECT "storeServiceId",
+               COUNT(*) as total_reviews,
+               AVG(rating) as avg_rating
+        FROM "Review"
+        GROUP BY "storeServiceId"
+      ) r ON r."storeServiceId" = ss.id
       WHERE 1 = 1
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
       ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
@@ -108,17 +118,25 @@ const getAll = async (filters: any, options: any) => {
       LIMIT ${limit} OFFSET ${skip}
     `;
 
+    result = (result as any[]).map((item) => ({
+      ...item,
+      avgRating: item.avgRating ? parseFloat(item.avgRating) : 0,
+      totalReviews: Number(item.totalReviews),
+    }));
+
     const totalResult: any = await prisma.$queryRaw`
-      SELECT COUNT(ss.id)::int as count FROM "StoreService" ss
+      SELECT COUNT(ss.id)::int as count 
+      FROM "StoreService" ss
       LEFT JOIN "Service" s ON ss."serviceId" = s.id
       LEFT JOIN "Store" st ON ss."storeId" = st.id
       WHERE 1 = 1
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
       ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
     `;
+
     total = totalResult[0]?.count || 0;
   } else {
-    result = await prisma.storeService.findMany({
+    const storeServices = await prisma.storeService.findMany({
       where: whereConditions,
       skip,
       take: limit,
@@ -139,16 +157,30 @@ const getAll = async (filters: any, options: any) => {
             operator: true,
             createdAt: true,
             updatedAt: true,
-          }
+          },
         },
         store: true,
-
+        reviews: true,
       },
       orderBy:
-        sortBy && sortOrder
-          ? { [sortBy]: sortOrder }
-          : { createdAt: 'desc' },
+        sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
     });
+
+    result = storeServices.map((storeService: any) => {
+      const totalReviews = storeService.reviews.length;
+      const totalRating = storeService.reviews.reduce(
+        (acc: number, review: any) => acc + (review.rating || 0),
+        0
+      );
+      const avgRating = totalReviews > 0 ? totalRating / totalReviews : 0;
+
+      return {
+        ...storeService,
+        avgRating,
+        totalReviews,
+      };
+    });
+
     total = await prisma.storeService.count({ where: whereConditions });
   }
 
@@ -224,7 +256,18 @@ const getById = async (id: string) => {
   if (!result) {
     throw new ApiError(404, 'StoreService not found');
   }
-  return result;
+
+  const totalRating = result.reviews.reduce(
+    (acc: number, review: any) => acc + (review.rating || 0),
+    0
+  );
+  const avgRating =
+    result.reviews.length > 0 ? totalRating / result.reviews.length : 0;
+
+  return {
+    ...result,
+    avgRating,
+  };
 };
 
 const update = async (id: string, payload: any) => {

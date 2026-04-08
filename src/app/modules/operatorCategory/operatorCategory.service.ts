@@ -55,6 +55,9 @@ const getAll = async (operatorId: string, filters: any, options: any) => {
     where: whereConditions,
     skip,
     take: limit,
+    include: {
+      category: true,
+    },
     orderBy:
       sortBy && sortOrder
         ? { [sortBy]: sortOrder }
