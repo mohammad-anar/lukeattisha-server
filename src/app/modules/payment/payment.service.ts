@@ -17,9 +17,6 @@ const create = async (payload: any) => {
  */
 const handleWebhook = async (signature: string, payload: any) => {
   const secret = (config.stripe.stripe_webhook_secret as string || "").trim();
-  console.log(`[STRIPE WEBHOOK] Incoming Request at ${new Date().toISOString()}`);
-  console.log(`[STRIPE WEBHOOK] SIGNATURE: ${signature?.substring(0, 20)}...`);
-  console.log(`[STRIPE WEBHOOK] USING SECRET: ${secret.substring(0, 10)}...${secret.slice(-4)}`);
   
   let event;
   try {
@@ -28,7 +25,6 @@ const handleWebhook = async (signature: string, payload: any) => {
       signature,
       secret
     );
-    console.log(`[STRIPE WEBHOOK] ✅ Verification SUCCESS: ${event.type}`);
   } catch (err: any) {
     console.error(`[STRIPE WEBHOOK ❌ ERROR] Verification Failed: ${err.message}`);
     throw new ApiError(400, `Webhook Error: ${err.message}`);
@@ -39,7 +35,6 @@ const handleWebhook = async (signature: string, payload: any) => {
   try {
     switch (event.type) {
       case "checkout.session.completed":
-        console.log(`[STRIPE WEBHOOK] ✅ checkout.session.completed for session ${session.id}`);
         await handleCheckoutSessionCompleted(session);
         break;
       case "customer.subscription.deleted":
@@ -107,9 +102,6 @@ const handleUserSubscriptionSuccess = async (userId: string, session: any) => {
 };
 
 const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: any) => {
-  console.log(`[STRIPE WEBHOOK 📦] SUCCESS HANDLER START for Order: ${orderId}`);
-  console.log(`[STRIPE WEBHOOK 📦] Metadata Check: type=${session.metadata?.type}, orderId=${session.metadata?.orderId}`);
-  
   // 1. Fetch the Order and attached Payment
   let payment = await prisma.payment.findUnique({
     where: { orderId },
@@ -122,12 +114,6 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
     },
   });
 
-  if (payment) {
-    console.log(`[STRIPE WEBHOOK 📦] Payment found. Current status: ${payment.status}`);
-  } else {
-    console.warn(`[STRIPE WEBHOOK 📦 ⚠️] Payment record MISSING for Order ${orderId}. Recovery triggered.`);
-  }
-
   // If payment record is missing (e.g. manually deleted), fetch order directly
   if (!payment) {
     const order = await prisma.order.findUnique({
@@ -136,10 +122,9 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
     });
 
     if (!order) {
-        console.error(`[STRIPE WEBHOOK 📦 ❌ ERROR] Order ${orderId} NOT FOUND in DB. Recovery failed.`);
+        console.error(`[STRIPE WEBHOOK ❌ ERROR] Order ${orderId} not found. Recovery failed.`);
         return;
     }
-    console.log(`[STRIPE WEBHOOK 📦] Order ${order.orderNumber} found. Creating missing payment record...`);
 
     // Create the missing payment record
     payment = await prisma.payment.create({
@@ -161,13 +146,9 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
     }) as any;
   }
 
-  if (payment!.status === "PAID") {
-    console.log(`[STRIPE WEBHOOK 📦 ℹ️] Order ${orderId} is ALREADY PAID. Skipping.`);
-    return;
-  }
+  if (payment!.status === "PAID") return;
 
   const order = payment!.order;
-  console.log(`[STRIPE WEBHOOK 📦] 💥 STARTING DB UPDATE for Order: ${order.orderNumber} ($${order.totalAmount})`);
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -250,15 +231,10 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
       }
     });
 
-    console.log(`[STRIPE WEBHOOK] ✅ Database updates SUCCESS for Order: ${order.orderNumber}`);
-
     // 5. External Stripe Transfers (Outside DB transaction)
     for (const opOrder of order.operatorOrders) {
       const operator = opOrder.operator;
-      if (!operator.stripeAccountId) {
-        console.warn(`[STRIPE WEBHOOK] Transfer SKIPPED: Operator ${operator.id} has no Stripe ID.`);
-        continue;
-      }
+      if (!operator.stripeAccountId) continue;
 
       try {
         const stripeTransfer = await StripeHelpers.createTransfer(
@@ -283,7 +259,6 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
             status: 'COMPLETED',
           },
         });
-        console.log(`[STRIPE WEBHOOK] 💸 Stripe Transfer SUCCESS: $${opOrder.transferAmount} to ${operator.id}`);
       } catch (transferErr: any) {
         console.error(`[STRIPE WEBHOOK ❌ TRANSFER ERROR] ${operator.id}:`, transferErr.message);
         await prisma.operatorOrder.update({

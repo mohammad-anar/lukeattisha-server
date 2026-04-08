@@ -10,19 +10,7 @@ const app: Application = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.static("uploads"));
 
-// DIAGNOSTIC MEGA-LOG: Catch every single POST request
-app.use((req, res, next) => {
-  if (req.method === "POST") {
-    console.log(`[TRAFFIC LOG] ${req.method} request received on: ${req.path}`);
-  }
-  if (req.path.includes("webhook")) {
-    console.log(`[WEBHOOK LOG] 👮 Webhook endpoint hit: ${req.method} ${req.path}`);
-  }
-  next();
-});
-
 // ---------- 1. WEBHOOK (Must stay BEFORE express.json()) ----------
-// Register multiple paths to be safe (Singular, Plural, and Root)
 const webhookPaths = [
   "/api/v1/payment/webhook",
   "/api/v1/payments/webhook",
@@ -32,10 +20,6 @@ const webhookPaths = [
 app.post(
   webhookPaths,
   express.raw({ type: "*/*" }),
-  (req, res, next) => {
-    console.log(`[STRIPE WEBHOOK ATTEMPT] Received request on path: ${req.path}`);
-    next();
-  },
   PaymentController.handleWebhook
 );
 
