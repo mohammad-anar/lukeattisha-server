@@ -274,18 +274,34 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
 };
 
 const handleAdSubscriptionSuccess = async (operatorId: string, planId: string, session: any) => {
+  // 1. Check if this payment session was already processed
   const existingSub = await prisma.adSubscription.findFirst({
     where: { stripePaymentId: session.id },
   });
-  if (existingSub) return;
+  if (existingSub) {
+    console.log(`[STRIPE WEBHOOK] Ad Subscription already processed for session: ${session.id}`);
+    return;
+  }
 
-  const plan = await prisma.adSubscriptionPlan.findUnique({ where: { id: planId } });
-  if (!plan) return;
+  // 2. Fetch the plan details to get duration
+  const plan = await prisma.adSubscriptionPlan.findUnique({ 
+    where: { id: planId } 
+  });
+  
+  if (!plan) {
+    console.error(`[STRIPE WEBHOOK ❌ ERROR] Plan ${planId} not found for ad subscription.`);
+    return;
+  }
 
   const startDate = new Date();
   const endDate = new Date();
-  endDate.setMonth(endDate.getMonth() + plan.durationMonth);
+  // Ensure duration is handled (defaulting to 1 month if not specified, though it should be in DB)
+  const duration = plan.durationMonth || 1;
+  endDate.setMonth(endDate.getMonth() + duration);
 
+  console.log(`[STRIPE WEBHOOK] 🚀 Activating Ad Subscription for Operator: ${operatorId}, Plan: ${plan.name}`);
+
+  // 3. Create active subscription record
   await prisma.adSubscription.create({
     data: {
       operatorId,
@@ -296,6 +312,8 @@ const handleAdSubscriptionSuccess = async (operatorId: string, planId: string, s
       stripePaymentId: session.id,
     },
   });
+
+  console.log(`[STRIPE WEBHOOK] ✅ Ad Subscription created successfully until ${endDate.toISOString()}`);
 };
 
 const handleSubscriptionDeleted = async (subscription: any) => {

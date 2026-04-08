@@ -240,6 +240,7 @@ const getAllAdmins = async (filters: any, options: any) => {
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },
@@ -344,6 +345,7 @@ const getAllOperators = async (filters: any, options: any) => {
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },

@@ -79,6 +79,7 @@ const getAll = async (filters: any, options: any) => {
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },

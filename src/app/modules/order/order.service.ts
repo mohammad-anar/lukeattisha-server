@@ -70,9 +70,6 @@ const checkout = async (userId: string, dto: {
   const BASE_PICKUP_AND_DELIVERY_FEE = adminSetting
     ? Number(adminSetting.pickupAndDeliveryFee)
     : 4.99;
-  const FIXED_TRANSACTION_FEE = adminSetting
-    ? Number(adminSetting.fixedTransactionFee)
-    : 0;
 
   let subtotal = 0;
   for (const item of cart.items) {
@@ -81,13 +78,12 @@ const checkout = async (userId: string, dto: {
 
   // platformFee is the total commission the platform takes from the subtotal
   const platformFee = subtotal * PLATFORM_COMMISSION_RATE;
-  
+
   // User pays 0 for delivery if subscribed
   const pickupAndDeliveryFee = isSubscription ? 0 : BASE_PICKUP_AND_DELIVERY_FEE;
-  const fixedTransactionFee = FIXED_TRANSACTION_FEE;
-  
+
   // Total user pays: Subtotal + Delivery + Fixed Fee
-  const totalAmount = subtotal + pickupAndDeliveryFee + fixedTransactionFee;
+  const totalAmount = subtotal + pickupAndDeliveryFee;
 
   // 5. Generate order number
   const orderNumber = `ORD-${Date.now()}`;
@@ -104,7 +100,6 @@ const checkout = async (userId: string, dto: {
         pickupAndDeliveryFee,
         actualPickupAndDeliveryFee: BASE_PICKUP_AND_DELIVERY_FEE,
         platformFee,
-        fixedTransactionFee,
         totalAmount,
         isSubscription,
         pickupAddress: {
@@ -123,10 +118,10 @@ const checkout = async (userId: string, dto: {
             );
             // Split delivery fee among all operators involved in the order
             const deliveryFeeShare = BASE_PICKUP_AND_DELIVERY_FEE / operatorMap.size;
-            
+
             // Transfer to operator: their share of subtotal (net of commission) + their share of delivery fee
             const transferAmount = (groupSubtotal * (1 - PLATFORM_COMMISSION_RATE)) + deliveryFeeShare;
-            
+
             return {
               operator: { connect: { id: group.operatorId } },
               store: { connect: { id: group.storeId } },
@@ -279,6 +274,7 @@ const getAll = async (filters: any, options: any) => {
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },
@@ -350,7 +346,7 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
   const total = await prisma.order.count({ where: whereConditions });
 
   return {
-    meta: { total, page, limit },
+    meta: { total, totalPage: Math.ceil(total / limit), page, limit },
     data: result,
   };
 };
@@ -362,9 +358,9 @@ const getById = async (id: string) => {
       orderItems: {
         include: { orderAddons: { include: { addon: true } } }
       },
-      deliveryAddress:true,
-      pickupAddress:true,
-      
+      deliveryAddress: true,
+      pickupAddress: true,
+
       operatorOrders: {
         include: { store: true, operator: { include: { user: true } } }
       },

@@ -117,6 +117,7 @@ const getByOperatorId = async (filters: any, options: any, operatorId: string) =
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },

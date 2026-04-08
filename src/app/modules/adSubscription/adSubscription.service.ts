@@ -55,6 +55,7 @@ const getAll = async (filters: any, options: any) => {
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },
@@ -100,14 +101,11 @@ const createCheckoutSession = async (operatorId: string, payload: { planId: stri
     throw new ApiError(404, 'Ad subscription plan not found');
   }
 
-  const priceId = payload.planId === config.stripe.ad_price_id ? config.stripe.ad_price_id : config.stripe.ad_price_id; 
-  // For now using the config price id as the user provided only one.
-  // In a real scenario, each plan would have its own priceId.
-
   const sessionUrl = await StripeHelpers.createOperatorAdSubscriptionSession(
     operatorId,
     plan.id,
-    config.stripe.ad_price_id as string
+    plan.name,
+    Number(plan.price)
   );
 
   return { url: sessionUrl };

@@ -13,7 +13,11 @@ router.get('/:id', BundleController.getById);
 
 // Restricted operator actions
 router.post('/', auth('OPERATOR', 'ADMIN', 'SUPER_ADMIN'), requireOperatorOnboarding, fileUploadHandler(), validateRequest(BundleValidation.createSchema), BundleController.create);
-router.patch('/:id', auth('OPERATOR', 'ADMIN', 'SUPER_ADMIN'), requireOperatorOnboarding, fileUploadHandler(), validateRequest(BundleValidation.updateSchema), BundleController.update);
+router.patch('/:id',
+    auth('OPERATOR', 'ADMIN', 'SUPER_ADMIN'),
+    // requireOperatorOnboarding,
+    fileUploadHandler(),
+    validateRequest(BundleValidation.updateSchema), BundleController.update);
 router.delete('/:id', auth('OPERATOR', 'ADMIN', 'SUPER_ADMIN'), requireOperatorOnboarding, BundleController.deleteById);
 
 export const BundleRouter = router;

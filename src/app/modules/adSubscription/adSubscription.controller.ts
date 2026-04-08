@@ -3,6 +3,8 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { AdSubscriptionService } from './adSubscription.service.js';
 import pick from '../../../helpers.ts/pick.js';
+import { prisma } from 'helpers.ts/prisma.js';
+import ApiError from 'errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const result = await AdSubscriptionService.create(req.body);
@@ -58,8 +60,11 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
-  const { id: operatorId } = (req as any).user;
-  const result = await AdSubscriptionService.createCheckoutSession(operatorId, req.body);
+  const { id } = req.user;
+  console.log(id, req.user);
+  const operator = await prisma.operator.findUnique({ where: { userId: id } });
+  if (!operator) throw new ApiError(404, 'Operator not found');
+  const result = await AdSubscriptionService.createCheckoutSession(operator.id, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,

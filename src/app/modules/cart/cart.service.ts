@@ -5,24 +5,32 @@ const getOrCreateCart = async (userId: string) => {
   if (!userId) {
     throw new ApiError(400, 'User ID is required for cart operations');
   }
-  return await prisma.cart.upsert({
+
+  const adminSetting = await prisma.adminSetting.findFirst();
+  const pickupAndDeliveryFee = adminSetting?.pickupAndDeliveryFee || 4.99;
+  const result = await prisma.cart.upsert({
     where: { userId },
     create: { userId },
     update: { userId },
-    include: { 
-      items: { 
-        include: { 
-          service: true, 
-          bundle: true, 
+    include: {
+      items: {
+        orderBy: { createdAt: 'asc' },
+        include: {
+          service: true,
+          bundle: true,
           selectedAddons: {
             include: {
               addon: true
             }
-          } 
-        } 
-      } 
+          }
+        }
+      }
     },
   });
+  return {
+    ...result,
+    pickupAndDeliveryFee
+  }
 };
 
 const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: string, quantity: number, addonIds?: string[] }) => {
@@ -35,9 +43,9 @@ const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: str
   if (dto.serviceId) {
     const service = await prisma.service.findUnique({
       where: { id: dto.serviceId },
-      include: { 
+      include: {
         operator: true,
-        storeServices: { take: 1 } 
+        storeServices: { take: 1 }
       },
     });
     if (!service) throw new ApiError(404, 'Service not found');
@@ -51,7 +59,7 @@ const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: str
   } else if (dto.bundleId) {
     const bundle = await prisma.bundle.findUnique({
       where: { id: dto.bundleId },
-      include: { 
+      include: {
         operator: true,
         storeBundles: { take: 1 }
       },

@@ -201,7 +201,18 @@ const getById = async (id: string) => {
           operator: true,
         }
       },
-      reviews: true,
+      reviews: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              avatar: true,
+            }
+          }
+        }
+      },
       _count: {
         select: {
           reviews: true

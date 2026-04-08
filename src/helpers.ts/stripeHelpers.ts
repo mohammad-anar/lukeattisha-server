@@ -41,14 +41,22 @@ export const createUserSubscriptionSession = async (
 export const createOperatorAdSubscriptionSession = async (
   operatorId: string,
   planId: string,
-  priceId: string
+  planName: string,
+  amount: number
 ) => {
   const session = await stripe.checkout.sessions.create({
-    mode: "payment", // Ads might be one-time or subscription. Assuming one-time for now per metadata
+    mode: "payment",
     payment_method_types: ["card"],
     line_items: [
       {
-        price: priceId,
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `${planName} - Ad Subscription`,
+            description: `Ad subscription for ${planName} plan`,
+          },
+          unit_amount: Math.round(amount * 100),
+        },
         quantity: 1,
       },
     ],

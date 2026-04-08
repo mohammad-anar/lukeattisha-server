@@ -54,6 +54,7 @@ const getAll = async (filters: any, options: any) => {
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },
@@ -99,16 +100,11 @@ const getByOperatorId = async (operatorId: string, filters: any, options: any) =
       id: true,
       name: true,
       price: true,
+      isActive: true,
       description: true,
       operatorId: true,
       createdAt: true,
       updatedAt: true,
-      operator: {
-        select: {
-          id: true,
-          addons: true,
-        },
-      }
     },
     orderBy:
       sortBy && sortOrder
@@ -120,6 +116,7 @@ const getByOperatorId = async (operatorId: string, filters: any, options: any) =
   return {
     meta: {
       total,
+      totalPage: Math.ceil(total / limit),
       page,
       limit,
     },

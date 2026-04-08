@@ -7,9 +7,9 @@ import { OperatorService } from '../operator/operator.service.js';
 const create = async (payload: any) => {
   const { addonIds, ...serviceData } = payload;
 
-  if (serviceData.operatorId) {
-    await OperatorService.assertPaymentActivated(serviceData.operatorId);
-  }
+  // if (serviceData.operatorId) {
+  //   await OperatorService.assertPaymentActivated(serviceData.operatorId);
+  // }
 
   const result = await prisma.service.create({
     data: serviceData,
@@ -110,32 +110,17 @@ const getAll = async (filters: any, options: any) => {
 const getById = async (id: string) => {
   const result = await prisma.service.findUnique({
     where: { id },
-    select: {
-      id: true,
-      serviceId: true,
-      name: true,
-      description: true,
-      basePrice: true,
-      image: true,
-      operatorId: true,
-      categoryId: true,
-      createdAt: true,
-      updatedAt: true,
+    include: {
       operator: true,
       category: true,
       ads: true,
       storeServices: true,
       serviceAddons: {
-        select: {
+        include: {
           addon: true,
-          addonId: true,
-          createdAt: true,
-          id: true,
-          serviceId: true,
-          updatedAt: true
-        }
+        },
       },
-    }
+    },
   });
   if (!result) {
     throw new ApiError(404, 'Service not found');
@@ -146,23 +131,17 @@ const getById = async (id: string) => {
 const getByOperatorId = async (id: string) => {
   const result = await prisma.service.findMany({
     where: { operatorId: id },
-    select: {
-      id: true,
-      serviceId: true,
-      name: true,
-      description: true,
-      basePrice: true,
-      image: true,
-      operatorId: true,
-      categoryId: true,
-      createdAt: true,
-      updatedAt: true,
+    include: {
       operator: true,
       category: true,
       ads: true,
       storeServices: true,
-      serviceAddons: true,
-    }
+      serviceAddons: {
+        include: {
+          addon: true,
+        },
+      },
+    },
   });
   if (!result) {
     throw new ApiError(404, 'Service not found');

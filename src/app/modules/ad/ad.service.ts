@@ -28,7 +28,7 @@ const create = async (payload: any) => {
       serviceId,
       bundleId,
       subscriptionId: activeSubscription.id,
-      status: "PENDING", // Admins might need to approve the ad content
+      status: "ACTIVE",
     },
   });
 
@@ -81,8 +81,8 @@ const getAll = async (filters: any, options: any) => {
        ORDER BY distance_meters ASC
        LIMIT ${limit} OFFSET ${skip}
      `;
-     
-     const totalResult: any = await prisma.$queryRaw`
+
+    const totalResult: any = await prisma.$queryRaw`
        SELECT COUNT(DISTINCT a.id)::int as count 
        FROM "Ad" a
        JOIN "AdSubscription" ads ON a."subscriptionId" = ads.id
@@ -111,7 +111,9 @@ const getAll = async (filters: any, options: any) => {
           : { createdAt: 'desc' },
       include: {
         subscription: true,
-        operator: true
+        operator: true,
+        service: true,
+        bundle: true
       }
     });
     total = await prisma.ad.count({ where: finalWhere });
@@ -130,6 +132,12 @@ const getAll = async (filters: any, options: any) => {
 const getById = async (id: string) => {
   const result = await prisma.ad.findUnique({
     where: { id },
+    include: {
+      subscription: true,
+      operator: true,
+      service: true,
+      bundle: true
+    }
   });
   if (!result) {
     throw new ApiError(404, 'Ad not found');
