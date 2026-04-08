@@ -18,7 +18,7 @@ const create = async (payload: { operatorId: string, amount: number }) => {
   });
 
   if (!operator) throw new ApiError(404, "Operator not found.");
-  if (!operator.stripeConnectedAccountId || !operator.onboardingComplete) {
+  if (!operator.stripeAccountId || !operator.onboardingComplete) {
     throw new ApiError(400, "Please complete Stripe onboarding before requesting withdrawals.");
   }
 

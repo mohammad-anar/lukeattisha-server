@@ -30,7 +30,7 @@ Operators must connect their Stripe accounts to receive payments.
 - When an operator goes to their dashboard, they will click "Connect Stripe".
 - The backend will call `createConnectAccount` and `generateAccountOnboardingLink`.
 - The operator will be redirected to Stripe to fill in their details.
-- Store the returned `stripeConnectedAccountId` in the `Operator` table.
+- Store the returned `stripeAccountId` in the `Operator` table.
 
 ## 5. Webhook Configuration
 - Go to **Developers -> Webhooks** in Stripe Dashboard.

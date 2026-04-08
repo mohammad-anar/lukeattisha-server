@@ -22,7 +22,7 @@ export const requireOperatorOnboarding = async (
       where: { userId: user.id },
     });
 
-    if (!operator || !operator.stripeConnectedAccountId) {
+    if (!operator || !operator.stripeAccountId) {
       throw new ApiError(
         StatusCodes.FORBIDDEN,
         "You must connect your Stripe account before managing services or bundles."

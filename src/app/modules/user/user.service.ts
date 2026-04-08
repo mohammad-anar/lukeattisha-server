@@ -78,7 +78,17 @@ const getAllUsers = async (filters: any, options: any) => {
       phone: true,
       avatar: true,
       role: true,
-      addresses: true,
+      addresses: {
+        select: {
+          id: true,
+          streetAddress: true,
+          city: true,
+          state: true,
+          country: true,
+          postalCode: true,
+          isDefault: true,
+        },
+      },
       isDeleted: true,
       status: true,
       lat: true,
@@ -96,7 +106,7 @@ const getAllUsers = async (filters: any, options: any) => {
       },
       orders: {
         select: {
-          payments: {
+          payment: {
             where: {
               status: 'PAID',
             },
@@ -117,10 +127,7 @@ const getAllUsers = async (filters: any, options: any) => {
   const userData = result.map((user: any) => {
     const totalOrders = user._count?.orders || 0;
     const totalSpent = user.orders?.reduce((acc: number, order: any) => {
-      const orderPaidAmount = order.payments?.reduce(
-        (pAcc: number, payment: any) => pAcc + Number(payment.amount),
-        0
-      ) || 0;
+      const orderPaidAmount = Number(order.payment?.amount || 0);
       return acc + orderPaidAmount;
     }, 0) || 0;
 
@@ -195,7 +202,17 @@ const getAllAdmins = async (filters: any, options: any) => {
       phone: true,
       avatar: true,
       role: true,
-      addresses: true,
+      addresses: {
+        select: {
+          id: true,
+          streetAddress: true,
+          city: true,
+          state: true,
+          country: true,
+          postalCode: true,
+          isDefault: true,
+        },
+      },
       isDeleted: true,
       lat: true,
       lng: true,
@@ -273,7 +290,17 @@ const getAllOperators = async (filters: any, options: any) => {
       phone: true,
       avatar: true,
       role: true,
-      addresses: true,
+      addresses: {
+        select: {
+          id: true,
+          streetAddress: true,
+          city: true,
+          state: true,
+          country: true,
+          postalCode: true,
+          isDefault: true,
+        },
+      },
       isDeleted: true,
       lat: true,
       lng: true,
@@ -367,9 +394,8 @@ const createOperator = async (payload: any, creatorId: string) => {
     const operator = await tx.operator.create({
       data: {
         userId: user.id,
-        stripeConnectedAccountId: stripeConnectId,
+        stripeAccountId: stripeConnectId,
         approvalStatus: 'APPROVED',
-        onboardingUrl: onboardingLink.url,
       }
     });
 
@@ -410,7 +436,17 @@ const approveOperator = async (id: string) => {
       phone: true,
       avatar: true,
       role: true,
-      addresses: true,
+      addresses: {
+        select: {
+          id: true,
+          streetAddress: true,
+          city: true,
+          state: true,
+          country: true,
+          postalCode: true,
+          isDefault: true,
+        },
+      },
       isDeleted: true,
       lat: true,
       lng: true,
@@ -440,7 +476,17 @@ const getById = async (id: string) => {
       phone: true,
       avatar: true,
       role: true,
-      addresses: true,
+      addresses: {
+        select: {
+          id: true,
+          streetAddress: true,
+          city: true,
+          state: true,
+          country: true,
+          postalCode: true,
+          isDefault: true,
+        },
+      },
       isDeleted: true,
       status: true,
       lat: true,
@@ -461,7 +507,7 @@ const getById = async (id: string) => {
       },
       orders: {
         select: {
-          payments: {
+          payment: {
             where: {
               status: 'PAID',
             },
@@ -484,11 +530,7 @@ const getById = async (id: string) => {
   const totalOrders = user._count?.orders || 0;
   const totalSpent =
     user.orders?.reduce((acc: number, order: any) => {
-      const orderPaidAmount =
-        order.payments?.reduce(
-          (pAcc: number, payment: any) => pAcc + Number(payment.amount),
-          0
-        ) || 0;
+      const orderPaidAmount = Number(order.payment?.amount || 0);
       return acc + orderPaidAmount;
     }, 0) || 0;
 
@@ -548,7 +590,17 @@ const getMe = async (id: string, role: string) => {
         phone: true,
         avatar: true,
         role: true,
-        addresses: true,
+        addresses: {
+          select: {
+            id: true,
+            streetAddress: true,
+            city: true,
+            state: true,
+            country: true,
+            postalCode: true,
+            isDefault: true,
+          },
+        },
         isDeleted: true,
         lat: true,
         lng: true,
@@ -575,7 +627,17 @@ const getMe = async (id: string, role: string) => {
         phone: true,
         avatar: true,
         role: true,
-        addresses: true,
+        addresses: {
+          select: {
+            id: true,
+            streetAddress: true,
+            city: true,
+            state: true,
+            country: true,
+            postalCode: true,
+            isDefault: true,
+          },
+        },
         isDeleted: true,
         lat: true,
         lng: true,
@@ -604,7 +666,17 @@ const getMe = async (id: string, role: string) => {
         phone: true,
         avatar: true,
         role: true,
-        addresses: true,
+        addresses: {
+          select: {
+            id: true,
+            streetAddress: true,
+            city: true,
+            state: true,
+            country: true,
+            postalCode: true,
+            isDefault: true,
+          },
+        },
         isDeleted: true,
         lat: true,
         lng: true,

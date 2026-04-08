@@ -5,7 +5,7 @@
   - You are about to drop the column `storeId` on the `Cart` table. All the data in the column will be lost.
   - You are about to drop the column `onboardingComplete` on the `Operator` table. All the data in the column will be lost.
   - You are about to drop the column `onboardingUrl` on the `Operator` table. All the data in the column will be lost.
-  - You are about to drop the column `stripeConnectedAccountId` on the `Operator` table. All the data in the column will be lost.
+  - You are about to drop the column `stripeAccountId` on the `Operator` table. All the data in the column will be lost.
   - You are about to drop the column `transactionType` on the `OperatorWalletTransaction` table. All the data in the column will be lost.
   - You are about to drop the column `operatorAmount` on the `Order` table. All the data in the column will be lost.
   - You are about to drop the column `storeId` on the `Order` table. All the data in the column will be lost.
@@ -62,7 +62,7 @@ ALTER TABLE "Order" DROP CONSTRAINT "Order_storeId_fkey";
 ALTER TABLE "SelectedAddon" DROP CONSTRAINT "SelectedAddon_cartItemId_fkey";
 
 -- DropIndex
-DROP INDEX "Operator_stripeConnectedAccountId_key";
+DROP INDEX "Operator_stripeAccountId_key";
 
 -- AlterTable
 ALTER TABLE "AdminWalletTransaction" DROP COLUMN "transactionType",
@@ -78,7 +78,7 @@ ADD COLUMN     "storeId" TEXT NOT NULL;
 -- AlterTable
 ALTER TABLE "Operator" DROP COLUMN "onboardingComplete",
 DROP COLUMN "onboardingUrl",
-DROP COLUMN "stripeConnectedAccountId",
+DROP COLUMN "stripeAccountId",
 ADD COLUMN     "stripeAccountId" TEXT,
 ADD COLUMN     "stripeAccountStatus" "StripeAccountStatus" NOT NULL DEFAULT 'PENDING';
 

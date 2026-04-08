@@ -70,7 +70,7 @@ CREATE TABLE "Operator" (
     "operatorId" TEXT,
     "userId" TEXT NOT NULL,
     "approvalStatus" "ApprovalStatus" NOT NULL DEFAULT 'PENDING',
-    "stripeConnectedAccountId" TEXT,
+    "stripeAccountId" TEXT,
     "onboardingComplete" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -584,7 +584,7 @@ CREATE UNIQUE INDEX "Operator_operatorId_key" ON "Operator"("operatorId");
 CREATE UNIQUE INDEX "Operator_userId_key" ON "Operator"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Operator_stripeConnectedAccountId_key" ON "Operator"("stripeConnectedAccountId");
+CREATE UNIQUE INDEX "Operator_stripeAccountId_key" ON "Operator"("stripeAccountId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Service_serviceId_key" ON "Service"("serviceId");
