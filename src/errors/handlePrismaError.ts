@@ -3,7 +3,7 @@ import { StatusCodes } from "http-status-codes";
 
 const handlePrismaError = (err: Prisma.PrismaClientKnownRequestError) => {
   let statusCode = StatusCodes.INTERNAL_SERVER_ERROR;
-  let message = "Database Error";
+  let message = err.message || "Database Error";
   let errorMessages: any[] = [];
 
   if (err.code === "P1001") {

@@ -15,8 +15,8 @@ export const createUserSubscriptionSession = async (
   planId: string
 ) => {
   const session = await stripe.checkout.sessions.create({
-    automatic_payment_methods: { enabled: true },
     mode: "subscription",
+    payment_method_types: ["card"],
     line_items: [
       {
         price: priceId,
@@ -44,8 +44,8 @@ export const createOperatorAdSubscriptionSession = async (
   priceId: string
 ) => {
   const session = await stripe.checkout.sessions.create({
-    automatic_payment_methods: { enabled: true },
     mode: "payment", // Ads might be one-time or subscription. Assuming one-time for now per metadata
+    payment_method_types: ["card"],
     line_items: [
       {
         price: priceId,
@@ -105,8 +105,8 @@ export const createOrderPaymentSession = async (
   }
 
   const session = await stripe.checkout.sessions.create({
-    automatic_payment_methods: { enabled: true },
     mode: "payment",
+    payment_method_types: ["card"],
     line_items: lineItems,
     payment_intent_data: {
       metadata: { orderId, userId, isSubscribed: String(isSubscribed) },
@@ -158,8 +158,8 @@ export const createMultiVendorOrderPaymentSession = async (
   transferGroup: string
 ) => {
   const session = await stripe.checkout.sessions.create({
-    automatic_payment_methods: { enabled: true },
     mode: "payment",
+    payment_method_types: ["card"],
     line_items: [
       {
         price_data: {

@@ -28,7 +28,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await CategoryService.getById(req.params.id);
+  const result = await CategoryService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +48,7 @@ const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await CategoryService.update(req.params.id, req.body);
+  const result = await CategoryService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -58,7 +58,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await CategoryService.deleteById(req.params.id);
+  const result = await CategoryService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,

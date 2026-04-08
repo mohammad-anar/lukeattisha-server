@@ -10,16 +10,8 @@ const app: Application = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.static("uploads"));
 
-// DIAGNOSTIC: Log every single request to see what's happening
-app.use((req, res, next) => {
-  if (req.path.includes("webhook")) {
-    console.log(`[GLOBAL LOG] Webhook access: ${req.method} ${req.path}`);
-  }
-  next();
-});
-
 // ---------- 1. WEBHOOK (Must stay BEFORE express.json()) ----------
-// Register multiple paths to be safe (Singular, Plural, and Root)
+// Register multiple paths for fallback
 const webhookPaths = [
   "/api/v1/payment/webhook",
   "/api/v1/payments/webhook",
@@ -29,10 +21,6 @@ const webhookPaths = [
 app.post(
   webhookPaths,
   express.raw({ type: "*/*" }),
-  (req, res, next) => {
-    console.log(`[STRIPE WEBHOOK ATTEMPT] Received request on path: ${req.path}`);
-    next();
-  },
   PaymentController.handleWebhook
 );
 

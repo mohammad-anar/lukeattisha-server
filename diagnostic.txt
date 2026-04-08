@@ -1,0 +1,4 @@
+Order Status: PENDING
+Order Payment Status: UNPAID
+Payment record MISSING for this order.
+Operator Orders Count: 1

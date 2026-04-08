@@ -17,8 +17,10 @@ const create = async (payload: any) => {
  */
 const handleWebhook = async (signature: string, payload: any) => {
   const secret = (config.stripe.stripe_webhook_secret as string || "").trim();
-  console.log(`[STRIPE WEBHOOK] Incoming Request...`);
-
+  console.log(`[STRIPE WEBHOOK] Incoming Request at ${new Date().toISOString()}`);
+  console.log(`[STRIPE WEBHOOK] SIGNATURE: ${signature?.substring(0, 20)}...`);
+  console.log(`[STRIPE WEBHOOK] USING SECRET: ${secret.substring(0, 10)}...${secret.slice(-4)}`);
+  
   let event;
   try {
     event = stripe.webhooks.constructEvent(
@@ -37,7 +39,7 @@ const handleWebhook = async (signature: string, payload: any) => {
   try {
     switch (event.type) {
       case "checkout.session.completed":
-        console.log(`[STRIPE WEBHOOK] Handling checkout.session.completed for ${session.id}`);
+        console.log(`[STRIPE WEBHOOK] ✅ checkout.session.completed for session ${session.id}`);
         await handleCheckoutSessionCompleted(session);
         break;
       case "customer.subscription.deleted":
@@ -57,8 +59,8 @@ const handleWebhook = async (signature: string, payload: any) => {
 };
 
 const handleCheckoutSessionCompleted = async (session: any) => {
-  const metadata = session.metadata;
-  if (!metadata || !metadata.type) {
+  const metadata = session.metadata || {};
+  if (!metadata.type) {
     console.warn(`[STRIPE WEBHOOK] Warning: No metadata type found in session ${session.id}`);
     return;
   }
@@ -105,9 +107,11 @@ const handleUserSubscriptionSuccess = async (userId: string, session: any) => {
 };
 
 const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: any) => {
-  console.log(`[STRIPE WEBHOOK] Multi-vendor payment success for Order: ${orderId}`);
-
-  const payment = await prisma.payment.findUnique({
+  console.log(`[STRIPE WEBHOOK 📦] SUCCESS HANDLER START for Order: ${orderId}`);
+  console.log(`[STRIPE WEBHOOK 📦] Metadata Check: type=${session.metadata?.type}, orderId=${session.metadata?.orderId}`);
+  
+  // 1. Fetch the Order and attached Payment
+  let payment = await prisma.payment.findUnique({
     where: { orderId },
     include: {
       order: {
@@ -118,132 +122,179 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
     },
   });
 
-  if (!payment || payment.status === "PAID") return;
-
-  const { order } = payment;
-
-  // 1. Mark order and payment as paid
-  await prisma.$transaction([
-    prisma.order.update({
-      where: { id: order.id },
-      data: { paymentStatus: 'PAID', status: 'PENDING' },
-    }),
-    prisma.payment.update({
-      where: { id: payment.id },
-      data: {
-        status: 'PAID',
-        paidAt: new Date(),
-        stripePaymentIntentId: session.payment_intent as string
-      },
-    }),
-  ]);
-
-  // 2. Platform Revenue (Admin Wallet)
-  // The Admin should get the platformFee (commission)
-  const admin = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
-  if (admin) {
-    const adminWallet = await prisma.adminWallet.upsert({
-      where: { userId: admin.id },
-      update: { balance: { increment: order.platformFee } },
-      create: { userId: admin.id, balance: order.platformFee },
-    });
-
-    await prisma.adminWalletTransaction.create({
-      data: {
-        walletId: adminWallet.id,
-        amount: order.platformFee,
-        type: "PLATFORM_COMMISSION",
-        orderId: order.id,
-        note: `Platform commission for multi-vendor order ${order.orderNumber}`,
-      },
-    });
-
-    // 3. Subscription Fee Handling (If subscription, admin absorbs delivery fee)
-    // The admin wallet gets the commission, but must pay the operator the delivery fee
-    if (order.isSubscription) {
-      const actualDeliveryFee = Number((order as any).actualPickupAndDeliveryFee);
-      if (actualDeliveryFee > 0) {
-        await prisma.adminWallet.update({
-          where: { id: adminWallet.id },
-          data: { balance: { decrement: actualDeliveryFee } }
-        });
-        await prisma.adminWalletTransaction.create({
-          data: {
-            walletId: adminWallet.id,
-            amount: actualDeliveryFee,
-            type: "DEBIT",
-            orderId: order.id,
-            note: `Subscription delivery fee absorbed for order ${order.orderNumber}`,
-          },
-        });
-        console.log(`[STRIPE WEBHOOK] Admin Wallet DEBITED for subscription delivery: $${actualDeliveryFee}`);
-      }
-    }
+  if (payment) {
+    console.log(`[STRIPE WEBHOOK 📦] Payment found. Current status: ${payment.status}`);
+  } else {
+    console.warn(`[STRIPE WEBHOOK 📦 ⚠️] Payment record MISSING for Order ${orderId}. Recovery triggered.`);
   }
 
-  // 4. Create transfers to each operator
-  for (const operatorOrder of order.operatorOrders) {
-    const operator = operatorOrder.operator;
+  // If payment record is missing (e.g. manually deleted), fetch order directly
+  if (!payment) {
+    const order = await prisma.order.findUnique({
+        where: { id: orderId },
+        include: { operatorOrders: { include: { operator: true } } }
+    });
 
-    if (!operator.stripeAccountId) {
-      console.error(`[STRIPE WEBHOOK] Transfer SKIPPED: Operator ${operator.id} has no Stripe ID.`);
-      continue;
+    if (!order) {
+        console.error(`[STRIPE WEBHOOK 📦 ❌ ERROR] Order ${orderId} NOT FOUND in DB. Recovery failed.`);
+        return;
     }
+    console.log(`[STRIPE WEBHOOK 📦] Order ${order.orderNumber} found. Creating missing payment record...`);
 
-    try {
-      const transfer = await StripeHelpers.createTransfer(
-        Math.round(Number(operatorOrder.transferAmount) * 100),
-        operator.stripeAccountId,
-        order.stripeTransferGroup!,
-        {
-          orderId: order.id,
-          operatorOrderId: operatorOrder.id,
-          operatorId: operator.id,
+    // Create the missing payment record
+    payment = await prisma.payment.create({
+        data: {
+            orderId: order.id,
+            amount: order.totalAmount,
+            stripePaymentIntentId: session.payment_intent as string || session.id,
+            stripeTransferGroup: order.stripeTransferGroup || `TG-${order.orderNumber}`,
+            status: 'UNPAID',
+            paymentUrl: (session as any).url || ""
+        },
+        include: {
+            order: {
+                include: {
+                    operatorOrders: { include: { operator: true } },
+                },
+            },
         }
-      );
+    }) as any;
+  }
 
-      await prisma.$transaction(async (tx) => {
-        await tx.operatorOrder.update({
-          where: { id: operatorOrder.id },
-          data: { transferStatus: 'COMPLETED', stripeTransferId: transfer.id },
+  if (payment!.status === "PAID") {
+    console.log(`[STRIPE WEBHOOK 📦 ℹ️] Order ${orderId} is ALREADY PAID. Skipping.`);
+    return;
+  }
+
+  const order = payment!.order;
+  console.log(`[STRIPE WEBHOOK 📦] 💥 STARTING DB UPDATE for Order: ${order.orderNumber} ($${order.totalAmount})`);
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      console.log(`[STRIPE WEBHOOK] ⛓️ Starting Transaction for Order: ${order.orderNumber}`);
+
+      // 1. Mark Order & Payment as PAID
+      await tx.order.update({
+        where: { id: order.id },
+        data: { paymentStatus: 'PAID', status: 'PENDING' },
+      });
+
+      await tx.payment.update({
+        where: { id: payment!.id },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(),
+          stripePaymentIntentId: session.payment_intent as string || session.id
+        },
+      });
+
+      // 2. Platform Revenue (Admin Wallet)
+      const admin = await tx.user.findFirst({ where: { role: "SUPER_ADMIN" } });
+      if (admin) {
+        const adminWallet = await tx.adminWallet.upsert({
+          where: { userId: admin.id },
+          update: { balance: { increment: order.platformFee } },
+          create: { userId: admin.id, balance: order.platformFee },
         });
 
-        await tx.transfer.create({
+        await tx.adminWalletTransaction.create({
           data: {
-            paymentId: payment.id,
-            operatorId: operator.id,
-            stripeConnectedAccId: operator.stripeAccountId!,
-            amount: operatorOrder.transferAmount,
-            stripeTransferId: transfer.id,
-            status: 'COMPLETED',
+            walletId: adminWallet.id,
+            amount: order.platformFee,
+            type: "PLATFORM_COMMISSION",
+            orderId: order.id,
+            note: `Commission for order: ${order.orderNumber}`,
           },
         });
 
-        const wallet = await tx.operatorWallet.upsert({
-          where: { operatorId: operator.id },
-          update: { balance: { increment: operatorOrder.transferAmount } },
-          create: { operatorId: operator.id, balance: operatorOrder.transferAmount },
+        // 3. Subscription Handling: Admin absorbs delivery fee
+        if (order.isSubscription) {
+          const actualDeliveryFee = Number((order as any).actualPickupAndDeliveryFee || 0);
+          if (actualDeliveryFee > 0) {
+            await tx.adminWallet.update({
+              where: { id: adminWallet.id },
+              data: { balance: { decrement: actualDeliveryFee } }
+            });
+            await tx.adminWalletTransaction.create({
+              data: {
+                walletId: adminWallet.id,
+                amount: actualDeliveryFee,
+                type: "DEBIT",
+                orderId: order.id,
+                note: `Subscription delivery fee absorbed for order ${order.orderNumber}`,
+              },
+            });
+            console.log(`[STRIPE WEBHOOK] 🎁 Subscription: Admin absorbed $${actualDeliveryFee} delivery fee`);
+          }
+        }
+      }
+
+      // 4. Operator Revenue (Internal Wallets)
+      for (const opOrder of order.operatorOrders) {
+        const opWallet = await tx.operatorWallet.upsert({
+          where: { operatorId: opOrder.operatorId },
+          create: { operatorId: opOrder.operatorId, balance: opOrder.transferAmount },
+          update: { balance: { increment: opOrder.transferAmount } },
         });
 
         await tx.operatorWalletTransaction.create({
           data: {
-            walletId: wallet.id,
-            operatorId: operator.id,
+            walletId: opWallet.id,
+            amount: opOrder.transferAmount,
+            type: "ORDER_REVENUE",
             orderId: order.id,
-            amount: operatorOrder.transferAmount,
-            type: 'ORDER_REVENUE',
-            note: `Revenue for multi-vendor order ${order.orderNumber}`,
+            operatorId: opOrder.operatorId,
+            note: `Revenue for order: ${order.orderNumber}`,
           },
         });
-      });
-      console.log(`[STRIPE WEBHOOK] Transfer SUCCESS: $${operatorOrder.transferAmount} to operator ${operator.id}`);
-    } catch (err: any) {
-      console.error(`[STRIPE WEBHOOK ❌ ERROR] Transfer failed for operator ${operator.id}:`, err.message);
-      await prisma.operatorOrder.update({
-        where: { id: operatorOrder.id },
-        data: { transferStatus: 'FAILED' },
-      });
+      }
+    });
+
+    console.log(`[STRIPE WEBHOOK] ✅ Database updates SUCCESS for Order: ${order.orderNumber}`);
+
+    // 5. External Stripe Transfers (Outside DB transaction)
+    for (const opOrder of order.operatorOrders) {
+      const operator = opOrder.operator;
+      if (!operator.stripeAccountId) {
+        console.warn(`[STRIPE WEBHOOK] Transfer SKIPPED: Operator ${operator.id} has no Stripe ID.`);
+        continue;
+      }
+
+      try {
+        const stripeTransfer = await StripeHelpers.createTransfer(
+          Math.round(Number(opOrder.transferAmount) * 100),
+          operator.stripeAccountId,
+          order.stripeTransferGroup!,
+          { orderId: order.id, operatorOrderId: opOrder.id }
+        );
+
+        await prisma.operatorOrder.update({
+          where: { id: opOrder.id },
+          data: { transferStatus: 'COMPLETED', stripeTransferId: stripeTransfer.id },
+        });
+
+        await prisma.transfer.create({
+          data: {
+            paymentId: payment!.id,
+            operatorId: operator.id,
+            stripeConnectedAccId: operator.stripeAccountId,
+            amount: opOrder.transferAmount,
+            stripeTransferId: stripeTransfer.id,
+            status: 'COMPLETED',
+          },
+        });
+        console.log(`[STRIPE WEBHOOK] 💸 Stripe Transfer SUCCESS: $${opOrder.transferAmount} to ${operator.id}`);
+      } catch (transferErr: any) {
+        console.error(`[STRIPE WEBHOOK ❌ TRANSFER ERROR] ${operator.id}:`, transferErr.message);
+        await prisma.operatorOrder.update({
+          where: { id: opOrder.id },
+          data: { transferStatus: 'FAILED' },
+        });
+      }
     }
+  } catch (error: any) {
+    console.error(`[STRIPE WEBHOOK ❌ TRANSACTION FAILED]:`, error.message);
+    throw error;
   }
 };
 
@@ -326,4 +377,7 @@ export const PaymentService = {
   update,
   deleteById,
   handleWebhook,
+  handleMultiVendorOrderPaymentSuccess,
+  handleUserSubscriptionSuccess,
+  handleAdSubscriptionSuccess,
 };

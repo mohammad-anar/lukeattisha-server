@@ -1,0 +1,14 @@
+◇ injecting env (0) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+◇ injecting env (0) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+[SIMULATION] Starting success simulation for Order: cmnpaipdn000htvcg0l67zk1c
+[SIMULATION] Order found: ORD-1775606927096. Current Payment Status: UNPAID
+[SIMULATION] Triggering handleMultiVendorOrderPaymentSuccess...
+[STRIPE WEBHOOK] Searching for Payment with orderId: cmnpaipdn000htvcg0l67zk1c
+[STRIPE WEBHOOK ❌ ERROR] Payment record NOT FOUND for orderId: cmnpaipdn000htvcg0l67zk1c
+--------------------------------------------------
+SIMULATION RESULTS:
+Order Status: PENDING
+Order Payment Status: UNPAID
+Payment Record Exists: false
+--------------------------------------------------
+[SIMULATION ❌ FAILED] The order status is still not PAID.
