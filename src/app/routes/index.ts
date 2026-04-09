@@ -39,6 +39,7 @@ import { AuthRouter } from '../modules/auth/auth.routes.js';
 import { StoreBundleRouter } from 'app/modules/storeBundle/storeBundle.routes.js';
 import { RefundRoutes } from '../modules/refund/refund.routes.js';
 import { AdminAnalyticsRouter } from '../modules/adminAnalytics/adminAnalytics.routes.js';
+import { OperatorAnalyticsRouter } from '../modules/operatorAnalytics/operatorAnalytics.routes.js';
 
 const router = express.Router();
 
@@ -83,6 +84,7 @@ const moduleRoutes = [
   { path: '/usersubscriptionplan', route: UserSubscriptionPlanRouter },
   { path: '/usersubscription', route: UserSubscriptionRouter },
   { path: '/admin-analytics', route: AdminAnalyticsRouter },
+  { path: '/operator-analytics', route: OperatorAnalyticsRouter },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));
