@@ -43,10 +43,10 @@ const getAll = async (filters: any, options: any) => {
     where: whereConditions,
     skip,
     take: limit,
-    orderBy:
-      sortBy && sortOrder
-        ? { [sortBy]: sortOrder }
-        : { createdAt: 'desc' },
+    // orderBy:
+    // sortBy && sortOrder
+    //   ? { [sortBy]: sortOrder }
+    //   : { createdAt: 'desc' },
   });
   const total = await prisma.adminWallet.count({ where: whereConditions });
 
@@ -59,6 +59,28 @@ const getAll = async (filters: any, options: any) => {
     },
     data: result,
   };
+};
+
+// getBy admin id 
+const getByAdminId = async (adminId: string) => {
+  const result = await prisma.adminWallet.findUnique({
+    where: { userId: adminId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+        }
+      }
+    }
+  });
+  if (!result) {
+    throw new ApiError(404, 'AdminWallet not found');
+  }
+  return result;
 };
 
 const getById = async (id: string) => {
@@ -92,6 +114,7 @@ export const AdminWalletService = {
   create,
   getAll,
   getById,
+  getByAdminId,
   update,
   deleteById,
 };

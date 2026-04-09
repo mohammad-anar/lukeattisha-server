@@ -3,6 +3,8 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { OperatorWalletService } from './operatorWallet.service.js';
 import pick from '../../../helpers.ts/pick.js';
+import { prisma } from 'helpers.ts/prisma.js';
+import ApiError from 'errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const result = await OperatorWalletService.create(req.body);
@@ -27,8 +29,23 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const operator = await prisma.operator.findUnique({ where: { userId } });
+  if (!operator) {
+    throw new ApiError(404, 'Operator not found');
+  }
+  const result = await OperatorWalletService.getByOperatorId(operator.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'OperatorWallet fetched successfully',
+    data: result,
+  });
+});
+
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await OperatorWalletService.getById(req.params.id);
+  const result = await OperatorWalletService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +55,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await OperatorWalletService.update(req.params.id, req.body);
+  const result = await OperatorWalletService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +65,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await OperatorWalletService.deleteById(req.params.id);
+  const result = await OperatorWalletService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -63,4 +80,5 @@ export const OperatorWalletController = {
   getById,
   update,
   deleteById,
+  getByOperatorId
 };

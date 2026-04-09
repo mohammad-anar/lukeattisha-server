@@ -42,11 +42,34 @@ const getAll = async (filters: any, options: any) => {
   const result = await prisma.operatorWallet.findMany({
     where: whereConditions,
     skip,
+    include: {
+      operator: {
+        select: {
+          id: true,
+          operatorId: true,
+          approvalStatus: true,
+          createdAt: true,
+          updatedAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              phone: true,
+              role: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true,
+            }
+          }
+        }
+      }
+    },
     take: limit,
-    orderBy:
-      sortBy && sortOrder
-        ? { [sortBy]: sortOrder }
-        : { createdAt: 'desc' },
+    // orderBy:
+    //   sortBy && sortOrder
+    //     ? { [sortBy]: sortOrder }
+    //     : { createdAt: 'desc' },
   });
   const total = await prisma.operatorWallet.count({ where: whereConditions });
 
@@ -61,9 +84,65 @@ const getAll = async (filters: any, options: any) => {
   };
 };
 
+const getByOperatorId = async (operatorId: string) => {
+  const result = await prisma.operatorWallet.findUnique({
+    where: { operatorId },
+    include: {
+      operator: {
+        select: {
+          id: true,
+          operatorId: true,
+          approvalStatus: true,
+          createdAt: true,
+          updatedAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              phone: true,
+              role: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true,
+            }
+          }
+        }
+      }
+    }
+  });
+  if (!result) {
+    throw new ApiError(404, 'OperatorWallet not found');
+  }
+  return result;
+};
+
 const getById = async (id: string) => {
   const result = await prisma.operatorWallet.findUnique({
     where: { id },
+    include: {
+      operator: {
+        select: {
+          id: true,
+          operatorId: true,
+          approvalStatus: true,
+          createdAt: true,
+          updatedAt: true,
+          user: {
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              phone: true,
+              role: true,
+              status: true,
+              createdAt: true,
+              updatedAt: true,
+            }
+          }
+        }
+      }
+    }
   });
   if (!result) {
     throw new ApiError(404, 'OperatorWallet not found');
@@ -94,4 +173,5 @@ export const OperatorWalletService = {
   getById,
   update,
   deleteById,
+  getByOperatorId
 };

@@ -49,6 +49,8 @@ model OperatorWallet {
 
   operator     Operator                    @relation(fields: [operatorId], references: [id])
   transactions OperatorWalletTransaction[]
+  createdAt    DateTime                    @default(now())
+  updatedAt    DateTime                    @updatedAt
 }
 
 model Withdrawal {
@@ -89,6 +91,8 @@ model AdminWallet {
 
   user         User                     @relation(fields: [userId], references: [id])
   transactions AdminWalletTransaction[]
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
 }
 
 model AdminWalletTransaction {
@@ -100,6 +104,7 @@ model AdminWalletTransaction {
   refundId  String?
   note      String?
   createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
 
   wallet AdminWallet @relation(fields: [walletId], references: [id])
   order  Order?      @relation(fields: [orderId], references: [id])

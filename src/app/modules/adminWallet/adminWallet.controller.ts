@@ -27,8 +27,19 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getByAdminId = catchAsync(async (req: Request, res: Response) => {
+  const adminId = req.user?.id;
+  const result = await AdminWalletService.getByAdminId(adminId as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'AdminWallet fetched successfully',
+    data: result,
+  });
+});
+
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdminWalletService.getById(req.params.id);
+  const result = await AdminWalletService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +49,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdminWalletService.update(req.params.id, req.body);
+  const result = await AdminWalletService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +59,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdminWalletService.deleteById(req.params.id);
+  const result = await AdminWalletService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -61,6 +72,7 @@ export const AdminWalletController = {
   create,
   getAll,
   getById,
+  getByAdminId,
   update,
   deleteById,
 };
