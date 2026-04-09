@@ -197,7 +197,7 @@ const getAll = async (filters: any, options: any) => {
 
 const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, userLat, userLng, categoryId, ...filterData } = filters;
+  const { searchTerm, userLat, userLng, categoryId, mostOrdered, extra, ...filterData } = filters;
 
   const andConditions: any[] = [{ storeId }];
 
@@ -219,6 +219,16 @@ const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
       service: {
         categoryId,
       },
+    });
+  }
+
+  if (extra === true || extra === 'true') {
+    andConditions.push({
+        service: {
+            serviceAddons: {
+                some: {}
+            }
+        }
     });
   }
 
@@ -249,7 +259,8 @@ const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
              ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) as distance_meters,
              ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) / 1609.34 as "distanceMile",
              COALESCE(r.total_reviews, 0) as "totalReviews",
-             COALESCE(r.avg_rating, 0) as "avgRating"
+             COALESCE(r.avg_rating, 0) as "avgRating",
+             COALESCE(o.total_orders, 0) as "totalOrders"
       FROM "StoreService" ss
       LEFT JOIN "Service" s ON ss."serviceId" = s.id
       LEFT JOIN "Store" st ON ss."storeId" = st.id
@@ -260,10 +271,18 @@ const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
         FROM "Review"
         GROUP BY "storeServiceId"
       ) r ON r."storeServiceId" = ss.id
+      LEFT JOIN (
+        SELECT "serviceId", COUNT(*) as total_orders
+        FROM "OrderItem"
+        GROUP BY "serviceId"
+      ) o ON o."serviceId" = ss."serviceId"
       WHERE ss."storeId" = ${storeId}
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
       ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
-      ORDER BY distance_meters ASC
+      ${(extra === true || extra === 'true') ? Prisma.sql`AND EXISTS (SELECT 1 FROM "ServiceAddon" sa WHERE sa."serviceId" = s.id)` : Prisma.empty}
+      ORDER BY 
+        ${(mostOrdered === true || mostOrdered === 'true') ? Prisma.sql`"totalOrders" DESC, ` : Prisma.empty}
+        distance_meters ASC
       LIMIT ${limit} OFFSET ${skip}
     `;
 
@@ -271,6 +290,7 @@ const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
       ...item,
       avgRating: item.avgRating ? parseFloat(item.avgRating) : 0,
       totalReviews: Number(item.totalReviews),
+      totalOrders: Number(item.totalOrders),
     }));
 
     const totalResult: any = await prisma.$queryRaw`
@@ -281,6 +301,7 @@ const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
       WHERE ss."storeId" = ${storeId}
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
       ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
+      ${(extra === true || extra === 'true') ? Prisma.sql`AND EXISTS (SELECT 1 FROM "ServiceAddon" sa WHERE sa."serviceId" = s.id)` : Prisma.empty}
     `;
 
     total = totalResult[0]?.count || 0;
