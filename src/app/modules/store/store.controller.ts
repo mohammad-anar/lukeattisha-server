@@ -35,7 +35,7 @@ const create = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status', 'userLat', 'userLng']); // Customize filters as needed
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   const result = await StoreService.getAll(filters, options);
   sendResponse(res, {
@@ -57,7 +57,7 @@ const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
   if (!operator) {
     throw new Error('Operator not found');
   }
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'status']);
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'status', 'userLat', 'userLng']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   const result = await StoreService.getByOperatorId(filters, options, operator.id);
   sendResponse(res, {

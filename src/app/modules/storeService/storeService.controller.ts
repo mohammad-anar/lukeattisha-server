@@ -38,7 +38,10 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 
 const getAllByStoreId = catchAsync(async (req: Request, res: Response) => {
   const storeId = req.params.storeId as string;
-  const result = await StoreServiceService.getAllByStoreId(storeId);
+  const filters = pick(req.query, ['searchTerm', 'userLat', 'userLng', 'categoryId']);
+  const options = pick(req.query, ['page', 'limit', 'sortBy', 'sortOrder']);
+
+  const result = await StoreServiceService.getAllByStoreId(storeId, filters, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,

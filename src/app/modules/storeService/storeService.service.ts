@@ -195,15 +195,153 @@ const getAll = async (filters: any, options: any) => {
   };
 };
 
-const getAllByStoreId = async (storeId: string) => {
-  const result = await prisma.storeService.findMany({
-    where: { storeId: storeId },
-    include: {
-      service: true,
-      store: true,
+const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
+  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+  const { searchTerm, userLat, userLng, categoryId, ...filterData } = filters;
+
+  const andConditions: any[] = [{ storeId }];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ['name', 'description'].map((field) => ({
+        service: {
+          [field]: {
+            contains: searchTerm,
+            mode: 'insensitive',
+          },
+        },
+      })),
+    });
+  }
+
+  if (categoryId) {
+    andConditions.push({
+      service: {
+        categoryId,
+      },
+    });
+  }
+
+  if (Object.keys(filterData).length > 0) {
+    andConditions.push({
+      AND: Object.keys(filterData).map((key) => ({
+        [key]: {
+          equals: (filterData as any)[key],
+        },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.StoreServiceWhereInput = { AND: andConditions };
+
+  let result;
+  let total;
+
+  if (userLat && userLng) {
+    const lat = parseFloat(userLat);
+    const lng = parseFloat(userLng);
+    const searchString = searchTerm ? `%${searchTerm}%` : null;
+
+    result = await prisma.$queryRaw`
+      SELECT ss.*, 
+             row_to_json(s.*) as service,
+             row_to_json(st.*) as store,
+             ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) as distance_meters,
+             ST_DistanceSphere(ST_MakePoint(${lng}, ${lat}), ST_MakePoint(st.lng, st.lat)) / 1609.34 as "distanceMile",
+             COALESCE(r.total_reviews, 0) as "totalReviews",
+             COALESCE(r.avg_rating, 0) as "avgRating"
+      FROM "StoreService" ss
+      LEFT JOIN "Service" s ON ss."serviceId" = s.id
+      LEFT JOIN "Store" st ON ss."storeId" = st.id
+      LEFT JOIN (
+        SELECT "storeServiceId",
+               COUNT(*) as total_reviews,
+               AVG(rating) as avg_rating
+        FROM "Review"
+        GROUP BY "storeServiceId"
+      ) r ON r."storeServiceId" = ss.id
+      WHERE ss."storeId" = ${storeId}
+      ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
+      ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
+      ORDER BY distance_meters ASC
+      LIMIT ${limit} OFFSET ${skip}
+    `;
+
+    result = (result as any[]).map((item) => ({
+      ...item,
+      avgRating: item.avgRating ? parseFloat(item.avgRating) : 0,
+      totalReviews: Number(item.totalReviews),
+    }));
+
+    const totalResult: any = await prisma.$queryRaw`
+      SELECT COUNT(ss.id)::int as count
+      FROM "StoreService" ss
+      LEFT JOIN "Service" s ON ss."serviceId" = s.id
+      LEFT JOIN "Store" st ON ss."storeId" = st.id
+      WHERE ss."storeId" = ${storeId}
+      ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
+      ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
+    `;
+
+    total = totalResult[0]?.count || 0;
+  } else {
+    const storeServices = await prisma.storeService.findMany({
+      where: whereConditions,
+      skip,
+      take: limit,
+      include: {
+        service: {
+          select: {
+            id: true,
+            name: true,
+            basePrice: true,
+            description: true,
+            image: true,
+            category: true,
+            categoryId: true,
+            serviceAddons: true,
+            storeServices: true,
+            isActive: true,
+            operatorId: true,
+            operator: true,
+            createdAt: true,
+            updatedAt: true,
+          },
+        },
+        store: true,
+        reviews: true,
+      },
+      orderBy:
+        sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
+    });
+
+    result = storeServices.map((storeService: any) => {
+      const totalReviews = storeService.reviews.length;
+      const totalRating = storeService.reviews.reduce(
+        (acc: number, review: any) => acc + (review.rating || 0),
+        0
+      );
+      const avgRating = totalReviews > 0 ? totalRating / totalReviews : 0;
+
+      return {
+        ...storeService,
+        avgRating,
+        totalReviews,
+      };
+    });
+
+    total = await prisma.storeService.count({ where: whereConditions });
+  }
+
+  return {
+    meta: {
+      total,
+      totalPage: Math.ceil(total / limit),
+      page,
+      limit,
     },
-  });
-  return result;
+    data: result,
+  };
 };
 
 const getAllByOperatorId = async (operatorId: string) => {

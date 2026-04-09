@@ -4,6 +4,25 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 import { OperatorService } from '../operator/operator.service.js';
 
+const calculateDistanceInMiles = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number => {
+  const R = 3958.8; // Radius of the Earth in miles
+  const dLat = (lat2 - lat1) * (Math.PI / 180);
+  const dLon = (lon2 - lon1) * (Math.PI / 180);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * (Math.PI / 180)) *
+      Math.cos(lat2 * (Math.PI / 180)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
+
 const create = async (payload: any) => {
   if (payload.operatorId) {
     await OperatorService.assertPaymentActivated(payload.operatorId);
@@ -16,7 +35,7 @@ const create = async (payload: any) => {
 
 const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filters;
+  const { searchTerm, userLat, userLng, ...filterData } = filters;
 
   const andConditions = [];
 
@@ -64,12 +83,25 @@ const getAll = async (filters: any, options: any) => {
       page,
       limit,
     },
-    data: result,
+    data: result.map((store: any) => {
+      if (userLat && userLng && store.lat && store.lng) {
+        return {
+          ...store,
+          distanceMile: calculateDistanceInMiles(
+            parseFloat(userLat),
+            parseFloat(userLng),
+            store.lat,
+            store.lng
+          ),
+        };
+      }
+      return store;
+    }),
   };
 };
 const getByOperatorId = async (filters: any, options: any, operatorId: string) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, isActive, ...filterData } = filters;
+  const { searchTerm, isActive, userLat, userLng, ...filterData } = filters;
 
   const andConditions: any[] = [{ operatorId }];
 
@@ -121,7 +153,20 @@ const getByOperatorId = async (filters: any, options: any, operatorId: string) =
       page,
       limit,
     },
-    data: result,
+    data: result.map((store: any) => {
+      if (userLat && userLng && store.lat && store.lng) {
+        return {
+          ...store,
+          distanceMile: calculateDistanceInMiles(
+            parseFloat(userLat),
+            parseFloat(userLng),
+            store.lat,
+            store.lng
+          ),
+        };
+      }
+      return store;
+    }),
   };
 };
 
@@ -131,18 +176,7 @@ const getById = async (id: string) => {
     where: { id },
     include: {
       operator: { select: { user: { select: { name: true, email: true, phone: true, avatar: true } } } },
-      storeServices: {
-        select: {
-          id: true,
-          service: true
-        }
-      },
-      storeBundles: {
-        select: {
-          id: true,
-          bundle: true
-        }
-      }
+      _count: true,
     }
   });
   if (!result) {
