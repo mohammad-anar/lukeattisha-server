@@ -44,7 +44,7 @@ const getTopServices = async (operatorId: string, limit = 10) => {
 
     const entry = serviceMap.get(sid)!;
     entry.total += 1;
-    if (orderStatus === OrderStatus.COMPLETED) {
+    if (orderStatus === OrderStatus.DELIVERED) {
       entry.completed += 1;
     }
   }

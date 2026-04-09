@@ -74,7 +74,7 @@ const getStats = async (operatorId: string) => {
     prisma.operatorOrder.count({
       where: {
         operatorId,
-        order: { status: OrderStatus.COMPLETED },
+        order: { status: OrderStatus.DELIVERED },
         createdAt: { gte: monthStart },
       },
     }),

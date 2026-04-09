@@ -102,9 +102,9 @@ const getStatsSummary = async () => {
 
   // ── 6. On-Time Completion Rate (this week vs prev week) ─────────────────────
   const [thisWeekCompleted, thisWeekTotal, prevWeekCompleted, prevWeekTotal] = await Promise.all([
-    prisma.order.count({ where: { status: OrderStatus.COMPLETED, createdAt: { gte: thisWeekStart } } }),
+    prisma.order.count({ where: { status: OrderStatus.DELIVERED, createdAt: { gte: thisWeekStart } } }),
     prisma.order.count({ where: { createdAt: { gte: thisWeekStart } } }),
-    prisma.order.count({ where: { status: OrderStatus.COMPLETED, createdAt: { gte: prevWeekStart, lte: prevWeekEnd } } }),
+    prisma.order.count({ where: { status: OrderStatus.DELIVERED, createdAt: { gte: prevWeekStart, lte: prevWeekEnd } } }),
     prisma.order.count({ where: { createdAt: { gte: prevWeekStart, lte: prevWeekEnd } } }),
   ]);
   const onTimeRate = thisWeekTotal > 0 ? parseFloat(((thisWeekCompleted / thisWeekTotal) * 100).toFixed(2)) : 0;
@@ -317,7 +317,7 @@ const getOrderStatusChart = async () => {
     OrderStatus.PROCESSING,
     OrderStatus.PICKED_UP,
     OrderStatus.READY_FOR_DELIVERY,
-    OrderStatus.COMPLETED,
+    OrderStatus.DELIVERED,
     OrderStatus.CANCELLED,
   ];
 
@@ -352,7 +352,7 @@ const getTopOperators = async (limit = 10) => {
   const mapped = operators.map((op) => {
     const totalOrders = op.operatorOrders.length;
     const completedOrders = op.operatorOrders.filter(
-      (oo) => oo.order.status === OrderStatus.COMPLETED,
+      (oo) => oo.order.status === OrderStatus.DELIVERED,
     ).length;
     const successRate = totalOrders > 0 ? parseFloat(((completedOrders / totalOrders) * 100).toFixed(2)) : 0;
 
