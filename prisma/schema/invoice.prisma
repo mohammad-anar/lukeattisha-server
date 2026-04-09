@@ -1,0 +1,17 @@
+model Invoice {
+  id               String   @id @default(cuid())
+  invoiceNumber    String   @unique // e.g., INV-XXXXXX
+  transactionId    String?  @unique // Link to our custom TNX-XXXXXX
+  orderId          String?  @unique
+  adSubscriptionId String?  @unique
+  userSubscriptionId String? @unique
+  userId           String
+  amount           Decimal  @db.Decimal(10, 2)
+  status           String   @default("PAID")
+  issuedDate       DateTime @default(now())
+
+  user             User            @relation(fields: [userId], references: [id])
+  order            Order?          @relation(fields: [orderId], references: [id])
+  adSubscription   AdSubscription? @relation(fields: [adSubscriptionId], references: [id])
+  userSubscription UserSubscription? @relation(fields: [userSubscriptionId], references: [id])
+}

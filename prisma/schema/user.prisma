@@ -38,6 +38,7 @@ model User {
   chatParticipants  ChatParticipant[]
   chatMessages      ChatMessage[]      @relation("UserMessages")
   paymentCards      UserPaymentCard[]  @relation("UserCards")
+  invoices          Invoice[]
 
   @@index([createdById])
 }

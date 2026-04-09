@@ -4,6 +4,8 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 import { StripeHelpers, stripe } from '../../../helpers.ts/stripeHelpers.js';
 import { config } from '../../../config/index.js';
+import { emailHelper } from '../../../helpers.ts/emailHelper.js';
+import { generateTransactionId, generateInvoiceNumber } from '../../../helpers.ts/idGenerator.js';
 
 const create = async (payload: any) => {
   const result = await prisma.payment.create({
@@ -79,16 +81,23 @@ const handleUserSubscriptionSuccess = async (userId: string, session: any) => {
   const plan = await prisma.userSubscriptionPlan.findUnique({ where: { id: planId } });
   if (!plan) return;
 
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) return;
+
   const startDate = new Date();
   const endDate = new Date();
   endDate.setMonth(endDate.getMonth() + plan.durationMonth);
+
+  const transactionId = generateTransactionId();
+  const invoiceNumber = generateInvoiceNumber();
 
   await prisma.$transaction(async (tx) => {
     await tx.user.update({
       where: { id: userId },
       data: { isSubscribed: true },
     });
-    await tx.userSubscription.create({
+    
+    const subscription = await tx.userSubscription.create({
       data: {
         userId,
         planId: plan.id,
@@ -96,19 +105,65 @@ const handleUserSubscriptionSuccess = async (userId: string, session: any) => {
         endDate,
         status: "ACTIVE",
         stripePaymentId: session.subscription as string,
+        transactionId,
+      },
+    });
+
+    await tx.invoice.create({
+      data: {
+        invoiceNumber,
+        transactionId,
+        userSubscriptionId: subscription.id,
+        userId,
+        amount: plan.price,
+        status: "PAID",
       },
     });
   });
+
+  // Send Emails
+  const admin = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
+  
+  const emailContent = `
+    <h1>Payment Successful</h1>
+    <p>Thank you for subscribing to ${plan.name}!</p>
+    <p><strong>Invoice Number:</strong> ${invoiceNumber}</p>
+    <p><strong>Transaction ID:</strong> ${transactionId}</p>
+    <p><strong>Amount Paid:</strong> $${plan.price}</p>
+    <p><strong>Duration:</strong> ${plan.durationMonth} Month(s)</p>
+    <p><strong>Expiry Date:</strong> ${endDate.toLocaleDateString()}</p>
+  `;
+
+  await emailHelper.sendEmail({
+    to: user.email,
+    subject: `Invoice - ${plan.name} Subscription`,
+    html: emailContent,
+  });
+
+  if (admin) {
+    await emailHelper.sendEmail({
+      to: admin.email,
+      subject: `New User Subscription - ${user.name}`,
+      html: `
+        <h1>New Subscription</h1>
+        <p>User ${user.name} (${user.email}) has purchased ${plan.name}.</p>
+        <p><strong>Invoice:</strong> ${invoiceNumber}</p>
+        <p><strong>Transaction:</strong> ${transactionId}</p>
+        <p><strong>Amount:</strong> $${plan.price}</p>
+      `,
+    });
+  }
 };
 
 const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: any) => {
-  // 1. Fetch the Order and attached Payment
+  // 1. Fetch the Order and attached Payment with necessary includes
   let payment = await prisma.payment.findUnique({
     where: { orderId },
     include: {
       order: {
         include: {
-          operatorOrders: { include: { operator: true } },
+          operatorOrders: { include: { operator: { include: { user: true } } } },
+          user: true,
         },
       },
     },
@@ -118,7 +173,10 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
   if (!payment) {
     const order = await prisma.order.findUnique({
         where: { id: orderId },
-        include: { operatorOrders: { include: { operator: true } } }
+        include: { 
+          operatorOrders: { include: { operator: { include: { user: true } } } },
+          user: true,
+        }
     });
 
     if (!order) {
@@ -139,7 +197,8 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
         include: {
             order: {
                 include: {
-                    operatorOrders: { include: { operator: true } },
+                    operatorOrders: { include: { operator: { include: { user: true } } } },
+                    user: true,
                 },
             },
         }
@@ -149,6 +208,8 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
   if (payment!.status === "PAID") return;
 
   const order = payment!.order;
+  const transactionId = generateTransactionId();
+  const invoiceNumber = generateInvoiceNumber();
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -165,11 +226,24 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
         data: {
           status: 'PAID',
           paidAt: new Date(),
-          stripePaymentIntentId: session.payment_intent as string || session.id
+          stripePaymentIntentId: session.payment_intent as string || session.id,
+          transactionId,
         },
       });
 
-      // 2. Platform Revenue (Admin Wallet)
+      // 2. Create Invoice
+      await tx.invoice.create({
+        data: {
+          invoiceNumber,
+          transactionId,
+          orderId: order.id,
+          userId: order.userId,
+          amount: order.totalAmount,
+          status: "PAID",
+        },
+      });
+
+      // 3. Platform Revenue (Admin Wallet)
       const admin = await tx.user.findFirst({ where: { role: "SUPER_ADMIN" } });
       if (admin) {
         const adminWallet = await tx.adminWallet.upsert({
@@ -188,7 +262,7 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
           },
         });
 
-        // 3. Subscription Handling: Admin absorbs delivery fee
+        // 4. Subscription Handling: Admin absorbs delivery fee
         if (order.isSubscription) {
           const actualDeliveryFee = Number((order as any).actualPickupAndDeliveryFee || 0);
           if (actualDeliveryFee > 0) {
@@ -210,7 +284,7 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
         }
       }
 
-      // 4. Operator Revenue (Internal Wallets)
+      // 5. Operator Revenue (Internal Wallets)
       for (const opOrder of order.operatorOrders) {
         const opWallet = await tx.operatorWallet.upsert({
           where: { operatorId: opOrder.operatorId },
@@ -231,7 +305,47 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
       }
     });
 
-    // 5. External Stripe Transfers (Outside DB transaction)
+    // 6. Send Emails
+    const admin = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
+    
+    // Email to User
+    const userEmailContent = `
+      <h1>Invoice for Order ${order.orderNumber}</h1>
+      <p>Your payment was successful!</p>
+      <p><strong>Invoice Number:</strong> ${invoiceNumber}</p>
+      <p><strong>Transaction ID:</strong> ${transactionId}</p>
+      <p><strong>Total Amount:</strong> $${order.totalAmount}</p>
+      <p>Thank you for using Laundry Link!</p>
+    `;
+    await emailHelper.sendEmail({ to: order.user.email, subject: `Invoice - Order ${order.orderNumber}`, html: userEmailContent });
+
+    // Email to Operators
+    for (const opOrder of order.operatorOrders) {
+      const opEmailContent = `
+        <h1>New Order Payment Received</h1>
+        <p>You have received a new payment for order ${order.orderNumber}.</p>
+        <p><strong>Amount Credited to Wallet:</strong> $${opOrder.transferAmount}</p>
+        <p><strong>Order Number:</strong> ${order.orderNumber}</p>
+      `;
+      await emailHelper.sendEmail({ to: opOrder.operator.user.email, subject: `Notification - Order Payment`, html: opEmailContent });
+    }
+
+    // Email to Admin
+    if (admin) {
+      await emailHelper.sendEmail({
+        to: admin.email,
+        subject: `Order Payment Successful - ${order.orderNumber}`,
+        html: `
+          <h1>Payment Success</h1>
+          <p>Order ${order.orderNumber} has been paid successfully.</p>
+          <p><strong>Total Amount:</strong> $${order.totalAmount}</p>
+          <p><strong>Platform Fee:</strong> $${order.platformFee}</p>
+          <p><strong>Transaction ID:</strong> ${transactionId}</p>
+        `,
+      });
+    }
+
+    // 7. External Stripe Transfers (Outside DB transaction)
     for (const opOrder of order.operatorOrders) {
       const operator = opOrder.operator;
       if (!operator.stripeAccountId) continue;
@@ -283,7 +397,7 @@ const handleAdSubscriptionSuccess = async (operatorId: string, planId: string, s
     return;
   }
 
-  // 2. Fetch the plan details to get duration
+  // 2. Fetch the plan details and operator user
   const plan = await prisma.adSubscriptionPlan.findUnique({ 
     where: { id: planId } 
   });
@@ -293,25 +407,84 @@ const handleAdSubscriptionSuccess = async (operatorId: string, planId: string, s
     return;
   }
 
+  const operator = await prisma.operator.findUnique({
+    where: { id: operatorId },
+    include: { user: true }
+  });
+
+  if (!operator) {
+    console.error(`[STRIPE WEBHOOK ❌ ERROR] Operator ${operatorId} not found for ad subscription.`);
+    return;
+  }
+
   const startDate = new Date();
   const endDate = new Date();
-  // Ensure duration is handled (defaulting to 1 month if not specified, though it should be in DB)
   const duration = plan.durationMonth || 1;
   endDate.setMonth(endDate.getMonth() + duration);
 
-  console.log(`[STRIPE WEBHOOK] 🚀 Activating Ad Subscription for Operator: ${operatorId}, Plan: ${plan.name}`);
+  const transactionId = generateTransactionId();
+  const invoiceNumber = generateInvoiceNumber();
 
-  // 3. Create active subscription record
-  await prisma.adSubscription.create({
-    data: {
-      operatorId,
-      planId,
-      startDate,
-      endDate,
-      status: "ACTIVE",
-      stripePaymentId: session.id,
-    },
+  console.log(`[STRIPE WEBHOOK] 🚀 Activating Ad Subscription for Operator: ${operator.user.name}, Plan: ${plan.name}`);
+
+  // 3. Create active subscription and invoice
+  await prisma.$transaction(async (tx) => {
+    const sub = await tx.adSubscription.create({
+      data: {
+        operatorId,
+        planId,
+        startDate,
+        endDate,
+        status: "ACTIVE",
+        stripePaymentId: session.id,
+        transactionId,
+      },
+    });
+
+    await tx.invoice.create({
+      data: {
+        invoiceNumber,
+        transactionId,
+        adSubscriptionId: sub.id,
+        userId: operator.userId,
+        amount: plan.price,
+        status: "PAID",
+      },
+    });
   });
+
+  // 4. Send Emails
+  const admin = await prisma.user.findFirst({ where: { role: "SUPER_ADMIN" } });
+
+  const emailContent = `
+    <h1>Ad Subscription Activated</h1>
+    <p>Success! Your ad subscription for ${plan.name} is now active.</p>
+    <p><strong>Invoice Number:</strong> ${invoiceNumber}</p>
+    <p><strong>Transaction ID:</strong> ${transactionId}</p>
+    <p><strong>Plan:</strong> ${plan.name}</p>
+    <p><strong>Amount:</strong> $${plan.price}</p>
+    <p><strong>Valid Until:</strong> ${endDate.toLocaleDateString()}</p>
+  `;
+
+  await emailHelper.sendEmail({
+    to: operator.user.email,
+    subject: `Invoice - Ad Subscription: ${plan.name}`,
+    html: emailContent,
+  });
+
+  if (admin) {
+    await emailHelper.sendEmail({
+      to: admin.email,
+      subject: `New Ad Subscription - ${operator.user.name}`,
+      html: `
+        <h1>New Ad Subscription</h1>
+        <p>Operator ${operator.user.name} (${operator.user.email}) has subscribed to ${plan.name}.</p>
+        <p><strong>Invoice:</strong> ${invoiceNumber}</p>
+        <p><strong>Transaction:</strong> ${transactionId}</p>
+        <p><strong>Amount:</strong> $${plan.price}</p>
+      `,
+    });
+  }
 
   console.log(`[STRIPE WEBHOOK] ✅ Ad Subscription created successfully until ${endDate.toISOString()}`);
 };

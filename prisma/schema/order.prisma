@@ -76,6 +76,7 @@ model Order {
   operatorWalletTx OperatorWalletTransaction[]
   adminWalletTx    AdminWalletTransaction[]
   refunds          Refund[]
+  invoice          Invoice?
 }
 
 model OperatorOrder {

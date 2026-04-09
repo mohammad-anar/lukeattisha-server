@@ -61,12 +61,14 @@ model AdSubscription {
   endDate         DateTime
   status          SubscriptionStatus @default(PENDING)
   stripePaymentId String?
+  transactionId   String?            @unique
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
   operator Operator           @relation(fields: [operatorId], references: [id])
   plan     AdSubscriptionPlan @relation(fields: [planId], references: [id])
   ads      Ad[]
+  invoice  Invoice?
 }
 
 model Ad {
@@ -103,9 +105,11 @@ model UserSubscription {
   endDate         DateTime
   status          SubscriptionStatus @default(PENDING)
   stripePaymentId String?
+  transactionId   String?            @unique
   createdAt       DateTime           @default(now())
   updatedAt       DateTime           @updatedAt
 
   user User                 @relation(fields: [userId], references: [id])
   plan UserSubscriptionPlan @relation(fields: [planId], references: [id])
+  invoice  Invoice?
 }
