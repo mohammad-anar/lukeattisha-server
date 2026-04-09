@@ -70,7 +70,8 @@ const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await StoreService.getById(req.params.id as string);
+  const { userLat, userLng } = pick(req.query, ['userLat', 'userLng']) as { userLat?: string; userLng?: string };
+  const result = await StoreService.getById(req.params.id as string, userLat, userLng);
   sendResponse(res, {
     success: true,
     statusCode: 200,

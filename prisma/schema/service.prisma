@@ -28,7 +28,9 @@ model Category {
 model OperatorCategory {
   id         String   @id @default(cuid())
   operatorId String
+  operator   Operator @relation(fields: [operatorId], references: [id])
   categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt

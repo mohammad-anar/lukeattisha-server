@@ -171,7 +171,7 @@ const getByOperatorId = async (filters: any, options: any, operatorId: string) =
 };
 
 
-const getById = async (id: string) => {
+const getById = async (id: string, userLat?: string, userLng?: string) => {
   const result = await prisma.store.findUnique({
     where: { id },
     include: {
@@ -182,6 +182,20 @@ const getById = async (id: string) => {
   if (!result) {
     throw new ApiError(404, 'Store not found');
   }
+
+  if (userLat && userLng && result.lat && result.lng) {
+    return {
+      ...result,
+      distanceMile: calculateDistanceInMiles(
+        parseFloat(userLat),
+        parseFloat(userLng),
+        result.lat,
+        result.lng
+      ),
+      
+    };
+  }
+
   return result;
 };
 
