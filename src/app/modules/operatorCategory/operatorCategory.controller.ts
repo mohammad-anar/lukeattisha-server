@@ -55,9 +55,15 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const operatorId = (req.user as any)?.id;
+  const userId = (req.user as any)?.id;
+  const operator = await prisma.operator.findUnique({
+    where: { userId: userId }
+  })
+  if (!operator) {
+    throw new ApiError(404, 'Operator not found');
+  }
   const operatorCategoryId = req.params.id as string;
-  const result = await OperatorCategoryService.update(operatorId, operatorCategoryId, req.body);
+  const result = await OperatorCategoryService.update(operator.id, operatorCategoryId, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
