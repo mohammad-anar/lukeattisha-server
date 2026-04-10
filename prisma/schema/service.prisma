@@ -15,7 +15,7 @@ model Address {
 
 model Category {
   id          String   @id @default(cuid())
-  name        String
+  name        String   @unique
   description String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -34,8 +34,7 @@ model OperatorCategory {
   isActive   Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-
+}
 
 model Service {
   id          String   @id @default(cuid())
@@ -88,16 +87,16 @@ model Addon {
 }
 
 model FavouriteService {
-  id        String   @id @default(cuid())
-  userId    String
-  serviceId String?
+  id             String   @id @default(cuid())
+  userId         String
+  serviceId      String?
   storeServiceId String?
-  storeBundleId String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  storeBundleId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  user    User    @relation(fields: [userId], references: [id])
-  service Service? @relation(fields: [serviceId], references: [id])
+  user         User          @relation(fields: [userId], references: [id])
+  service      Service?      @relation(fields: [serviceId], references: [id])
   storeService StoreService? @relation(fields: [storeServiceId], references: [id])
-  storeBundle StoreBundle? @relation(fields: [storeBundleId], references: [id])
+  storeBundle  StoreBundle?  @relation(fields: [storeBundleId], references: [id])
 }

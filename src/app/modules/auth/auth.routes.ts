@@ -47,4 +47,19 @@ router.post(
   AuthController.logout,
 );
 
+import passport from "passport";
+
+router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));
+router.get("/google/callback", passport.authenticate("google", { session: false }), (req, res) => {
+  const { token } = req.user as any;
+  // Send token to client (e.g. via redirect with query param or json response)
+  res.redirect(`${process.env.FRONTEND_URL}/auth/success?token=${token}`);
+});
+
+router.get("/facebook", passport.authenticate("facebook", { scope: ["email"], session: false }));
+router.get("/facebook/callback", passport.authenticate("facebook", { session: false }), (req, res) => {
+  const { token } = req.user as any;
+  res.redirect(`${process.env.FRONTEND_URL}/auth/success?token=${token}`);
+});
+
 export const AuthRouter = router;

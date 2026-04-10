@@ -1,15 +1,15 @@
 model Cart {
-  id        String     @id @default(cuid())
-  userId    String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user  User       @relation(fields: [userId], references: [id])
   items CartItem[]
 }
 
 model CartItem {
-  id         String  @id @default(cuid())
+  id         String   @id @default(cuid())
   cartId     String
   storeId    String
   operatorId String
@@ -48,13 +48,13 @@ model Order {
   status        OrderStatus   @default(PENDING)
   paymentStatus PaymentStatus @default(UNPAID)
 
-  subtotal             Decimal @db.Decimal(10, 2)
-  pickupAndDeliveryFee Decimal @db.Decimal(10, 2) @default(4.99)
-  platformFee          Decimal @db.Decimal(10, 2)
-  fixedTransactionFee  Decimal @db.Decimal(10, 2) @default(0)
-  totalAmount          Decimal @db.Decimal(10, 2)
-  actualPickupAndDeliveryFee Decimal @db.Decimal(10, 2) @default(0)
-  isSubscription       Boolean @default(false)
+  subtotal                   Decimal @db.Decimal(10, 2)
+  pickupAndDeliveryFee       Decimal @default(4.99) @db.Decimal(10, 2)
+  platformFee                Decimal @db.Decimal(10, 2)
+  fixedTransactionFee        Decimal @default(0) @db.Decimal(10, 2)
+  totalAmount                Decimal @db.Decimal(10, 2)
+  actualPickupAndDeliveryFee Decimal @default(0) @db.Decimal(10, 2)
+  isSubscription             Boolean @default(false)
 
   pickupAddress   OrderPickupAddress?
   deliveryAddress OrderDeliveryAddress?
@@ -77,6 +77,32 @@ model Order {
   adminWalletTx    AdminWalletTransaction[]
   refunds          Refund[]
   invoice          Invoice?
+  orderTrackings   OrderTracking[]
+  orderIssues      OrderIssue[]
+}
+
+model OrderTracking {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  note      String?
+  createdAt DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model OrderIssue {
+  id          String      @id @default(cuid())
+  orderId     String
+  userId      String
+  description String
+  imageUrl    String?
+  status      IssueStatus @default(PENDING)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model OperatorOrder {
@@ -90,14 +116,14 @@ model OperatorOrder {
   stripeTransferId String?
   createdAt        DateTime       @default(now())
 
-  order    Order     @relation(fields: [orderId], references: [id])
-  operator Operator  @relation(fields: [operatorId], references: [id])
-  store    Store     @relation(fields: [storeId], references: [id])
+  order    Order       @relation(fields: [orderId], references: [id])
+  operator Operator    @relation(fields: [operatorId], references: [id])
+  store    Store       @relation(fields: [storeId], references: [id])
   items    OrderItem[]
 }
 
 model OrderItem {
-  id              String  @id @default(cuid())
+  id              String   @id @default(cuid())
   orderId         String
   operatorOrderId String
   serviceName     String
@@ -125,10 +151,10 @@ model OrderAddon {
 }
 
 model OrderPickupAddress {
-  id            String   @id @default(cuid())
-  orderId       String   @unique
-  pickupTime    String?  // Set by operator later
-  pickupDate    String?  // Set by operator later
+  id            String  @id @default(cuid())
+  orderId       String  @unique
+  pickupTime    String? // Set by operator later
+  pickupDate    String? // Set by operator later
   streetAddress String
   city          String
   state         String?
@@ -139,9 +165,9 @@ model OrderPickupAddress {
 }
 
 model OrderDeliveryAddress {
-  id            String   @id @default(cuid())
-  orderId       String   @unique
-  deliveryTime  String?  // Set by operator later
+  id            String  @id @default(cuid())
+  orderId       String  @unique
+  deliveryTime  String? // Set by operator later
   streetAddress String
   city          String
   state         String?
@@ -152,16 +178,16 @@ model OrderDeliveryAddress {
 }
 
 model Refund {
-  id            String       @id @default(cuid())
-  orderId       String
-  operatorId    String
-  amount        Decimal      @db.Decimal(10, 2)
-  reason        String?
-  status        RefundStatus @default(PENDING)
-  isEscalated   Boolean      @default(false)
-  adminNote     String?
-  createdAt     DateTime     @default(now())
-  updatedAt     DateTime     @updatedAt
+  id          String       @id @default(cuid())
+  orderId     String
+  operatorId  String
+  amount      Decimal      @db.Decimal(10, 2)
+  reason      String?
+  status      RefundStatus @default(PENDING)
+  isEscalated Boolean      @default(false)
+  adminNote   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
   order    Order    @relation(fields: [orderId], references: [id])
   operator Operator @relation(fields: [operatorId], references: [id])

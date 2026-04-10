@@ -6,7 +6,7 @@ const createSchema = z.object({
 
 const updateSchema = z.object({
   approvalStatus: z.enum(['PENDING', 'APPROVED', 'REJECTED']).optional(),
-  onboardingComplete: z.boolean().optional(),
+  stripeAccountStatus: z.enum(['PENDING', 'ONBOARDING', 'ACTIVE', 'RESTRICTED']).optional()
 });
 
 export const OperatorValidation = {

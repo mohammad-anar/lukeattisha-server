@@ -434,6 +434,14 @@ const updateOrderStatus = async (id: string, status: any) => {
     },
   });
 
+  await prisma.orderTracking.create({
+    data: {
+      orderId: order.id,
+      status: finalStatus,
+      note: `Order status updated to ${finalStatus}`,
+    }
+  });
+
   // Emit event to socket
   try {
     const socketHelper = await import('../../../helpers.ts/socketHelper.js');

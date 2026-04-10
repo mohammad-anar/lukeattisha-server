@@ -1,5 +1,6 @@
-import { config } from "config/index.js";
+import { config } from "../config/index.js";
 import nodemailer from "nodemailer";
+import { prisma } from "./prisma.js";
 
 export type ISendEmail = {
   to: string;
@@ -24,6 +25,19 @@ const transporter = nodemailer.createTransport({
 
 const sendEmail = async (values: ISendEmail) => {
   try {
+    const user = await prisma.user.findUnique({
+      where: { email: values.to },
+      include: { notificationPref: true }
+    });
+    
+    // Auth and transactional emails must always send
+    const isTransactional = /verify|reset|password|otp/i.test(values.subject);
+    
+    if (!isTransactional && user?.notificationPref && user.notificationPref.email === false) {
+      console.log(`Email Service: Blocked sending to [${values.to}] due to user preference`);
+      return null;
+    }
+
     console.log(`Email Service: Attempting to send [${values.subject}] to [${values.to}]`);
     const info = await transporter.sendMail({
       from: `"Laundry Link" <${config.email.from}>`,

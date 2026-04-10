@@ -13,7 +13,7 @@ export const requireOperatorOnboarding = async (
   next: NextFunction
 ) => {
   try {
-    const user = req.user;
+    const user = req.user as any;
     if (!user || user.role !== "OPERATOR") {
       return next(new ApiError(StatusCodes.FORBIDDEN, "Only operators can perform this action."));
     }
@@ -29,12 +29,8 @@ export const requireOperatorOnboarding = async (
       );
     }
 
-    if (operator.approvalStatus !== "APPROVED") {
-      throw new ApiError(
-        StatusCodes.FORBIDDEN,
-        "Your operator account is still pending approval by the admin."
-      );
-    }
+    // Allow operators to setup their services after Stripe connection
+    // We defer the approval check to when their store is published or goes live.
 
     next();
   } catch (error) {

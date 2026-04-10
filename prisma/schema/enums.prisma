@@ -4,6 +4,7 @@ enum UserRole {
   ADMIN
   SUPER_ADMIN
 }
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -132,8 +133,18 @@ enum PayoutSchedule {
 
 // Source of a user subscription purchase
 enum IAPSource {
-  STRIPE        // Paid via Stripe checkout
-  APPLE_IAP     // Apple in-app purchase
-  GOOGLE_IAP    // Google Play in-app purchase
-  MANUAL        // Admin-activated manually
+  STRIPE // Paid via Stripe checkout
+  APPLE_IAP // Apple in-app purchase
+  GOOGLE_IAP // Google Play in-app purchase
+  MANUAL // Admin-activated manually
+}
+
+enum PageType {
+  PRIVACY_POLICY
+  TERMS_AND_CONDITIONS
+}
+
+enum IssueStatus {
+  PENDING
+  RESOLVED
 }

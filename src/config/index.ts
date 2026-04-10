@@ -50,4 +50,17 @@ export const config = {
     password: process.env.PASSWORD,
     avatar: process.env.AVATAR,
   },
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER,
+  },
+  oauth: {
+    googleClientId: process.env.GOOGLE_CLIENT_ID,
+    googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
+    facebookClientId: process.env.FACEBOOK_CLIENT_ID,
+    facebookClientSecret: process.env.FACEBOOK_CLIENT_SECRET,
+    facebookCallbackUrl: process.env.FACEBOOK_CALLBACK_URL || '/api/auth/facebook/callback',
+  }
 };

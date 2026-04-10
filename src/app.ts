@@ -10,6 +10,10 @@ const app: Application = express();
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.static("uploads"));
 
+import "./config/passport.js";
+import passport from "passport";
+app.use(passport.initialize());
+
 // ---------- 1. WEBHOOK (Must stay BEFORE express.json()) ----------
 const webhookPaths = [
   "/api/v1/payment/webhook",

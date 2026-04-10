@@ -7,9 +7,15 @@ import { prisma } from 'helpers.ts/prisma.js';
 import ApiError from 'errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
-  const operatorId = req.user?.id;
+  const userId = (req.user as any)?.id;
+  const operator = await prisma.operator.findUnique({
+    where: { userId: userId }
+  })
+  if (!operator) {
+    throw new ApiError(404, 'Operator not found');
+  }
   const categoryIds = req.body.categoryIds;
-  const result = await OperatorCategoryService.create({ operatorId, categoryIds });
+  const result = await OperatorCategoryService.create({ operatorId: operator.id, categoryIds });
   sendResponse(res, {
     success: true,
     statusCode: 201,
@@ -49,7 +55,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const operatorId = req.user?.id;
+  const operatorId = (req.user as any)?.id;
   const operatorCategoryId = req.params.id as string;
   const result = await OperatorCategoryService.update(operatorId, operatorCategoryId, req.body);
   sendResponse(res, {

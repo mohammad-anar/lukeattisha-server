@@ -51,7 +51,7 @@ model OperatorWallet {
   operator     Operator                    @relation(fields: [operatorId], references: [id])
   transactions OperatorWalletTransaction[]
   createdAt    DateTime                    @default(now())
-  updatedAt    DateTime                    @updatedAt
+  updatedAt    DateTime                    @default(now()) @updatedAt
 }
 
 model Withdrawal {
@@ -67,16 +67,16 @@ model Withdrawal {
 }
 
 model OperatorWalletTransaction {
-  id        String          @id @default(cuid())
-  walletId  String
-  amount    Decimal         @db.Decimal(10, 2)
-  type      TransactionType
-  operatorId String?
-  orderId   String?
+  id           String          @id @default(cuid())
+  walletId     String
+  amount       Decimal         @db.Decimal(10, 2)
+  type         TransactionType
+  operatorId   String?
+  orderId      String?
   withdrawalId String?
   refundId     String?
-  note      String?
-  createdAt DateTime        @default(now())
+  note         String?
+  createdAt    DateTime        @default(now())
 
   wallet     OperatorWallet @relation(fields: [walletId], references: [id])
   order      Order?         @relation(fields: [orderId], references: [id])
@@ -93,7 +93,7 @@ model AdminWallet {
   user         User                     @relation(fields: [userId], references: [id])
   transactions AdminWalletTransaction[]
   createdAt    DateTime                 @default(now())
-  updatedAt    DateTime                 @updatedAt
+  updatedAt    DateTime                 @default(now()) @updatedAt
 }
 
 model AdminWalletTransaction {
@@ -105,7 +105,7 @@ model AdminWalletTransaction {
   refundId  String?
   note      String?
   createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  updatedAt DateTime        @default(now()) @updatedAt
 
   wallet AdminWallet @relation(fields: [walletId], references: [id])
   order  Order?      @relation(fields: [orderId], references: [id])

@@ -4,9 +4,30 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
+  if (payload.userId) {
+    const userPref = await prisma.userNotificationPreference.findUnique({
+      where: { userId: payload.userId }
+    });
+    // Default is push = true. If explicitly false, block it.
+    if (userPref && userPref.push === false) {
+      console.log(`Push Service: Blocked notification for user [${payload.userId}] due to preference`);
+      return null;
+    }
+  }
+
   const result = await prisma.notification.create({
     data: payload,
   });
+
+  if (payload.userId) {
+    try {
+      const socketHelper = await import('../../../helpers.ts/socketHelper.js');
+      socketHelper.emitToUser(payload.userId, 'new-notification', result);
+    } catch (err) {
+      console.error('Push Service: Socket emission failed', err);
+    }
+  }
+
   return result;
 };
 
