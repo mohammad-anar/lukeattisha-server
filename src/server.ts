@@ -2,6 +2,8 @@ import { config } from "config/index.js";
 import app from "./app.js";
 import { initSocket } from "./helpers.ts/socketHelper.js";
 import { seedSuperAdmin } from "./db/seedSuperAdmin.js";
+import { seedCategories } from "./db/seedCategories.js";
+import { initCronJobs } from "./helpers.ts/cronHelper.js";
 
 let server: any;
 
@@ -15,6 +17,8 @@ async function bootstrap() {
   try {
     // seeding admin
     await seedSuperAdmin();
+    // seed categories
+    await seedCategories();
     //
     server = app.listen(config.port, () => {
       console.log(`🚀 Server running on http://localhost:${config.port}`);
@@ -22,6 +26,9 @@ async function bootstrap() {
     // socket
     //socket
     initSocket(server);
+
+    // cron jobs
+    initCronJobs();
   } catch (error) {
     console.error("Error during server startup:", error);
     process.exit(1);

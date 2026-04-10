@@ -83,7 +83,7 @@ const setupConnectAccount = async (id: string) => {
   // 1. Create Connect Account in Stripe if they don't have one
   let connectId = operator.stripeAccountId;
   if (!connectId) {
-    connectId = await StripeHelpers.createConnectAccount(user.email);
+    connectId = await StripeHelpers.createConnectAccount(user.email, user.name);
   }
 
   // 2. Generate Link

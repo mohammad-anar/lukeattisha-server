@@ -23,10 +23,12 @@ const register = async (payload: Prisma.UserCreateInput & { address: string, cit
 
   const { address, city, country, ...userData } = payload;
 
+  const customUserId = await generateCustomId('USER');
+  const customer = await StripeHelpers.createStripeCustomer(userData.email!, userData.name!, customUserId);
+
   const user = await prisma.$transaction(async (tx) => {
-    const customUserId = await generateCustomId('USER');
     const user = await tx.user.create({
-      data: { ...userData, password: hashedPassword, userId: customUserId },
+      data: { ...userData, password: hashedPassword, userId: customUserId, stripeCustomerId: customer.id },
       select: {
         id: true,
         name: true,
@@ -74,13 +76,17 @@ const registerOperator = async (payload: Prisma.UserCreateInput & { address: str
 
   const { name, email, password, phone, address, storeName, city, country } = payload;
 
-  const stripeConnectId = await StripeHelpers.createConnectAccount(email);
-  const onboardingLink = await StripeHelpers.generateAccountOnboardingLink(stripeConnectId);
+  // We first determine a custom User ID
+  const customUserId = await generateCustomId('USER');
+
+  // Create Stripe Customer
+  const customer = await StripeHelpers.createStripeCustomer(email, name, customUserId);
+
+  const stripeConnectId = await StripeHelpers.createConnectAccount(email, name);
 
   const user = await prisma.$transaction(async (tx) => {
-    const customUserId = await generateCustomId('USER');
     const user = await tx.user.create({
-      data: { name, email, password: hashedPassword, phone, role: "OPERATOR", userId: customUserId },
+      data: { name, email, password: hashedPassword, phone, role: "OPERATOR", userId: customUserId, stripeCustomerId: customer.id },
       select: {
         id: true,
         name: true,

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../helpers.ts/prisma.js";
 import ApiError from "../../errors/ApiError.js";
 import { StatusCodes } from "http-status-codes";
+import { StripeHelpers } from "helpers.ts/stripeHelpers.js";
 
 /**
  * Middleware to ensure that an Operator has completed their Stripe onboarding
@@ -31,6 +32,24 @@ export const requireOperatorOnboarding = async (
 
     // Allow operators to setup their services after Stripe connection
     // We defer the approval check to when their store is published or goes live.
+
+    if (operator.approvalStatus !== "APPROVED") {
+      throw new ApiError(
+        StatusCodes.FORBIDDEN,
+        "Your account is not approved yet. Please contact the administrator for approval."
+      );
+    }
+
+    if (operator.stripeAccountStatus !== "ACTIVE") {
+      const onboardingLink = await StripeHelpers.generateAccountOnboardingLink(operator.stripeAccountId);
+      throw new ApiError(
+        StatusCodes.FORBIDDEN,
+        JSON.stringify({
+           message: "You must fully onboard your Stripe connect account before managing services or bundles.",
+           onboardingUrl: onboardingLink.url
+        })
+      );
+    }
 
     next();
   } catch (error) {

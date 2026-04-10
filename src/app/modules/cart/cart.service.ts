@@ -49,9 +49,9 @@ const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: str
       },
     });
     if (!service) throw new ApiError(404, 'Service not found');
-    // if (service.operator.stripeAccountStatus !== 'ACTIVE') {
-    //   throw new ApiError(400, 'This service is not available for purchase (Operator not active).');
-    // }
+    if (service.operator.stripeAccountStatus !== 'ACTIVE') {
+      throw new ApiError(400, 'This service is not available for purchase (Operator not active).');
+    }
     storeId = service.storeServices[0]?.storeId;
     if (!storeId) throw new ApiError(400, 'This service is not assigned to any store');
     operatorId = service.operatorId;
@@ -85,7 +85,9 @@ const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: str
     price += addonsPrice;
   }
 
-  return await prisma.cartItem.upsert({
+  console.log(cart.id, storeId, operatorId, dto.serviceId, dto.bundleId, dto.quantity, price);
+
+  const result = await prisma.cartItem.upsert({
     where: dto.serviceId
       ? { cartId_serviceId: { cartId: cart.id, serviceId: dto.serviceId } }
       : { cartId_bundleId: { cartId: cart.id, bundleId: dto.bundleId! } },
@@ -103,6 +105,8 @@ const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: str
     },
     update: { quantity: dto.quantity },
   });
+
+  return result;
 };
 
 // update quqantity

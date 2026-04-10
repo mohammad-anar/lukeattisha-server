@@ -14,9 +14,9 @@ router.get('/:id', ServiceController.getById);
 router.get('/operator/:id', auth('OPERATOR', 'ADMIN', 'SUPER_ADMIN'), ServiceController.getByOperatorId);
 
 // Restricted operator actions
-router.post('/', auth('OPERATOR'), 
-// requireOperatorOnboarding,
- fileUploadHandler(), validateRequest(createServiceSchema), ServiceController.create);
+router.post('/', auth('OPERATOR'),
+    requireOperatorOnboarding,
+    fileUploadHandler(), validateRequest(createServiceSchema), ServiceController.create);
 
 router.patch('/:id', auth('OPERATOR'), requireOperatorOnboarding, fileUploadHandler(), validateRequest(updateServiceSchema), ServiceController.update);
 

@@ -236,10 +236,14 @@ export const generateAccountOnboardingLink = async (
 /**
  * Creates a Connect Account
  */
-export const createConnectAccount = async (email: string) => {
+export const createConnectAccount = async (email: string, name?: string) => {
   const account = await stripe.accounts.create({
     type: "express",
     email: email,
+    business_profile: {
+      support_email: email,
+      ...(name && { name }),
+    },
     capabilities: {
       card_payments: { requested: true },
       transfers: { requested: true },

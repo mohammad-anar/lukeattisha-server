@@ -7,9 +7,9 @@ import { OperatorService } from '../operator/operator.service.js';
 const create = async (payload: any) => {
   const { addonIds, ...serviceData } = payload;
 
-  // if (serviceData.operatorId) {
-  //   await OperatorService.assertPaymentActivated(serviceData.operatorId);
-  // }
+  if (serviceData.operatorId) {
+    await OperatorService.assertPaymentActivated(serviceData.operatorId);
+  }
 
   const result = await prisma.service.create({
     data: serviceData,

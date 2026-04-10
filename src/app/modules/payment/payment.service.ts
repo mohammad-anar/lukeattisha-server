@@ -35,7 +35,7 @@ const handleWebhook = async (signature: string, payload: any) => {
   const session = event.data.object as any;
 
   try {
-    switch (event.type) {
+    switch (event.type as string) {
       case "checkout.session.completed":
         await handleCheckoutSessionCompleted(session);
         break;
@@ -44,6 +44,20 @@ const handleWebhook = async (signature: string, payload: any) => {
         break;
       case "customer.subscription.updated":
         await handleSubscriptionUpdated(session);
+        break;
+      case "account.updated":
+        await handleAccountUpdated(session);
+        break;
+      case "financial_connections.account.created":
+      case "person.updated":
+      case "capability.updated":
+      case "account.external_account.created":
+      case "transfer.created":
+      case "payment.created":
+      case "payment_intent.created":
+      case "payment_intent.succeeded":
+      case "charge.succeeded":
+        // Intentionally ignored, no action needed for these intermediary onboarding or processed transaction steps
         break;
       default:
         console.log(`[STRIPE WEBHOOK] Unhandled event type: ${event.type}`);
@@ -509,6 +523,28 @@ const handleSubscriptionDeleted = async (subscription: any) => {
 
 const handleSubscriptionUpdated = async (subscription: any) => {
   // Logic for status sync if needed
+};
+
+const handleAccountUpdated = async (account: any) => {
+  const stripeAccountId = account.id;
+  const operator = await prisma.operator.findUnique({
+    where: { stripeAccountId }
+  });
+
+  if (operator) {
+    // Treat as active if details were submitted OR payouts are enabled 
+    // (In test mode, payouts_enabled can lazily update after details_submitted is true)
+    const isReady = account.details_submitted || (account.charges_enabled && account.payouts_enabled);
+    const newStatus = isReady ? "ACTIVE" : "ONBOARDING";
+    
+    if (operator.stripeAccountStatus !== newStatus) {
+      await prisma.operator.update({
+        where: { id: operator.id },
+        data: { stripeAccountStatus: newStatus }
+      });
+      console.log(`[STRIPE WEBHOOK] 🔄 Operator ${operator.id} status updated to ${newStatus}`);
+    }
+  }
 };
 
 const getAll = async (filters: any, options: any) => {
