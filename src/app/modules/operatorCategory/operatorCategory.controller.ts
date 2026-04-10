@@ -34,7 +34,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
   if (!operator) {
     throw new ApiError(404, 'Operator not found');
   }
-  const result = await OperatorCategoryService.getAll(operator?.userId, filters, options);
+  const result = await OperatorCategoryService.getAll(operator?.id, filters, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
