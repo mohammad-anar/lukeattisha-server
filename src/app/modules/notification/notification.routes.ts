@@ -15,6 +15,6 @@ router.patch('/mark-all-read', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRo
 router.patch('/:id/mark-read', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), NotificationController.markAsRead);
 router.get('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), NotificationController.getById);
 router.patch('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), NotificationController.update);
-router.delete('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), NotificationController.deleteById);
+// router.delete('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), NotificationController.deleteById);
 
 export const NotificationRouter = router;

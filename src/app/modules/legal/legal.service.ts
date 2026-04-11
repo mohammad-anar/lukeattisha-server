@@ -10,6 +10,7 @@ const createOrUpdate = async (type: string, content: string) => {
   return result;
 };
 
+
 const getByType = async (type: string) => {
   const result = await prisma.legalDocument.findUnique({
     where: { type },
