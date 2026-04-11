@@ -91,6 +91,7 @@ model LiveSupportMessage {
   roomId    String
   senderId  String // userId or adminId
   content   String
+  images    String[] @default([])
   createdAt DateTime @default(now())
 
   room LiveSupportRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
@@ -101,6 +102,7 @@ model EmailSupport {
   userId    String?
   name      String
   email     String
+  orderId   String?
   subject   String
   message   String
   createdAt DateTime @default(now())

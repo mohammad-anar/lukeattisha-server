@@ -92,4 +92,5 @@ model Operator {
   walletTransactions OperatorWalletTransaction[]
   refunds            Refund[]
   operatorCategories OperatorCategory[]
+  orderIssues        OrderIssue[]
 }

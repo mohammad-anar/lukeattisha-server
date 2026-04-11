@@ -4,14 +4,7 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
-  if (Array.isArray(payload)) {
-    const result = await prisma.fAQ.createMany({
-      data: payload,
-    });
-    return result;
-  }
-
-  const result = await prisma.fAQ.create({
+  const result = await prisma.emailSupport.create({
     data: payload,
   });
   return result;
@@ -21,16 +14,16 @@ const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = filters;
 
-  const andConditions = [];
+  const andConditions: Prisma.EmailSupportWhereInput[] = [];
 
   if (searchTerm) {
     andConditions.push({
-      OR: ["question", "answer"].map((field) => ({
+      OR: ['name', 'email', 'subject', 'message', 'orderId'].map((field) => ({
         [field]: {
-          contains: searchTerm,
+          contains: searchTerm as string,
           mode: 'insensitive',
         },
-      })),
+      })) as any,
     });
   }
 
@@ -44,49 +37,51 @@ const getAll = async (filters: any, options: any) => {
     });
   }
 
-  const whereConditions: Prisma.FAQWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+  const whereConditions: Prisma.EmailSupportWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const result = await prisma.fAQ.findMany({
+  const result = await prisma.emailSupport.findMany({
     where: whereConditions,
     skip,
     take: limit,
-    orderBy: sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
+    orderBy:
+      sortBy && sortOrder
+        ? { [sortBy]: sortOrder }
+        : { createdAt: 'desc' },
   });
-  const total = await prisma.fAQ.count({ where: whereConditions });
+  const total = await prisma.emailSupport.count({ where: whereConditions });
 
   return {
-    meta: { total, totalPage: Math.ceil(total / limit), page, limit },
+    meta: {
+      total,
+      totalPage: Math.ceil(total / limit),
+      page,
+      limit,
+    },
     data: result,
   };
 };
 
 const getById = async (id: string) => {
-  const result = await prisma.fAQ.findUnique({
+  const result = await prisma.emailSupport.findUnique({
     where: { id },
   });
-  if (!result) throw new ApiError(404, 'FAQ not found');
-  return result;
-};
-
-const update = async (id: string, payload: any) => {
-  const result = await prisma.fAQ.update({
-    where: { id },
-    data: payload,
-  });
+  if (!result) {
+    throw new ApiError(404, 'EmailSupport not found');
+  }
   return result;
 };
 
 const deleteById = async (id: string) => {
-  const result = await prisma.fAQ.delete({
+  const result = await prisma.emailSupport.delete({
     where: { id },
   });
   return result;
 };
 
-export const FAQService = {
+export const EmailSupportService = {
   create,
   getAll,
   getById,
-  update,
   deleteById,
 };

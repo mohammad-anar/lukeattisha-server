@@ -1,6 +1,7 @@
 import { prisma } from '../../../helpers.ts/prisma.js';
 import ApiError from '../../../errors/ApiError.js';
 import { RefundStatus, TransactionType } from '@prisma/client';
+import { StripeHelpers } from '../../../helpers.ts/stripeHelpers.js';
 
 const requestRefund = async (userId: string, payload: { orderId: string, operatorId: string, amount: number, reason: string }) => {
   const { orderId, operatorId, amount, reason } = payload;
@@ -62,6 +63,20 @@ const processRefundByOperator = async (operatorId: string, refundId: string, act
         data: { paymentStatus: 'REFUNDED' }
       });
 
+      // Call Stripe Refund API
+      const order = await tx.order.findUnique({
+        where: { id: updatedRefund.orderId },
+        include: { payment: true }
+      });
+
+      if (order?.payment?.stripePaymentIntentId) {
+        await StripeHelpers.createRefund(
+          order.payment.stripePaymentIntentId,
+          Math.round(Number(updatedRefund.amount) * 100),
+          { refundId: updatedRefund.id, orderId: order.id }
+        );
+      }
+
       await updateWalletsOnRefund(tx, updatedRefund);
       return updatedRefund;
     });
@@ -99,6 +114,20 @@ const processRefundByAdmin = async (adminId: string, refundId: string, action: '
         where: { id: updatedRefund.orderId },
         data: { paymentStatus: partialAmount ? 'PAID' : 'REFUNDED' } // If partial, it stays PAID but record shows refund
       });
+
+      // Call Stripe Refund API
+      const order = await tx.order.findUnique({
+        where: { id: updatedRefund.orderId },
+        include: { payment: true }
+      });
+
+      if (order?.payment?.stripePaymentIntentId) {
+        await StripeHelpers.createRefund(
+          order.payment.stripePaymentIntentId,
+          Math.round(Number(updatedRefund.amount) * 100),
+          { refundId: updatedRefund.id, orderId: order.id, partial: !!partialAmount }
+        );
+      }
 
       await updateWalletsOnRefund(tx, updatedRefund);
       return updatedRefund;

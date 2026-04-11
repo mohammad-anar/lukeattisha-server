@@ -266,6 +266,25 @@ export const getAccountStatus = async (accountId: string) => {
   };
 };
 
+/**
+ * Creates a refund for a payment intent
+ * @param paymentIntentId Stripe Payment Intent ID
+ * @param amountInCents Amount in cents (optional, if missing it's a full refund)
+ * @param metadata Additional metadata
+ */
+export const createRefund = async (
+  paymentIntentId: string,
+  amountInCents?: number,
+  metadata?: any
+) => {
+  const refund = await stripe.refunds.create({
+    payment_intent: paymentIntentId,
+    ...(amountInCents && { amount: amountInCents }),
+    metadata,
+  });
+  return refund;
+};
+
 export const StripeHelpers = {
   createUserSubscriptionSession,
   createOperatorAdSubscriptionSession,
@@ -277,4 +296,5 @@ export const StripeHelpers = {
   createConnectAccount,
   getAccountStatus,
   createTransfer,
+  createRefund,
 };

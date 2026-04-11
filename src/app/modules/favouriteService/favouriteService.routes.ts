@@ -9,7 +9,7 @@ const router = express.Router();
 
 router.post('/', validateRequest(FavouriteServiceValidation.createSchema), auth(UserRole.USER), FavouriteServiceController.create);
 router.get('/my-favourites', auth(UserRole.USER), FavouriteServiceController.getMyFavourites);
-router.get('/', auth(UserRole.USER), FavouriteServiceController.getAll);
+router.get('/', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN), FavouriteServiceController.getAll);
 // router.get('/:id', auth(UserRole.USER), FavouriteServiceController.getById);
 // router.patch('/:id', validateRequest(FavouriteServiceValidation.updateSchema), auth(UserRole.USER), FavouriteServiceController.update);
 // router.delete('/:id', auth(UserRole.USER), FavouriteServiceController.deleteById);

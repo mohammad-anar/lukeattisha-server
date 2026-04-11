@@ -3,8 +3,27 @@ import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 import { NotificationService } from '../notification/notification.service.js';
+import { RefundService } from '../refund/refund.service.js';
 
 const create = async (payload: any) => {
+  const { orderId, userId } = payload;
+
+  console.log(payload);
+
+  // Verify order belongs to user
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { operatorOrders: true }
+  });
+
+  if (!order) throw new ApiError(404, 'Order not found');
+  if (order.userId !== userId) throw new ApiError(403, 'Unauthorized');
+
+  // Auto-assign first operator if not provided
+  if (!payload.operatorId && order.operatorOrders.length > 0) {
+    payload.operatorId = order.operatorOrders[0].operatorId;
+  }
+
   const result = await prisma.orderIssue.create({
     data: payload,
     include: { order: true }
@@ -21,12 +40,28 @@ const create = async (payload: any) => {
     });
   }
 
+  // Notify Operator
+  if (payload.operatorId) {
+    const operator = await prisma.operator.findUnique({
+      where: { id: payload.operatorId },
+      include: { user: true }
+    });
+    if (operator) {
+      await NotificationService.create({
+        userId: operator.userId,
+        title: 'New Issue on Your Order',
+        message: `An issue has been reported for order ${result.order.orderNumber}.`,
+        type: 'SYSTEM'
+      });
+    }
+  }
+
   return result;
 };
 
 const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filters;
+  const { searchTerm, operatorId, userId, ...filterData } = filters;
 
   const andConditions = [];
 
@@ -38,6 +73,22 @@ const getAll = async (filters: any, options: any) => {
           mode: 'insensitive',
         },
       })),
+    });
+  }
+
+  if (operatorId) {
+    andConditions.push({
+      operatorId: {
+        equals: operatorId,
+      },
+    });
+  }
+
+  if (userId) {
+    andConditions.push({
+      userId: {
+        equals: userId,
+      },
     });
   }
 
@@ -77,27 +128,158 @@ const getById = async (id: string) => {
   return result;
 };
 
-const updateStatus = async (id: string, status: any) => {
-  const result = await prisma.orderIssue.update({
+const respondToIssue = async (id: string, operatorId: string, payload: { action?: 'REFUND' | 'ESCALATE', amount?: number, note?: string, status?: string, operatorNote?: string, refundAmount?: number }) => {
+  const issue = await prisma.orderIssue.findUnique({
     where: { id },
-    data: { status },
     include: { order: true }
   });
 
-  // Notify User
-  await NotificationService.create({
-    userId: result.userId,
-    title: 'Order Issue Updated',
-    message: `Your issue regarding order ${result.order.orderNumber} has been updated to ${status}.`,
-    type: 'SYSTEM'
+  if (!issue) throw new ApiError(404, 'Order issue not found');
+  if (issue.operatorId !== operatorId) throw new ApiError(403, 'Unauthorized');
+  if (issue.isEscalated) throw new ApiError(400, 'This issue has been escalated and cannot be modified by the operator.');
+
+  // Normalize payload for internal use
+  const action = payload.action || (payload.status === 'REFUNDED' ? 'REFUND' : (payload.status === 'ESCALATED' ? 'ESCALATE' : undefined));
+  const amount = payload.amount || payload.refundAmount;
+  const note = payload.note || payload.operatorNote;
+
+  if (action === 'ESCALATE') {
+    const result = await prisma.orderIssue.update({
+      where: { id },
+      data: {
+        status: 'ESCALATED',
+        isEscalated: true,
+        escalationNote: note
+      }
+    });
+
+    // Notify Admin
+    const admin = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+    if (admin) {
+      await NotificationService.create({
+        userId: admin.id,
+        title: 'Issue Escalated to Admin',
+        message: `An issue for order ${issue.order.orderNumber} has been escalated.`,
+        type: 'SYSTEM'
+      });
+    }
+    return result;
+  }
+
+  if (action === 'REFUND') {
+    if (!amount) throw new ApiError(400, 'Refund amount is required');
+
+    return await prisma.$transaction(async (tx) => {
+      // 1. Create Refund Request via RefundService
+      const refund = await RefundService.requestRefund(issue.userId, {
+        orderId: issue.orderId,
+        operatorId: operatorId,
+        amount: amount!,
+        reason: issue.description
+      });
+
+      // 2. Process/Approve the refund immediately (Operator initiated)
+      await RefundService.processRefundByOperator(operatorId, refund.id, 'APPROVE');
+
+      // 3. Update Issue Status
+      const updatedIssue = await tx.orderIssue.update({
+        where: { id },
+        data: {
+          status: 'REFUNDED',
+          refundAmount: amount,
+          operatorNote: note
+        }
+      });
+
+      return updatedIssue;
+    });
+  }
+
+  // Handle direct updates for other statuses (e.g., RESOLVED)
+  if (payload.status || payload.operatorNote || payload.refundAmount) {
+     return await prisma.orderIssue.update({
+       where: { id },
+       data: {
+         status: (payload.status as any) || issue.status,
+         operatorNote: note || issue.operatorNote,
+         refundAmount: amount || issue.refundAmount
+       }
+     });
+  }
+
+  throw new ApiError(400, 'No valid action or update data provided');
+};
+
+const resolveEscalatedIssue = async (id: string, adminId: string, payload: { action?: 'REFUND' | 'PARTIAL_REFUND' | 'SOLVE', amount?: number, note?: string, status?: string, adminNote?: string, refundAmount?: number }) => {
+  const issue = await prisma.orderIssue.findUnique({
+    where: { id },
+    include: { order: true }
   });
 
-  return result;
+  if (!issue) throw new ApiError(404, 'Order issue not found');
+  if (!issue.isEscalated) throw new ApiError(400, 'Issue is not escalated to admin.');
+
+  // Normalize payload
+  const action = payload.action || (payload.status === 'REFUNDED' ? 'REFUND' : (payload.status === 'RESOLVED' ? 'SOLVE' : undefined));
+  const amount = payload.amount || payload.refundAmount;
+  const note = payload.note || payload.adminNote;
+
+  if (action === 'SOLVE') {
+    return await prisma.orderIssue.update({
+      where: { id },
+      data: {
+        status: 'RESOLVED',
+        adminNote: note
+      }
+    });
+  }
+
+  if (action === 'REFUND' || action === 'PARTIAL_REFUND') {
+    if (!amount) throw new ApiError(400, 'Refund amount is required');
+
+    return await prisma.$transaction(async (tx) => {
+      // 1. Create Refund Request
+      const refund = await RefundService.requestRefund(issue.userId, {
+        orderId: issue.orderId,
+        operatorId: issue.operatorId!,
+        amount: amount!,
+        reason: `Admin Resolved: ${issue.description}`
+      });
+
+      // 2. Process by Admin
+      await RefundService.processRefundByAdmin(adminId, refund.id, 'APPROVE', action === 'PARTIAL_REFUND' ? amount : undefined);
+
+      // 3. Update Issue
+      return await tx.orderIssue.update({
+        where: { id },
+        data: {
+          status: 'REFUNDED',
+          refundAmount: amount,
+          adminNote: note
+        }
+      });
+    });
+  }
+
+  // Fallback direct update
+  if (payload.status || payload.adminNote || payload.refundAmount) {
+     return await prisma.orderIssue.update({
+       where: { id },
+       data: {
+         status: (payload.status as any) || issue.status,
+         adminNote: note || issue.adminNote,
+         refundAmount: amount || issue.refundAmount
+       }
+     });
+  }
+
+  throw new ApiError(400, 'No valid action or update data provided');
 };
 
 export const OrderIssueService = {
   create,
   getAll,
   getById,
-  updateStatus,
+  respondToIssue,
+  resolveEscalatedIssue,
 };

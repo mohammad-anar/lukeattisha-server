@@ -92,17 +92,25 @@ model OrderTracking {
 }
 
 model OrderIssue {
-  id          String      @id @default(cuid())
-  orderId     String
-  userId      String
-  description String
-  imageUrl    String?
-  status      IssueStatus @default(PENDING)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id             String      @id @default(cuid())
+  orderId        String
+  userId         String
+  operatorId     String?
+  issueTitle     String?
+  description    String
+  images         String[]
+  status         IssueStatus @default(PENDING)
+  refundAmount   Decimal?    @db.Decimal(10, 2)
+  operatorNote   String?
+  adminNote      String?
+  isEscalated    Boolean     @default(false)
+  escalationNote String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
-  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order    Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  operator Operator? @relation(fields: [operatorId], references: [id], onDelete: SetNull)
 }
 
 model OperatorOrder {
