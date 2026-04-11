@@ -94,6 +94,7 @@ const getAll = async (filters: any, options: any) => {
       take: limit,
       include: {
         category: true,
+        serviceAddons:true,
         // ... rest of your includes
       },
       orderBy: sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
