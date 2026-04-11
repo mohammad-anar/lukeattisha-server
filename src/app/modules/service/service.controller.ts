@@ -77,7 +77,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const assignAddons = catchAsync(async (req: Request, res: Response) => {
-  const operatorIdUserId = req.user?.id;
+  const operatorIdUserId = (req as any).user?.id;
   const operator = await prisma.operator.findUnique({
     where: { userId: operatorIdUserId },
   });

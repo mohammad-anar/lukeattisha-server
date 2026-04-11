@@ -1,14 +1,17 @@
 import express from 'express';
 import { ChatRoomController } from './chatRoom.controller.js';
-// import validateRequest from '../../middlewares/validateRequest.js';
-// import { ChatRoomValidation } from './chatRoom.validation.js';
+import auth from '../../middlewares/auth.js';
+import { UserRole } from '@prisma/client';
 
 const router = express.Router();
 
-router.post('/', ChatRoomController.create);
-router.get('/', ChatRoomController.getAll);
-router.get('/:id', ChatRoomController.getById);
-router.patch('/:id', ChatRoomController.update);
-router.delete('/:id', ChatRoomController.deleteById);
+router.post('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), ChatRoomController.create);
+router.get('/my-rooms', auth(UserRole.USER, UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN), ChatRoomController.getMyRooms);
+router.post('/create-support', auth(UserRole.USER), ChatRoomController.createSupportRoom);
+
+router.get('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), ChatRoomController.getAll);
+router.get('/:id', auth(UserRole.USER, UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN), ChatRoomController.getById);
+router.patch('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), ChatRoomController.update);
+router.delete('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), ChatRoomController.deleteById);
 
 export const ChatRoomRouter = router;

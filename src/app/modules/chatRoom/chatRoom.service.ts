@@ -42,11 +42,18 @@ const getAll = async (filters: any, options: any) => {
   const result = await prisma.chatRoom.findMany({
     where: whereConditions,
     skip,
-    take: limit,
-    orderBy:
-      sortBy && sortOrder
-        ? { [sortBy]: sortOrder }
-        : { createdAt: 'desc' },
+    include: {
+      participants: {
+        include: {
+          user: { select: { name: true, email: true, role: true, avatar: true } },
+          operator: { select: { user: { select: { name: true, avatar: true } } } }
+        }
+      },
+      messages: {
+        take: 1,
+        orderBy: { createdAt: 'desc' }
+      }
+    }
   });
   const total = await prisma.chatRoom.count({ where: whereConditions });
 
@@ -64,6 +71,21 @@ const getAll = async (filters: any, options: any) => {
 const getById = async (id: string) => {
   const result = await prisma.chatRoom.findUnique({
     where: { id },
+    include: {
+      participants: {
+        include: {
+          user: { select: { id: true, name: true, role: true, avatar: true } },
+          operator: { select: { id: true, user: { select: { name: true, avatar: true } } } }
+        }
+      },
+      messages: {
+        orderBy: { createdAt: 'asc' },
+        include: {
+          senderUser: { select: { name: true, avatar: true } },
+          senderOperator: { select: { user: { select: { name: true, avatar: true } } } }
+        }
+      }
+    }
   });
   if (!result) {
     throw new ApiError(404, 'ChatRoom not found');
@@ -80,6 +102,88 @@ const update = async (id: string, payload: any) => {
   return result;
 };
 
+const getMyRooms = async (userId: string, role: string) => {
+  const where: Prisma.ChatRoomWhereInput = {
+    participants: {
+      some: role === 'OPERATOR' ? { operator: { userId } } : { userId }
+    }
+  };
+
+  const result = await prisma.chatRoom.findMany({
+    where,
+    include: {
+      participants: {
+        include: {
+          user: { select: { id: true, name: true, role: true, avatar: true } },
+          operator: { select: { id: true, user: { select: { name: true, avatar: true } } } }
+        }
+      },
+      messages: {
+        take: 1,
+        orderBy: { createdAt: 'desc' }
+      }
+    },
+    orderBy: { updatedAt: 'desc' }
+  });
+
+  return result;
+};
+
+const getOrCreateSupportRoom = async (userId: string) => {
+  // 1. Check if an active live support room exists for this user
+  const existingRoom = await prisma.chatRoom.findFirst({
+    where: {
+      participants: { some: { userId } },
+      ticket: { type: 'LIVE_CHAT', status: { notIn: ['RESOLVED', 'CLOSED'] } }
+    }
+  });
+
+  if (existingRoom) return existingRoom;
+
+  // 2. Create a new support ticket and room
+  const result = await prisma.$transaction(async (tx) => {
+    const ticketNumber = `SUP-${Date.now()}`;
+    const ticket = await tx.supportTicket.create({
+      data: {
+        ticketNumber,
+        userId,
+        subject: 'Live Chat Support',
+        description: 'Auto-generated for live chat session',
+        type: 'LIVE_CHAT',
+        status: 'OPEN'
+      }
+    });
+
+    const room = await tx.chatRoom.create({
+      data: {
+        name: 'Live Support',
+        ticketId: ticket.id,
+      }
+    });
+
+    // Add user as participant
+    await tx.chatParticipant.create({
+      data: { roomId: room.id, userId }
+    });
+
+    // Add all admins as participants
+    const admins = await tx.user.findMany({
+      where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+      select: { id: true }
+    });
+
+    for (const admin of admins) {
+      await tx.chatParticipant.create({
+        data: { roomId: room.id, userId: admin.id }
+      });
+    }
+
+    return room;
+  });
+
+  return result;
+};
+
 const deleteById = async (id: string) => {
   await getById(id);
   const result = await prisma.chatRoom.delete({
@@ -92,6 +196,8 @@ export const ChatRoomService = {
   create,
   getAll,
   getById,
+  getMyRooms,
+  getOrCreateSupportRoom,
   update,
   deleteById,
 };

@@ -4,6 +4,7 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 import { StripeHelpers } from '../../../helpers.ts/stripeHelpers.js';
 import { config } from '../../../config/index.js';
+import { NotificationService } from '../notification/notification.service.js';
 
 const checkout = async (userId: string, dto: {
   pickupAddress: {
@@ -209,6 +210,36 @@ const checkout = async (userId: string, dto: {
 
   // 9. Clear cart
   await txClearCart(userId);
+
+  // 10. Notifications
+  // Notify User
+  await NotificationService.create({
+    userId,
+    title: 'Order Placed',
+    message: `Your order ${order.orderNumber} has been placed successfully.`,
+    type: 'ORDER'
+  });
+
+  // Notify Admin
+  const admin = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+  if (admin) {
+    await NotificationService.create({
+      userId: admin.id,
+      title: 'New Order',
+      message: `A new order ${order.orderNumber} has been created.`,
+      type: 'ORDER'
+    });
+  }
+
+  // Notify Operators
+  for (const opOrder of (order as any).operatorOrders) {
+    await NotificationService.create({
+      userId: opOrder.operator.userId,
+      title: 'New Order Received',
+      message: `You have received a new order ${order.orderNumber}.`,
+      type: 'ORDER'
+    });
+  }
 
   return { orderId: order.id, paymentUrl: session.url };
 };
@@ -453,6 +484,23 @@ const updateOrderStatus = async (id: string, status: any) => {
     });
   } catch (err) {
     console.error('Socket emission failed for order update', err);
+  }
+
+  // User Notification on status update
+  await NotificationService.create({
+    userId: order.userId,
+    title: 'Order Status Updated',
+    message: `Your order ${order.orderNumber} status has been updated to ${finalStatus}.`,
+    type: 'ORDER'
+  });
+
+  if (finalStatus === 'DELIVERED') {
+    await NotificationService.create({
+      userId: order.userId,
+      title: 'Order Delivered',
+      message: `Your order ${order.orderNumber} has been delivered. Thank you!`,
+      type: 'ORDER'
+    });
   }
 
   return result;

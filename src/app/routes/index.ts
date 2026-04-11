@@ -40,6 +40,9 @@ import { StoreBundleRouter } from 'app/modules/storeBundle/storeBundle.routes.js
 import { RefundRoutes } from '../modules/refund/refund.routes.js';
 import { AdminAnalyticsRouter } from '../modules/adminAnalytics/adminAnalytics.routes.js';
 import { OperatorAnalyticsRouter } from '../modules/operatorAnalytics/operatorAnalytics.routes.js';
+import { LegalRouter } from '../modules/legal/legal.routes.js';
+import { OrderIssueRouter } from '../modules/orderIssue/orderIssue.routes.js';
+import { FAQRouter } from '../modules/faq/faq.routes.js';
 
 const router = express.Router();
 
@@ -85,6 +88,9 @@ const moduleRoutes = [
   { path: '/usersubscription', route: UserSubscriptionRouter },
   { path: '/admin-analytics', route: AdminAnalyticsRouter },
   { path: '/operator-analytics', route: OperatorAnalyticsRouter },
+  { path: '/legal', route: LegalRouter },
+  { path: '/order-issue', route: OrderIssueRouter },
+  { path: '/faq', route: FAQRouter },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

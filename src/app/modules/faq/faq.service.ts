@@ -4,7 +4,7 @@ import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 
 const create = async (payload: any) => {
-  const result = await prisma.chatParticipant.create({
+  const result = await prisma.fAQ.create({
     data: payload,
   });
   return result;
@@ -18,7 +18,7 @@ const getAll = async (filters: any, options: any) => {
 
   if (searchTerm) {
     andConditions.push({
-      OR: [].map((field) => ({
+      OR: ["question", "answer"].map((field) => ({
         [field]: {
           contains: searchTerm,
           mode: 'insensitive',
@@ -37,43 +37,32 @@ const getAll = async (filters: any, options: any) => {
     });
   }
 
-  const whereConditions: Prisma.ChatParticipantWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
+  const whereConditions: Prisma.FAQWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
 
-  const result = await prisma.chatParticipant.findMany({
+  const result = await prisma.fAQ.findMany({
     where: whereConditions,
     skip,
     take: limit,
-    orderBy:
-      sortBy && sortOrder
-        ? { [sortBy]: sortOrder }
-        : { joinedAt: 'desc' },
+    orderBy: sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
   });
-  const total = await prisma.chatParticipant.count({ where: whereConditions });
+  const total = await prisma.fAQ.count({ where: whereConditions });
 
   return {
-    meta: {
-      total,
-      totalPage: Math.ceil(total / limit),
-      page,
-      limit,
-    },
+    meta: { total, totalPage: Math.ceil(total / limit), page, limit },
     data: result,
   };
 };
 
 const getById = async (id: string) => {
-  const result = await prisma.chatParticipant.findUnique({
+  const result = await prisma.fAQ.findUnique({
     where: { id },
   });
-  if (!result) {
-    throw new ApiError(404, 'ChatParticipant not found');
-  }
+  if (!result) throw new ApiError(404, 'FAQ not found');
   return result;
 };
 
 const update = async (id: string, payload: any) => {
-  await getById(id);
-  const result = await prisma.chatParticipant.update({
+  const result = await prisma.fAQ.update({
     where: { id },
     data: payload,
   });
@@ -81,14 +70,13 @@ const update = async (id: string, payload: any) => {
 };
 
 const deleteById = async (id: string) => {
-  await getById(id);
-  const result = await prisma.chatParticipant.delete({
+  const result = await prisma.fAQ.delete({
     where: { id },
   });
   return result;
 };
 
-export const ChatParticipantService = {
+export const FAQService = {
   create,
   getAll,
   getById,

@@ -33,7 +33,7 @@ const create = async (payload: any) => {
 
 const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filters;
+  const { searchTerm,userId, ...filterData } = filters;
 
   const andConditions = [];
 
@@ -45,6 +45,14 @@ const getAll = async (filters: any, options: any) => {
           mode: 'insensitive',
         },
       })),
+    });
+  }
+
+  if (userId) {
+    andConditions.push({
+      userId: {
+        equals: userId,
+      },
     });
   }
 
@@ -109,10 +117,28 @@ const deleteById = async (id: string) => {
   return result;
 };
 
+const markAllAsRead = async (userId: string) => {
+  const result = await prisma.notification.updateMany({
+    where: { userId, isRead: false },
+    data: { isRead: true },
+  });
+  return result;
+};
+
+const markAsRead = async (notificationId: string, userId: string) => {
+  const result = await prisma.notification.updateMany({
+    where: { id: notificationId, userId },
+    data: { isRead: true },
+  });
+  return result;
+};
+
 export const NotificationService = {
   create,
   getAll,
   getById,
   update,
   deleteById,
+  markAllAsRead,
+  markAsRead,
 };

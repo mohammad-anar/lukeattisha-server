@@ -173,6 +173,28 @@ const revertDelete = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const updateNotificationPreferences = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const result = await UserService.updateNotificationPreferences(userId, req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Notification preferences updated successfully',
+    data: result,
+  });
+});
+
+const getNotificationPreferences = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const result = await UserService.getNotificationPreferences(userId);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Notification preferences fetched successfully',
+    data: result,
+  });
+});
+
 export const UserController = {
   create,
   createAdmin,
@@ -188,4 +210,6 @@ export const UserController = {
   banUser,
   unbanUser,
   revertDelete,
+  updateNotificationPreferences,
+  getNotificationPreferences,
 };

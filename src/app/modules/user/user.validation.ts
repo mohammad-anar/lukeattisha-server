@@ -26,8 +26,15 @@ const updateSchema = z.object({
   isSubscribed: z.boolean().optional(),
 });
 
+const updateNotificationPreferencesSchema = z.object({
+  push: z.boolean().optional(),
+  sms: z.boolean().optional(),
+  email: z.boolean().optional(),
+});
+
 export const UserValidation = {
   createAdminSchema,
   createOperatorSchema,
   updateSchema,
+  updateNotificationPreferencesSchema,
 };

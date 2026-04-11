@@ -367,6 +367,7 @@ const createAdmin = async (payload: any, creatorId: string) => {
       isVerified: true,
       createdById: creatorId,
       userId: customUserId,
+      notificationPref: { create: {} }
     },
   });
   return result;
@@ -390,6 +391,7 @@ const createOperator = async (payload: any, creatorId: string) => {
         isVerified: true,
         createdById: creatorId,
         userId: customUserId,
+        notificationPref: { create: {} }
       }
     });
 
@@ -615,6 +617,7 @@ const getMe = async (id: string, role: string) => {
         isSubscribed: true,
         userId: true,
         isVerified: true,
+        notificationPref: true,
         createdAt: true,
         updatedAt: true,
       }
@@ -654,6 +657,7 @@ const getMe = async (id: string, role: string) => {
         isSubscribed: true,
         userId: true,
         isVerified: true,
+        notificationPref: true,
         createdAt: true,
         updatedAt: true,
       }
@@ -690,6 +694,7 @@ const getMe = async (id: string, role: string) => {
         isSubscribed: true,
         userId: true,
         isVerified: true,
+        notificationPref: true,
         createdAt: true,
         updatedAt: true,
       }
@@ -724,6 +729,26 @@ const revertDelete = async (id: string) => {
   return result;
 };
 
+const getNotificationPreferences = async (userId: string) => {
+  const result = await prisma.userNotificationPreference.findUnique({
+    where: { userId },
+  });
+  return result;
+};
+
+const updateNotificationPreferences = async (userId: string, payload: { push?: boolean; sms?: boolean; email?: boolean }) => {
+  // We can use upsert to create or update the preference
+  const result = await prisma.userNotificationPreference.upsert({
+    where: { userId },
+    update: payload,
+    create: {
+      userId,
+      ...payload
+    }
+  });
+  return result;
+};
+
 export const UserService = {
   create,
   createAdmin,
@@ -739,4 +764,6 @@ export const UserService = {
   unbanUser,
   deleteById,
   revertDelete,
+  updateNotificationPreferences,
+  getNotificationPreferences,
 };

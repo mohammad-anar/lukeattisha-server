@@ -6,6 +6,7 @@ import { StripeHelpers, stripe } from '../../../helpers.ts/stripeHelpers.js';
 import { config } from '../../../config/index.js';
 import { emailHelper } from '../../../helpers.ts/emailHelper.js';
 import { generateTransactionId, generateInvoiceNumber } from '../../../helpers.ts/idGenerator.js';
+import { NotificationService } from '../notification/notification.service.js';
 
 const create = async (payload: any) => {
   const result = await prisma.payment.create({
@@ -165,6 +166,23 @@ const handleUserSubscriptionSuccess = async (userId: string, session: any) => {
         <p><strong>Transaction:</strong> ${transactionId}</p>
         <p><strong>Amount:</strong> $${plan.price}</p>
       `,
+    });
+  }
+
+  // Notifications
+  await NotificationService.create({
+    userId,
+    title: 'Subscription Activated',
+    message: `Payment successful! Your ${plan.name} subscription is now active.`,
+    type: 'SUBSCRIPTION'
+  });
+
+  if (admin) {
+    await NotificationService.create({
+      userId: admin.id,
+      title: 'New User Subscription',
+      message: `User ${user.name} has subscribed to ${plan.name}.`,
+      type: 'SUBSCRIPTION'
     });
   }
 };
@@ -359,6 +377,36 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
       });
     }
 
+    // Notifications
+    // User Notification
+    await NotificationService.create({
+      userId: order.userId,
+      title: 'Order Paid Successfully',
+      message: `Your payment for order ${order.orderNumber} has been received.`,
+      type: 'PAYMENT'
+    });
+
+    // Admin Notification
+    const superAdmin = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+    if (superAdmin) {
+      await NotificationService.create({
+        userId: superAdmin.id,
+        title: 'New Payment Received',
+        message: `Payment for order ${order.orderNumber} has been received. Amount: $${order.totalAmount}`,
+        type: 'PAYMENT'
+      });
+    }
+
+    // Operator Notifications
+    for (const opOrder of order.operatorOrders) {
+      await NotificationService.create({
+        userId: opOrder.operator.userId,
+        title: 'New Payment Received',
+        message: `A new payment for order ${order.orderNumber} has been received and credited to your wallet.`,
+        type: 'PAYMENT'
+      });
+    }
+
     // 7. External Stripe Transfers (Outside DB transaction)
     for (const opOrder of order.operatorOrders) {
       const operator = opOrder.operator;
@@ -497,6 +545,24 @@ const handleAdSubscriptionSuccess = async (operatorId: string, planId: string, s
         <p><strong>Transaction:</strong> ${transactionId}</p>
         <p><strong>Amount:</strong> $${plan.price}</p>
       `,
+    });
+  }
+
+  // Notifications
+  await NotificationService.create({
+    userId: operator.userId,
+    title: 'Ad Subscription Activated',
+    message: `Success! Your ad subscription for ${plan.name} is now active.`,
+    type: 'AD_SUBSCRIPTION'
+  });
+
+  const superAdmin = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
+  if (superAdmin) {
+    await NotificationService.create({
+      userId: superAdmin.id,
+      title: 'New Ad Subscription',
+      message: `Operator ${operator.user.name} has subscribed to ad plan ${plan.name}.`,
+      type: 'AD_SUBSCRIPTION'
     });
   }
 

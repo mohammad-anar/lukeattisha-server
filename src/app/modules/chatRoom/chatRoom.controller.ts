@@ -14,6 +14,28 @@ const create = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyRooms = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId, role } = (req as any).user;
+  const result = await ChatRoomService.getMyRooms(userId, role);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'My ChatRooms fetched successfully',
+    data: result,
+  });
+});
+
+const createSupportRoom = catchAsync(async (req: Request, res: Response) => {
+  const { id: userId } = (req as any).user;
+  const result = await ChatRoomService.getOrCreateSupportRoom(userId);
+  sendResponse(res, {
+    success: true,
+    statusCode: 201,
+    message: 'Support chat room ready',
+    data: result,
+  });
+});
+
 const getAll = catchAsync(async (req: Request, res: Response) => {
   const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
@@ -28,7 +50,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await ChatRoomService.getById(req.params.id);
+  const result = await ChatRoomService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +60,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await ChatRoomService.update(req.params.id, req.body);
+  const result = await ChatRoomService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +70,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await ChatRoomService.deleteById(req.params.id);
+  const result = await ChatRoomService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -59,6 +81,8 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
 
 export const ChatRoomController = {
   create,
+  getMyRooms,
+  createSupportRoom,
   getAll,
   getById,
   update,

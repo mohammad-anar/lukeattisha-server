@@ -47,7 +47,7 @@ const create = async (payload: { operatorId: string, amount: number }) => {
       data: {
         walletId: wallet.id,
         amount,
-        transactionType: "WITHDRAWAL",
+        type: "WITHDRAWAL",
         withdrawalId: withdrawal.id,
         note: `Withdrawal request of $${amount} (Held in escrow)`,
       },

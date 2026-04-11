@@ -15,6 +15,8 @@ router.patch('/approve-operator/:id', auth(UserRole.SUPER_ADMIN), UserController
 router.get('/admins', auth(UserRole.SUPER_ADMIN), UserController.getAllAdmins);
 router.get('/operators', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), UserController.getAllOperators);
 router.get('/get-me', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), UserController.getMe);
+router.get('/notification-preferences', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), UserController.getNotificationPreferences);
+router.patch('/notification-preferences', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), validateRequest(UserValidation.updateNotificationPreferencesSchema), UserController.updateNotificationPreferences);
 router.get('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), UserController.getAll);
 router.get('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), UserController.getById);
 router.patch('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), fileUploadHandler(), validateRequest(UserValidation.updateSchema), UserController.update);

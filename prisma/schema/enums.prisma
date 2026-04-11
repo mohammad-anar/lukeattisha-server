@@ -102,6 +102,7 @@ enum SupportTicketType {
   ORDER_ISSUE
   PAYMENT_ISSUE
   GENERAL
+  LIVE_CHAT
 }
 
 enum TransferStatus {
