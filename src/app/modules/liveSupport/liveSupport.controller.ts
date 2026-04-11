@@ -39,8 +39,19 @@ const sendMessage = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyRoom = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const result = await LiveSupportService.getMyRoom(userId);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Live support room retrieved successfully',
+    data: result,
+  });
+});
+
 const getMessages = catchAsync(async (req: Request, res: Response) => {
-  const result = await LiveSupportService.getMessages(req.params.roomId);
+  const result = await LiveSupportService.getMessages(req.params.roomId as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -66,6 +77,7 @@ const getAllRooms = catchAsync(async (req: Request, res: Response) => {
 export const LiveSupportController = {
   startChat,
   sendMessage,
+  getMyRoom,
   getMessages,
   getAllRooms,
 };

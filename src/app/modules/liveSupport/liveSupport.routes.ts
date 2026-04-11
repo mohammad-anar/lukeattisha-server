@@ -14,6 +14,12 @@ router.post(
   LiveSupportController.startChat
 );
 
+router.get(
+  '/my-room',
+  auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  LiveSupportController.getMyRoom
+);
+
 router.post(
   '/message',
   auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN),

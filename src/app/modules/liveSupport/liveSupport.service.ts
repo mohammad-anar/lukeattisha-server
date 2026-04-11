@@ -62,6 +62,28 @@ const sendMessage = async (payload: {
   return result;
 };
 
+// get my room
+const getMyRoom = async (userId: string) => {
+  const result = await prisma.liveSupportRoom.findUnique({
+    where: { userId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true,
+        },
+      },
+      messages: {
+        take: 1,
+        orderBy: { createdAt: 'desc' },
+      },
+    },
+  });
+  return result;
+};
+
 const getMessages = async (roomId: string) => {
   const result = await prisma.liveSupportMessage.findMany({
     where: { roomId },
@@ -132,4 +154,5 @@ export const LiveSupportService = {
   sendMessage,
   getMessages,
   getAllRooms,
+  getMyRoom,
 };
