@@ -69,6 +69,19 @@ const getAll = async (filters: any, options: any) => {
     where: whereConditions,
     skip,
     take: limit,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          avatar: true,
+          phone: true,
+          role: true,
+        }
+      },
+      chatRooms: true,
+    },
     orderBy:
       sortBy && sortOrder
         ? { [sortBy]: sortOrder }
@@ -90,6 +103,19 @@ const getAll = async (filters: any, options: any) => {
 const getById = async (id: string) => {
   const result = await prisma.supportTicket.findUnique({
     where: { id },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+          email: true,
+          phone: true,
+          role: true,
+        }
+      },
+      chatRooms: true,
+    }
   });
   if (!result) {
     throw new ApiError(404, 'SupportTicket not found');
@@ -115,12 +141,12 @@ const deleteById = async (id: string) => {
     await tx.chatMessage.deleteMany({
       where: { room: { ticketId: id } },
     });
-    
+
     // Deleting chat participants
     await tx.chatParticipant.deleteMany({
       where: { room: { ticketId: id } },
     });
-    
+
     // Deleting chat rooms
     await tx.chatRoom.deleteMany({
       where: { ticketId: id },
@@ -130,7 +156,7 @@ const deleteById = async (id: string) => {
     const deletedTicket = await tx.supportTicket.delete({
       where: { id },
     });
-    
+
     return deletedTicket;
   });
 

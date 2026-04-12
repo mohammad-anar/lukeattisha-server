@@ -7,7 +7,7 @@ import { PaymentController } from "./app/modules/payment/payment.controller.js";
 
 const app: Application = express();
 
-app.use(cors({ origin: true, credentials: true }));
+app.use(cors({ origin: (origin, callback) => callback(null, true), credentials: true }));
 app.use(express.static("uploads"));
 
 import "./config/passport.js";

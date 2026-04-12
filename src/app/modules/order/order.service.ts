@@ -253,21 +253,56 @@ const txClearCart = async (userId: string) => {
 
 const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filters;
+  const { searchTerm, fromDate, toDate, operatorId, ...filterData } = filters;
 
-  const andConditions = [];
+  const andConditions: Prisma.OrderWhereInput[] = [];
 
+  // Search Condition
   if (searchTerm) {
     andConditions.push({
-      OR: ["orderNumber"].map((field) => ({
-        [field]: {
-          contains: searchTerm,
-          mode: 'insensitive',
+      OR: [
+        {
+          orderNumber: {
+            contains: searchTerm as string,
+            mode: 'insensitive' as Prisma.QueryMode,
+          },
         },
-      })),
+        {
+          user: {
+            name: {
+              contains: searchTerm as string,
+              mode: 'insensitive' as Prisma.QueryMode,
+            },
+          },
+        },
+      ],
     });
   }
 
+  // Date Range Condition
+  if (fromDate || toDate) {
+    const dateCondition: Prisma.DateTimeFilter = {};
+    if (fromDate) dateCondition.gte = new Date(fromDate as string);
+    if (toDate) {
+       const endDate = new Date(toDate as string);
+       endDate.setHours(23, 59, 59, 999);
+       dateCondition.lte = endDate;
+    }
+    andConditions.push({ createdAt: dateCondition });
+  }
+
+  // Operator ID Condition
+  if (operatorId) {
+    andConditions.push({
+      operatorOrders: {
+        some: {
+          operatorId: operatorId as string,
+        },
+      },
+    });
+  }
+
+  // Other specific filters (status, paymentStatus, etc.)
   if (Object.keys(filterData).length > 0) {
     andConditions.push({
       AND: Object.keys(filterData).map((key) => ({
@@ -275,7 +310,7 @@ const getAll = async (filters: any, options: any) => {
           equals: (filterData as any)[key],
         },
       })),
-    });
+    } as any);
   }
 
   const whereConditions: Prisma.OrderWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};

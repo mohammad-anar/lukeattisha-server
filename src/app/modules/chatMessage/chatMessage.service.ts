@@ -46,7 +46,15 @@ const getAll = async (filters: any, options: any) => {
     orderBy:
       sortBy && sortOrder
         ? { [sortBy]: sortOrder }
-        : { createdAt: 'desc' },
+        : { createdAt: 'asc' }, // usually messages are older to newer
+    include: {
+        senderUser: {
+            select: { id: true, name: true, avatar: true }
+        },
+        senderOperator: {
+            select: { id: true, user: { select: { id: true, name: true, avatar: true } } }
+        }
+    }
   });
   const total = await prisma.chatMessage.count({ where: whereConditions });
 
@@ -61,9 +69,21 @@ const getAll = async (filters: any, options: any) => {
   };
 };
 
+const getByRoomId = async (roomId: string, options: any) => {
+    return await getAll({ roomId }, options);
+};
+
 const getById = async (id: string) => {
   const result = await prisma.chatMessage.findUnique({
     where: { id },
+    include: {
+        senderUser: {
+            select: { id: true, name: true, avatar: true }
+        },
+        senderOperator: {
+            select: { id: true, user: { select: { id: true, name: true, avatar: true } } }
+        }
+    }
   });
   if (!result) {
     throw new ApiError(404, 'ChatMessage not found');
@@ -92,6 +112,7 @@ export const ChatMessageService = {
   create,
   getAll,
   getById,
+  getByRoomId,
   update,
   deleteById,
 };

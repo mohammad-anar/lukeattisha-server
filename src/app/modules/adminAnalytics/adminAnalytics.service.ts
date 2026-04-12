@@ -248,7 +248,7 @@ const getMonthlyRevenueChart = async (filter: 'weekly' | 'monthly' | '3' | '6' |
 
   // ── 3 / 6 / 12: last N months, one bucket per month ────────────────────────
   const months = parseInt(filter) as 3 | 6 | 12;
-  const results: { month: string; revenue: number }[] = [];
+  const results: { label: string; revenue: number }[] = [];
   for (let i = months - 1; i >= 0; i--) {
     const date  = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const start = new Date(date.getFullYear(), date.getMonth(), 1);
@@ -258,10 +258,10 @@ const getMonthlyRevenueChart = async (filter: 'weekly' | 'monthly' | '3' | '6' |
       _sum: { platformFee: true },
     });
     const monthLabel = `${MONTH_SHORT[date.getMonth()]} ${date.getFullYear()}`;
-    results.push({ month: monthLabel, revenue: Number(agg._sum.platformFee ?? 0) });
+    results.push({ label: monthLabel, revenue: Number(agg._sum.platformFee ?? 0) });
   }
-  return results;
-};
+  return results; 
+};  
 
 // ─── 3. Orders Chart (weekly/monthly/yearly) ───────────────────────────────────
 

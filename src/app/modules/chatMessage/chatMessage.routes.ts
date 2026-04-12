@@ -8,6 +8,8 @@ const router = express.Router();
 router.post('/', ChatMessageController.create);
 router.get('/', ChatMessageController.getAll);
 router.get('/:id', ChatMessageController.getById);
+router.get('/:roomId/messages', ChatMessageController.getByRoomId);
+
 router.patch('/:id', ChatMessageController.update);
 router.delete('/:id', ChatMessageController.deleteById);
 

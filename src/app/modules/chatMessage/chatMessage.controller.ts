@@ -28,7 +28,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await ChatMessageService.getById(req.params.id);
+  const result = await ChatMessageService.getById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -38,7 +38,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await ChatMessageService.update(req.params.id, req.body);
+  const result = await ChatMessageService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -48,7 +48,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await ChatMessageService.deleteById(req.params.id);
+  const result = await ChatMessageService.deleteById(req.params.id as string);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -57,10 +57,23 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getByRoomId = catchAsync(async (req: Request, res: Response) => {
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  const result = await ChatMessageService.getByRoomId(req.params.roomId as string, options);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Chat messages for room fetched successfully',
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
 export const ChatMessageController = {
   create,
   getAll,
   getById,
+  getByRoomId,
   update,
   deleteById,
 };

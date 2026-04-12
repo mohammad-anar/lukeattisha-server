@@ -10,7 +10,7 @@ const socketMap: Map<string, Set<string>> = new Map();
 export const initSocket = (server: any) => {
   io = new Server(server, {
     pingTimeout: 60000,
-    cors: { origin: config.cors_origin },
+    cors: { origin: "*" },
   });
 
   io.on("connection", (socket: Socket) => {
