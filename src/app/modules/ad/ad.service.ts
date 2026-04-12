@@ -9,6 +9,22 @@ const create = async (payload: any) => {
 
   const now = new Date();
 
+  // Check if an active Ad already exists for this operator
+  const existingActiveAd = await prisma.ad.findFirst({
+    where: {
+      operatorId,
+      status: "ACTIVE",
+      subscription: {
+        status: "ACTIVE",
+        endDate: { gte: now }
+      }
+    }
+  });
+
+  if (existingActiveAd) {
+    throw new ApiError(400, "You already have an active ad. Only one active ad is permitted at a time.");
+  }
+
   // Find an active subscription for this operator
   const activeSubscription = await prisma.adSubscription.findFirst({
     where: {
