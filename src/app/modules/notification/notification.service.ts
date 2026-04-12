@@ -133,6 +133,94 @@ const markAsRead = async (notificationId: string, userId: string) => {
   return result;
 };
 
+const sendToUser = async (userId: string, title: string, message: string, type: 'ORDER_UPDATE' | 'PROMOTION' | 'SYSTEM' = 'SYSTEM') => {
+  return await create({
+    userId,
+    title,
+    message,
+    type,
+    channel: 'IN_APP'
+  });
+};
+
+const sendToAdmins = async (title: string, message: string, type: 'SYSTEM' = 'SYSTEM') => {
+  const admins = await prisma.user.findMany({
+    where: { role: { in: ['ADMIN', 'SUPER_ADMIN'] } },
+    select: { id: true }
+  });
+
+  const notifications = admins.map(admin => ({
+    userId: admin.id,
+    title,
+    message,
+    type,
+    channel: 'IN_APP'
+  }));
+
+  // Since create() has side effects (socket), we loop or use a modified create
+  const results = [];
+  for (const n of notifications) {
+    results.push(await create(n));
+  }
+  return results;
+};
+
+const sendToAll = async (title: string, message: string, type: 'PROMOTION' = 'PROMOTION') => {
+  const users = await prisma.user.findMany({
+    select: { id: true }
+  });
+
+  const results = [];
+  for (const user of users) {
+    results.push(await create({
+      userId: user.id,
+      title,
+      message,
+      type,
+      channel: 'IN_APP'
+    }));
+  }
+  return results;
+};
+
+const sendToOperators = async (title: string, message: string, type: 'SYSTEM' = 'SYSTEM') => {
+  const operators = await prisma.user.findMany({
+    where: { role: 'OPERATOR' },
+    select: { id: true }
+  });
+
+  const results = [];
+  for (const op of operators) {
+    results.push(await create({
+      userId: op.id,
+      title,
+      message,
+      type,
+      channel: 'IN_APP'
+    }));
+  }
+  return results;
+};
+
+const sendToUsers = async (title: string, message: string, type: 'PROMOTION' = 'PROMOTION') => {
+  const users = await prisma.user.findMany({
+    where: { role: 'USER' },
+    select: { id: true }
+  });
+
+  const results = [];
+  for (const user of users) {
+    results.push(await create({
+      userId: user.id,
+      title,
+      message,
+      type,
+      channel: 'IN_APP'
+    }));
+  }
+  return results;
+};
+
 export const NotificationService = {
   create,
   getAll,
@@ -141,4 +229,9 @@ export const NotificationService = {
   deleteById,
   markAllAsRead,
   markAsRead,
+  sendToUser,
+  sendToAdmins,
+  sendToAll,
+  sendToOperators,
+  sendToUsers
 };
