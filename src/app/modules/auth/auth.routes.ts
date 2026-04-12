@@ -50,7 +50,12 @@ router.post(
 import passport from "passport";
 
 router.get("/google", passport.authenticate("google", { scope: ["profile", "email"], session: false }));
-router.get("/google/callback", passport.authenticate("google", { session: false }), (req, res) => {
+router.get("/google/callback", (req, res, next) => {
+  if (!req.query.code) {
+    return res.redirect("/api/v1/auth/google");
+  }
+  next();
+}, passport.authenticate("google", { session: false }), (req, res) => {
   const { token } = req.user as any;
   // Send token to client (e.g. via redirect with query param or json response)
   res.redirect(`${process.env.FRONTEND_URL}/auth/success?token=${token}`);

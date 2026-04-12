@@ -109,11 +109,14 @@ model EmailSupport {
 }
 
 model SupportPhone {
-  id        String   @id @default(cuid())
-  number    String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(cuid())
+  number        String
+  availableTime String?
+  avgWaitTime   String?
+  email         String?
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model FAQ {

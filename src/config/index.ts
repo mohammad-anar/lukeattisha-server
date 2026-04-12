@@ -58,9 +58,9 @@ export const config = {
   oauth: {
     googleClientId: process.env.GOOGLE_CLIENT_ID,
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL || '/api/auth/google/callback',
+    googleCallbackUrl: process.env.GOOGLE_CALLBACK_URL || '/api/v1/auth/google/callback',
     facebookClientId: process.env.FACEBOOK_CLIENT_ID,
     facebookClientSecret: process.env.FACEBOOK_CLIENT_SECRET,
-    facebookCallbackUrl: process.env.FACEBOOK_CALLBACK_URL || '/api/auth/facebook/callback',
+    facebookCallbackUrl: process.env.FACEBOOK_CALLBACK_URL || '/api/v1/auth/facebook/callback',
   }
 };

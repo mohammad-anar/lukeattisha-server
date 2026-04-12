@@ -20,7 +20,7 @@ const create = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status', 'userLat', 'userLng']); // Customize filters as needed
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   const result = await AdService.getAll(filters, options);
   sendResponse(res, {

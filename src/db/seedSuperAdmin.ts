@@ -41,6 +41,18 @@ export const seedSuperAdmin = async () => {
       create: { userId: superAdmin.id, balance: 0 },
     });
 
+    // Initialize Admin Notification Preferences
+    await prisma.userNotificationPreference.upsert({
+      where: { userId: superAdmin.id },
+      update: {},
+      create: {
+        userId: superAdmin.id,
+        push: true,
+        sms: false,
+        email: true,
+      },
+    });
+
     console.log("✅ Super Admin seeded successfully.");
   } catch (error) {
     console.error("Error seeding Super Admin:", error);
