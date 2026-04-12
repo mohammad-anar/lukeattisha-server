@@ -9,26 +9,26 @@ model Cart {
 }
 
 model CartItem {
-  id         String   @id @default(cuid())
-  cartId     String
-  storeId    String
-  operatorId String
-  serviceId  String?
-  bundleId   String?
-  quantity   Int
-  price      Decimal  @db.Decimal(10, 2)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id             String   @id @default(cuid())
+  cartId         String
+  storeId        String
+  operatorId     String
+  storeServiceId String?
+  storeBundleId  String?
+  quantity       Int
+  price          Decimal  @db.Decimal(10, 2)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   cart           Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
   store          Store           @relation(fields: [storeId], references: [id])
   operator       Operator        @relation(fields: [operatorId], references: [id])
-  service        Service?        @relation(fields: [serviceId], references: [id])
-  bundle         Bundle?         @relation(fields: [bundleId], references: [id])
+  storeService   StoreService?   @relation(fields: [storeServiceId], references: [id])
+  storeBundle    StoreBundle?    @relation(fields: [storeBundleId], references: [id])
   selectedAddons SelectedAddon[]
 
-  @@unique([cartId, serviceId])
-  @@unique([cartId, bundleId])
+  @@unique([cartId, storeServiceId])
+  @@unique([cartId, storeBundleId])
 }
 
 model SelectedAddon {
@@ -143,8 +143,8 @@ model OrderItem {
 
   order         Order         @relation(fields: [orderId], references: [id])
   operatorOrder OperatorOrder @relation(fields: [operatorOrderId], references: [id])
-  service       Service?      @relation(fields: [storeServiceId], references: [id])
-  bundle        Bundle?       @relation(fields: [storeBundleId], references: [id])
+  storeService  StoreService? @relation(fields: [storeServiceId], references: [id])
+  storeBundle   StoreBundle?  @relation(fields: [storeBundleId], references: [id])
   orderAddons   OrderAddon[]
 }
 

@@ -174,7 +174,7 @@ const handleUserSubscriptionSuccess = async (userId: string, session: any) => {
     userId,
     title: 'Subscription Activated',
     message: `Payment successful! Your ${plan.name} subscription is now active.`,
-    type: 'SUBSCRIPTION'
+    type: 'SYSTEM'
   });
 
   if (admin) {
@@ -182,7 +182,7 @@ const handleUserSubscriptionSuccess = async (userId: string, session: any) => {
       userId: admin.id,
       title: 'New User Subscription',
       message: `User ${user.name} has subscribed to ${plan.name}.`,
-      type: 'SUBSCRIPTION'
+      type: 'SYSTEM'
     });
   }
 };
@@ -383,7 +383,7 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
       userId: order.userId,
       title: 'Order Paid Successfully',
       message: `Your payment for order ${order.orderNumber} has been received.`,
-      type: 'PAYMENT'
+      type: 'SYSTEM'
     });
 
     // Admin Notification
@@ -393,7 +393,7 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
         userId: superAdmin.id,
         title: 'New Payment Received',
         message: `Payment for order ${order.orderNumber} has been received. Amount: $${order.totalAmount}`,
-        type: 'PAYMENT'
+        type: 'SYSTEM'
       });
     }
 
@@ -403,7 +403,7 @@ const handleMultiVendorOrderPaymentSuccess = async (orderId: string, session: an
         userId: opOrder.operator.userId,
         title: 'New Payment Received',
         message: `A new payment for order ${order.orderNumber} has been received and credited to your wallet.`,
-        type: 'PAYMENT'
+        type: 'SYSTEM'
       });
     }
 
@@ -553,7 +553,7 @@ const handleAdSubscriptionSuccess = async (operatorId: string, planId: string, s
     userId: operator.userId,
     title: 'Ad Subscription Activated',
     message: `Success! Your ad subscription for ${plan.name} is now active.`,
-    type: 'AD_SUBSCRIPTION'
+    type: 'SYSTEM'
   });
 
   const superAdmin = await prisma.user.findFirst({ where: { role: 'SUPER_ADMIN' } });
@@ -562,7 +562,7 @@ const handleAdSubscriptionSuccess = async (operatorId: string, planId: string, s
       userId: superAdmin.id,
       title: 'New Ad Subscription',
       message: `Operator ${operator.user.name} has subscribed to ad plan ${plan.name}.`,
-      type: 'AD_SUBSCRIPTION'
+      type: 'SYSTEM'
     });
   }
 

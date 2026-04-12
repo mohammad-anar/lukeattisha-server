@@ -39,6 +39,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
+  if (req.body.status === 'COMPLETED') req.body.status = 'DELIVERED';
   const result = await OrderService.update(req.params.id as string, req.body);
   sendResponse(res, {
     success: true,
@@ -74,7 +75,9 @@ const getMyOrders = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
-  const result = await OrderService.updateOrderStatus(req.params.id as string, req.body.status);
+  let status = req.body.status;
+  if (status === 'COMPLETED') status = 'DELIVERED';
+  const result = await OrderService.updateOrderStatus(req.params.id as string, status);
   sendResponse(res, {
     success: true,
     statusCode: 200,

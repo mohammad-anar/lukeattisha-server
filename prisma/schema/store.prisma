@@ -36,6 +36,8 @@ model StoreService {
   favouriteServices FavouriteService[]
   reviews           Review[]
   ads               Ad[]
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
 }
 
 model Bundle {
@@ -52,8 +54,6 @@ model Bundle {
   operator       Operator         @relation(fields: [operatorId], references: [id])
   bundleServices BundleServices[]
   storeBundles   StoreBundle[]
-  cartItems      CartItem[]
-  orderItems     OrderItem[]
 }
 
 model BundleServices {
@@ -82,4 +82,6 @@ model StoreBundle {
   favouriteServices FavouriteService[]
   reviews           Review[]
   ads               Ad[]
+  cartItems         CartItem[]
+  orderItems        OrderItem[]
 }

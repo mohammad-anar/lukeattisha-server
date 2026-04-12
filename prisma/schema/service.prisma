@@ -53,8 +53,6 @@ model Service {
   serviceAddons  ServiceAddon[]
   storeServices  StoreService[]
   bundleServices BundleServices[]
-  cartItems      CartItem[]
-  orderItems     OrderItem[]
   favourites     FavouriteService[]
 }
 

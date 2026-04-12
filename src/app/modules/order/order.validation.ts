@@ -26,7 +26,20 @@ const checkoutSchema = z.object({
 
 const updateSchema = z.object({
 
-    status: z.enum(['PENDING', 'PICKED_UP', 'PROCESSING', 'READY_FOR_DELIVERY', 'COMPLETED', 'CANCELLED']).optional(),
+    status: z.enum([
+      'PENDING', 
+      'PROCESSING', 
+      'OUT_FOR_PICKUP', 
+      'PICKED_UP', 
+      'RECEIVED_BY_STORE', 
+      'IN_PROGRESS', 
+      'READY_FOR_DELIVERY', 
+      'OUT_FOR_DELIVERY', 
+      'DELIVERED', 
+      'CANCELLED', 
+      'REFUNDED',
+      'COMPLETED'
+    ]).optional(),
 
 });
 

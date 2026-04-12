@@ -1,9 +1,8 @@
-import { prisma } from '../../../helpers.ts/prisma.js';
+import { Prisma } from '@prisma/client';
 import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
-import { Prisma } from '@prisma/client';
+import { prisma } from '../../../helpers.ts/prisma.js';
 import { StripeHelpers } from '../../../helpers.ts/stripeHelpers.js';
-import { config } from '../../../config/index.js';
 import { NotificationService } from '../notification/notification.service.js';
 
 const checkout = async (userId: string, dto: {
@@ -31,8 +30,8 @@ const checkout = async (userId: string, dto: {
     include: {
       items: {
         include: {
-          service: true,
-          bundle: true,
+          storeService: { include: { service: true } },
+          storeBundle: { include: { bundle: true } },
           selectedAddons: { include: { addon: true } },
           operator: true,
           store: true,
@@ -146,11 +145,11 @@ const checkout = async (userId: string, dto: {
             data: {
               order: { connect: { id: newOrder.id } },
               operatorOrder: { connect: { id: opOrder.id } },
-              serviceName: item.service?.name ?? item.bundle?.name ?? 'Unknown',
+              serviceName: item.storeService?.service?.name ?? item.storeBundle?.bundle?.name ?? 'Unknown',
               quantity: item.quantity,
               price: priceStr,
-              ...(item.serviceId && { service: { connect: { id: item.serviceId } } }),
-              ...(item.bundleId && { bundle: { connect: { id: item.bundleId } } }),
+              ...(item.storeServiceId && { storeService: { connect: { id: item.storeServiceId } } }),
+              ...(item.storeBundleId && { storeBundle: { connect: { id: item.storeBundleId } } }),
               ...(addons.length > 0 && {
                 orderAddons: {
                   create: addons.map((sa: any) => ({
@@ -165,8 +164,8 @@ const checkout = async (userId: string, dto: {
             orderId: newOrder.id,
             operatorOrderId: opOrder.id,
             price: priceStr,
-            serviceId: item.serviceId,
-            bundleId: item.bundleId,
+            storeServiceId: item.storeServiceId,
+            storeBundleId: item.storeBundleId,
             addonCount: addons.length,
           }));
           console.error('[OrderItem.create] Raw Prisma error message:\n', err?.message);
@@ -217,7 +216,7 @@ const checkout = async (userId: string, dto: {
     userId,
     title: 'Order Placed',
     message: `Your order ${order.orderNumber} has been placed successfully.`,
-    type: 'ORDER'
+    type: 'ORDER_UPDATE'
   });
 
   // Notify Admin
@@ -227,7 +226,7 @@ const checkout = async (userId: string, dto: {
       userId: admin.id,
       title: 'New Order',
       message: `A new order ${order.orderNumber} has been created.`,
-      type: 'ORDER'
+      type: 'ORDER_UPDATE'
     });
   }
 
@@ -237,7 +236,7 @@ const checkout = async (userId: string, dto: {
       userId: opOrder.operator.userId,
       title: 'New Order Received',
       message: `You have received a new order ${order.orderNumber}.`,
-      type: 'ORDER'
+      type: 'ORDER_UPDATE'
     });
   }
 
@@ -410,7 +409,13 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
       user: { select: { name: true, email: true } },
       pickupAddress: true,
       deliveryAddress: true,
-      orderItems: true,      
+      orderItems: {
+        include: {
+          storeService: { include: { service: true, _count: {select: {reviews: true}} } },
+          storeBundle: { include: { bundle: true } },
+          orderAddons: { include: { addon: true } },
+        }
+      },      
       operatorOrders: {
         include: { store: true }
       },
@@ -535,7 +540,7 @@ const updateOrderStatus = async (id: string, status: any) => {
     userId: order.userId,
     title: 'Order Status Updated',
     message: `Your order ${order.orderNumber} status has been updated to ${finalStatus}.`,
-    type: 'ORDER'
+    type: 'ORDER_UPDATE'
   });
 
   if (finalStatus === 'DELIVERED') {
@@ -543,7 +548,7 @@ const updateOrderStatus = async (id: string, status: any) => {
       userId: order.userId,
       title: 'Order Delivered',
       message: `Your order ${order.orderNumber} has been delivered. Thank you!`,
-      type: 'ORDER'
+      type: 'ORDER_UPDATE'
     });
   }
 

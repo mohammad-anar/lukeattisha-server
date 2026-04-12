@@ -1,16 +1,16 @@
 import { z } from "zod";
 
 const addItemSchema = z.object({
-  serviceId: z.string().optional(),
-  bundleId: z.string().optional(),
+  storeServiceId: z.string().optional(),
+  storeBundleId: z.string().optional(),
   quantity: z.number().int().min(1, "Quantity must be at least 1"),
   addonIds: z.array(z.string()).optional(),
 }).refine(
-  (data) => data.serviceId || data.bundleId,
-  { message: "Either serviceId or bundleId is required" }
+  (data) => data.storeServiceId || data.storeBundleId,
+  { message: "Either storeServiceId or storeBundleId is required" }
 ).refine(
-  (data) => !(data.serviceId && data.bundleId),
-  { message: "Provide only one of serviceId or bundleId" }
+  (data) => !(data.storeServiceId && data.storeBundleId),
+  { message: "Provide only one of storeServiceId or storeBundleId" }
 )
 
 const updateQuantitySchema = z.object({

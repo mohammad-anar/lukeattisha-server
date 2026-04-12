@@ -16,8 +16,8 @@ const getOrCreateCart = async (userId: string) => {
       items: {
         orderBy: { createdAt: 'asc' },
         include: {
-          service: true,
-          bundle: true,
+          storeService: { include: { service: true } },
+          storeBundle: { include: { bundle: true } },
           selectedAddons: {
             include: {
               addon: true
@@ -33,47 +33,46 @@ const getOrCreateCart = async (userId: string) => {
   }
 };
 
-const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: string, quantity: number, addonIds?: string[] }) => {
+const addItem = async (userId: string, dto: { storeServiceId?: string, storeBundleId?: string, quantity: number, addonIds?: string[] }) => {
   const cart = await getOrCreateCart(userId);
 
   let storeId: string;
   let operatorId: string;
   let price: number;
 
-  if (dto.serviceId) {
-    const service = await prisma.service.findUnique({
-      where: { id: dto.serviceId },
+  if (dto.storeServiceId) {
+    const storeService = await prisma.storeService.findUnique({
+      where: { id: dto.storeServiceId },
       include: {
-        operator: true,
-        storeServices: { take: 1 }
+        service: {
+          include: { operator: true }
+        }
       },
     });
-    if (!service) throw new ApiError(404, 'Service not found');
-    if (service.operator.stripeAccountStatus !== 'ACTIVE') {
+    if (!storeService) throw new ApiError(404, 'Service not found');
+    if (storeService.service.operator.stripeAccountStatus !== 'ACTIVE') {
       throw new ApiError(400, 'This service is not available for purchase (Operator not active).');
     }
-    storeId = service.storeServices[0]?.storeId;
+    storeId = storeService.storeId;
     if (!storeId) throw new ApiError(400, 'This service is not assigned to any store');
-    operatorId = service.operatorId;
-    price = Number(service.basePrice);
-  } else if (dto.bundleId) {
-    const bundle = await prisma.bundle.findUnique({
-      where: { id: dto.bundleId },
+    operatorId = storeService.service.operatorId;
+    price = Number(storeService.service.basePrice);
+  } else if (dto.storeBundleId) {
+    const storeBundle = await prisma.storeBundle.findUnique({
+      where: { id: dto.storeBundleId },
       include: {
-        operator: true,
-        storeBundles: { take: 1 }
+        bundle: {
+          include: { operator: true }
+        }
       },
     });
-    if (!bundle) throw new ApiError(404, 'Bundle not found');
-    // if (bundle.operator.stripeAccountStatus !== 'ACTIVE') {
-    //   throw new ApiError(400, 'This bundle is not available for purchase (Operator not active).');
-    // }
-    storeId = bundle.storeBundles[0]?.storeId;
+    if (!storeBundle) throw new ApiError(404, 'Bundle not found');
+    storeId = storeBundle.storeId;
     if (!storeId) throw new ApiError(400, 'This bundle is not assigned to any store');
-    operatorId = bundle.operatorId;
-    price = Number(bundle.bundlePrice);
+    operatorId = storeBundle.bundle.operatorId;
+    price = Number(storeBundle.bundle.bundlePrice);
   } else {
-    throw new ApiError(400, 'serviceId or bundleId is required.');
+    throw new ApiError(400, 'storeServiceId or storeBundleId is required.');
   }
 
   // Calculate price with addons
@@ -85,18 +84,18 @@ const addItem = async (userId: string, dto: { serviceId?: string, bundleId?: str
     price += addonsPrice;
   }
 
-  console.log(cart.id, storeId, operatorId, dto.serviceId, dto.bundleId, dto.quantity, price);
+  console.log(cart.id, storeId, operatorId, dto.storeServiceId, dto.storeBundleId, dto.quantity, price);
 
   const result = await prisma.cartItem.upsert({
-    where: dto.serviceId
-      ? { cartId_serviceId: { cartId: cart.id, serviceId: dto.serviceId } }
-      : { cartId_bundleId: { cartId: cart.id, bundleId: dto.bundleId! } },
+    where: dto.storeServiceId
+      ? { cartId_storeServiceId: { cartId: cart.id, storeServiceId: dto.storeServiceId } }
+      : { cartId_storeBundleId: { cartId: cart.id, storeBundleId: dto.storeBundleId! } },
     create: {
       cartId: cart.id,
       storeId,
       operatorId,
-      serviceId: dto.serviceId,
-      bundleId: dto.bundleId,
+      storeServiceId: dto.storeServiceId,
+      storeBundleId: dto.storeBundleId,
       quantity: dto.quantity,
       price: price,
       selectedAddons: dto.addonIds?.length

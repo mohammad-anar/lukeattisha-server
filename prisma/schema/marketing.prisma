@@ -84,15 +84,15 @@ model Ad {
   id             String   @id @default(cuid())
   operatorId     String
   subscriptionId String
-  storeServiceId      String?
-  storeBundleId       String?
+  storeServiceId String?
+  storeBundleId  String?
   status         AdStatus @default(PENDING)
   createdAt      DateTime @default(now())
 
   operator     Operator       @relation(fields: [operatorId], references: [id])
   subscription AdSubscription @relation(fields: [subscriptionId], references: [id])
-  storeService      StoreService?       @relation(fields: [storeServiceId], references: [id])
-  storeBundle       StoreBundle?        @relation(fields: [storeBundleId], references: [id])
+  storeService StoreService?  @relation(fields: [storeServiceId], references: [id])
+  storeBundle  StoreBundle?   @relation(fields: [storeBundleId], references: [id])
 }
 
 model UserSubscriptionPlan {

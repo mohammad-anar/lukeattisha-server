@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 const createSchema = z.object({
   cartId: z.string({ message: 'Cart ID is required' }),
-  serviceId: z.string().optional(),
-  bundleId: z.string().optional(),
+  storeServiceId: z.string().optional(),
+  storeBundleId: z.string().optional(),
   quantity: z.number({ message: 'Quantity is required' }).int().min(1),
   price: z.number({ message: 'Price is required' }),
 });
