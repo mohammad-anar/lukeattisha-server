@@ -56,7 +56,6 @@ model Service {
   cartItems      CartItem[]
   orderItems     OrderItem[]
   favourites     FavouriteService[]
-  ads            Ad[]
 }
 
 model ServiceAddon {

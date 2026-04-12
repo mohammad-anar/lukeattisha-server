@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 import { AdSubscriptionService } from '../adSubscription/adSubscription.service.js';
 
 const create = async (payload: any) => {
-  const { operatorId, serviceId, bundleId, planId } = payload;
+  const { operatorId, storeServiceId, storeBundleId, planId } = payload;
 
   const now = new Date();
 
@@ -50,8 +50,8 @@ const create = async (payload: any) => {
   const result = await prisma.ad.create({
     data: {
       operatorId,
-      serviceId,
-      bundleId,
+      storeServiceId,
+      storeBundleId,
       subscriptionId: activeSubscription.id,
       status: "ACTIVE",
     },
@@ -130,28 +130,30 @@ const getAll = async (filters: any, options: any) => {
        JOIN "AdSubscription" ads ON a."subscriptionId" = ads.id
        JOIN "Operator" op ON a."operatorId" = op.id
        JOIN "User" u ON op."userId" = u.id
-       LEFT JOIN "Service" s ON a."serviceId" = s.id
-       LEFT JOIN "Bundle" b ON a."bundleId" = b.id
+       LEFT JOIN "StoreService" ss ON a."storeServiceId" = ss.id
+       LEFT JOIN "StoreBundle" sb ON a."storeBundleId" = sb.id
+       LEFT JOIN "Service" s ON ss."serviceId" = s.id
+       LEFT JOIN "Bundle" b ON sb."bundleId" = b.id
        LEFT JOIN "Store" st ON a."operatorId" = st."operatorId"
        LEFT JOIN (
            SELECT 
-               ss."serviceId" as service_id,
-               NULL as bundle_id,
+               r."storeServiceId" as store_service_id,
+               NULL as store_bundle_id,
                AVG(r."rating") as avg_rating,
                COUNT(r."id") as review_count
            FROM "Review" r
-           JOIN "StoreService" ss ON r."storeServiceId" = ss.id
-           GROUP BY ss."serviceId"
+           WHERE r."storeServiceId" IS NOT NULL
+           GROUP BY r."storeServiceId"
            UNION ALL
            SELECT 
-               NULL as service_id,
-               sb."bundleId" as bundle_id,
+               NULL as store_service_id,
+               r."storeBundleId" as store_bundle_id,
                AVG(r."rating") as avg_rating,
                COUNT(r."id") as review_count
            FROM "Review" r
-           JOIN "StoreBundle" sb ON r."storeBundleId" = sb.id
-           GROUP BY sb."bundleId"
-       ) sub ON (a."serviceId" = sub.service_id OR a."bundleId" = sub.bundle_id)
+           WHERE r."storeBundleId" IS NOT NULL
+           GROUP BY r."storeBundleId"
+       ) sub ON (a."storeServiceId" = sub.store_service_id OR a."storeBundleId" = sub.store_bundle_id)
        WHERE a."status" = 'ACTIVE' 
          AND ads."status" = 'ACTIVE' 
          AND ads."endDate" > NOW()
@@ -196,18 +198,16 @@ const getAll = async (filters: any, options: any) => {
             stores: { select: { lat: true, lng: true } }
           }
         },
-        service: {
+        storeService: {
           include: { 
-            storeServices: { 
-              include: { reviews: { select: { rating: true } } } 
-            } 
+            service: true,
+            reviews: { select: { rating: true } } 
           }
         },
-        bundle: {
+        storeBundle: {
           include: { 
-            storeBundles: { 
-              include: { reviews: { select: { rating: true } } } 
-            } 
+            bundle: true,
+            reviews: { select: { rating: true } } 
           }
         }
       }
@@ -220,30 +220,26 @@ const getAll = async (filters: any, options: any) => {
       let totalRating = 0;
       let reviewCount = 0;
 
-      if (ad.service) {
-        ad.service.storeServices.forEach(ss => {
-          ss.reviews.forEach(r => {
-            totalRating += r.rating;
-            reviewCount++;
-          });
+      if (ad.storeService) {
+        ad.storeService.reviews.forEach((r: any) => {
+          totalRating += r.rating;
+          reviewCount++;
         });
       }
 
-      if (ad.bundle) {
-        ad.bundle.storeBundles.forEach(sb => {
-          sb.reviews.forEach(r => {
-            totalRating += r.rating;
-            reviewCount++;
-          });
+      if (ad.storeBundle) {
+        ad.storeBundle.reviews.forEach((r: any) => {
+          totalRating += r.rating;
+          reviewCount++;
         });
       }
 
       return {
         ...ad,
-        serviceName: ad.service?.name,
-        serviceImage: ad.service?.image,
-        bundleName: ad.bundle?.name,
-        bundleImage: ad.bundle?.image,
+        serviceName: ad.storeService?.service?.name,
+        serviceImage: ad.storeService?.service?.image,
+        bundleName: ad.storeBundle?.bundle?.name,
+        bundleImage: ad.storeBundle?.bundle?.image,
         avgRating: reviewCount > 0 ? totalRating / reviewCount : 0,
         totalReviewCount: reviewCount,
         distanceMile: null // Coordinates not provided
@@ -267,8 +263,8 @@ const getById = async (id: string) => {
     include: {
       subscription: true,
       operator: true,
-      service: true,
-      bundle: true
+      storeService: { include: { service: true } },
+      storeBundle: { include: { bundle: true } }
     }
   });
   if (!result) {

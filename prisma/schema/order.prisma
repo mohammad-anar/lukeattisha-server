@@ -137,14 +137,14 @@ model OrderItem {
   serviceName     String
   quantity        Int
   price           Decimal  @db.Decimal(10, 2)
-  serviceId       String?
-  bundleId        String?
+  storeServiceId  String?
+  storeBundleId   String?
   createdAt       DateTime @default(now())
 
   order         Order         @relation(fields: [orderId], references: [id])
   operatorOrder OperatorOrder @relation(fields: [operatorOrderId], references: [id])
-  service       Service?      @relation(fields: [serviceId], references: [id])
-  bundle        Bundle?       @relation(fields: [bundleId], references: [id])
+  service       Service?      @relation(fields: [storeServiceId], references: [id])
+  bundle        Bundle?       @relation(fields: [storeBundleId], references: [id])
   orderAddons   OrderAddon[]
 }
 

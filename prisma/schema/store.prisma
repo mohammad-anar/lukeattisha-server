@@ -35,6 +35,7 @@ model StoreService {
   service           Service            @relation(fields: [serviceId], references: [id])
   favouriteServices FavouriteService[]
   reviews           Review[]
+  ads               Ad[]
 }
 
 model Bundle {
@@ -53,7 +54,6 @@ model Bundle {
   storeBundles   StoreBundle[]
   cartItems      CartItem[]
   orderItems     OrderItem[]
-  ads            Ad[]
 }
 
 model BundleServices {
@@ -81,4 +81,5 @@ model StoreBundle {
 
   favouriteServices FavouriteService[]
   reviews           Review[]
+  ads               Ad[]
 }

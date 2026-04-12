@@ -86,7 +86,7 @@ const getAllAdmins = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAllOperators = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isVerified', 'isDeleted']);
+  const filters = pick(req.query, ['searchTerm', 'isVerified', "status", 'isDeleted']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   const result = await UserService.getAllOperators({ ...filters, role: 'OPERATOR' }, options);
   sendResponse(res, {

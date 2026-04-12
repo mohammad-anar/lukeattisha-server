@@ -60,7 +60,7 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
 
 const getMyOrders = catchAsync(async (req: Request, res: Response) => {
   const user = (req as any).user;
-  const filters = pick(req.query, ['searchTerm', 'status', 'paymentStatus']);
+  const filters = pick(req.query, ['searchTerm', 'status', 'paymentStatus', "pastOrders"]);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
   
   const result = await OrderService.getMyOrders(user, filters, options);

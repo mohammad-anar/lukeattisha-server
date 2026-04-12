@@ -291,6 +291,7 @@ const getAllOperators = async (filters: any, options: any) => {
       phone: true,
       avatar: true,
       role: true,
+      status:true,
       addresses: {
         select: {
           id: true,
@@ -495,6 +496,7 @@ const getById = async (id: string) => {
       status: true,
       lat: true,
       lng: true,
+      operatorProfile:true,
       isTwoFactorEnabled: true,
       adminWallet: true,
       createdBy: true,

@@ -284,9 +284,9 @@ const getAll = async (filters: any, options: any) => {
     const dateCondition: Prisma.DateTimeFilter = {};
     if (fromDate) dateCondition.gte = new Date(fromDate as string);
     if (toDate) {
-       const endDate = new Date(toDate as string);
-       endDate.setHours(23, 59, 59, 999);
-       dateCondition.lte = endDate;
+      const endDate = new Date(toDate as string);
+      endDate.setHours(23, 59, 59, 999);
+      dateCondition.lte = endDate;
     }
     andConditions.push({ createdAt: dateCondition });
   }
@@ -350,7 +350,7 @@ const getAll = async (filters: any, options: any) => {
 
 const getMyOrders = async (user: any, filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
-  const { searchTerm, ...filterData } = filters;
+  const { searchTerm, pastOrders, ...filterData } = filters;
 
   const andConditions: any[] = [];
 
@@ -374,6 +374,15 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
           mode: 'insensitive',
         },
       })),
+    });
+  }
+
+
+  if (pastOrders) {
+    andConditions.push({
+      status: {
+        in: ["DELIVERED", "CANCELLED", "REFUNDED"],
+      },
     });
   }
 
@@ -401,7 +410,7 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
       user: { select: { name: true, email: true } },
       pickupAddress: true,
       deliveryAddress: true,
-      orderItems: true,
+      orderItems: true,      
       operatorOrders: {
         include: { store: true }
       },
@@ -494,7 +503,7 @@ const updateOrderStatus = async (id: string, status: any) => {
 
   const result = await prisma.order.update({
     where: { id },
-    data: { 
+    data: {
       status: finalStatus,
       ...(paymentStatusUpdate && { paymentStatus: paymentStatusUpdate as any })
     },

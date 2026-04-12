@@ -1,14 +1,14 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  serviceId: z.string().optional(),
-  bundleId: z.string().optional(),
+  storeServiceId: z.string().optional(),
+  storeBundleId: z.string().optional(),
   planId: z.string().optional(), // Optional if no active subscription found
   userLat: z.string().optional(),
   userLng: z.string().optional(),
-}).refine((data) => data.serviceId || data.bundleId, {
+}).refine((data) => data.storeServiceId || data.storeBundleId, {
   message: 'serviceId or bundleId is required',
-  path: ['serviceId', 'bundleId'],
+  path: ['storeServiceId', 'storeBundleId'],
 });
 
 const updateSchema = z.object({
