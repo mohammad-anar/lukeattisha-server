@@ -8,14 +8,8 @@ import fileUploadHandler from '../../middlewares/fileUploadHandler.js';
 
 const router = express.Router();
 
-router.post(
-  '/start',
-  auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN),
-  LiveSupportController.startChat
-);
-
 router.get(
-  '/my-room',
+  '/get-my-room',
   auth(UserRole.USER, UserRole.ADMIN, UserRole.SUPER_ADMIN),
   LiveSupportController.getMyRoom
 );

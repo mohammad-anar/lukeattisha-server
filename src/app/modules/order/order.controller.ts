@@ -74,6 +74,28 @@ const getMyOrders = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getActiveOrders = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await OrderService.getActiveOrders(user.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Active orders fetched successfully',
+    data: result,
+  });
+});
+
+const repayOrder = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const result = await OrderService.repayOrder(user.id, req.params.id as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'New payment URL generated successfully',
+    data: result,
+  });
+});
+
 const updateOrderStatus = catchAsync(async (req: Request, res: Response) => {
   let status = req.body.status;
   if (status === 'COMPLETED') status = 'DELIVERED';
@@ -90,6 +112,8 @@ export const OrderController = {
   checkout,
   getAll,
   getMyOrders,
+  getActiveOrders,
+  repayOrder,
   getById,
   update,
   updateOrderStatus,

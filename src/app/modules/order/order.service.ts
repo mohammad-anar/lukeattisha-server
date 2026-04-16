@@ -5,6 +5,74 @@ import { prisma } from '../../../helpers.ts/prisma.js';
 import { StripeHelpers } from '../../../helpers.ts/stripeHelpers.js';
 import { NotificationService } from '../notification/notification.service.js';
 
+const enrichOrderData = (order: any) => {
+  const statusMapping: Record<string, { step: number; message: string }> = {
+    PENDING: { step: 1, message: 'Order Received' },
+    PROCESSING: { step: 1, message: 'Order is being processed' },
+    OUT_FOR_PICKUP: { step: 1, message: 'Driver on way to pickup' },
+    PICKED_UP: { step: 1, message: 'Items picked up' },
+    RECEIVED_BY_STORE: { step: 2, message: 'Received by store' },
+    IN_PROGRESS: { step: 2, message: 'Your items are being cleaned' },
+    READY_FOR_DELIVERY: { step: 2, message: 'Ready for delivery' },
+    OUT_FOR_DELIVERY: { step: 3, message: 'Heading to you' },
+    DELIVERED: { step: 4, message: 'Delivered' },
+    CANCELLED: { step: 0, message: 'Order Cancelled' },
+    REFUNDED: { step: 0, message: 'Order Refunded' }
+  };
+
+  const info = statusMapping[order.status as string] || { step: 1, message: 'Processing' };
+
+  // Calculate estimated time if missing
+  let estimatedArrival = '';
+  if (order.deliveryAddress?.deliveryTime) {
+    estimatedArrival = order.deliveryAddress.deliveryTime;
+  } else if (order.status === 'OUT_FOR_DELIVERY' || order.status === 'READY_FOR_DELIVERY') {
+    const baseDate = order.updatedAt || order.createdAt;
+    const start = new Date(baseDate);
+    start.setMinutes(start.getMinutes() + 20);
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + 15);
+    
+    const formatTime = (d: Date) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    estimatedArrival = `${formatTime(start)} - ${formatTime(end)} estimated arrival`;
+  } else {
+    const baseDate = order.scheduledDate || order.createdAt;
+    const start = new Date(baseDate);
+    const end = new Date(start);
+    end.setMinutes(end.getMinutes() + 30);
+    
+    const formatTime = (d: Date) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    estimatedArrival = `${formatTime(start)} - ${formatTime(end)} estimated arrival`;
+  }
+
+  // Extract primary operator for "driver" info
+  const primaryOperatorOrder = order.operatorOrders?.[0];
+  const driver = primaryOperatorOrder?.operator?.user ? {
+    name: primaryOperatorOrder.operator.user.name,
+    avatar: primaryOperatorOrder.operator.user.avatar,
+    phone: primaryOperatorOrder.operator.user.phone,
+    rating: 4.8, // Placeholder as rating logic is usually service-based or calculated from reviews
+  } : null;
+
+  const chatRoomId = order.chatRooms?.[0]?.id || null;
+  const paymentUrl = order.paymentStatus === 'UNPAID' ? order.paymentUrl : null;
+
+  return {
+    ...order,
+    roomId: chatRoomId,
+    paymentUrl,
+    activeOrderMetadata: {
+      currentStep: info.step,
+      totalSteps: 4,
+      statusMessage: info.message,
+      estimatedArrivalTime: estimatedArrival,
+      driver,
+      chatRoomId,
+      paymentUrl
+    }
+  };
+};
+
 const checkout = async (userId: string, dto: {
   pickupAddress: {
     pickupTime?: string;
@@ -175,6 +243,22 @@ const checkout = async (userId: string, dto: {
       }
     }
 
+    // Step 6c: Create Chat Room for the order
+    await tx.chatRoom.create({
+      data: {
+        orderId: newOrder.id,
+        name: `Chat for Order ${orderNumber}`,
+        participants: {
+          create: [
+            { userId: userId }, // Customer
+            ...Array.from(operatorMap.keys()).map((opId) => ({
+              operatorId: opId // Operator
+            }))
+          ]
+        }
+      }
+    });
+
     return newOrder;
   });
 
@@ -240,7 +324,12 @@ const checkout = async (userId: string, dto: {
     });
   }
 
-  return { orderId: order.id, paymentUrl: session.url };
+  // 11. Find Chat Room ID
+  const chatRoom = await prisma.chatRoom.findFirst({
+    where: { orderId: order.id }
+  });
+
+  return { orderId: order.id, paymentUrl: session.url, roomId: chatRoom?.id };
 };
 
 // Helper for transaction
@@ -331,7 +420,8 @@ const getAll = async (filters: any, options: any) => {
           store: { select: { name: true } },
           operator: { select: { user: { select: { name: true } } } }
         }
-      }
+      },
+      chatRooms: true
     }
   });
   const total = await prisma.order.count({ where: whereConditions });
@@ -343,7 +433,7 @@ const getAll = async (filters: any, options: any) => {
       page,
       limit,
     },
-    data: result,
+    data: result.map(enrichOrderData),
   };
 };
 
@@ -427,6 +517,7 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
         include: { store: true }
       },
       payment: true,
+      chatRooms: true,
     }
   });
 
@@ -434,8 +525,46 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
 
   return {
     meta: { total, totalPage: Math.ceil(total / limit), page, limit },
-    data: result,
+    data: result.map(enrichOrderData),
   };
+};
+
+
+
+const getActiveOrders = async (userId: string) => {
+  const activeStatuses = [
+    'PENDING', 'PROCESSING', 'OUT_FOR_PICKUP', 'PICKED_UP',
+    'RECEIVED_BY_STORE', 'IN_PROGRESS', 'READY_FOR_DELIVERY', 'OUT_FOR_DELIVERY'
+  ];
+
+  const orders = await prisma.order.findMany({
+    where: {
+      userId,
+      status: { in: activeStatuses as any[] }
+    },
+    include: {
+      pickupAddress: true,
+      deliveryAddress: true,
+      operatorOrders: {
+        include: {
+          operator: { include: { user: { select: { name: true, avatar: true, phone: true } } } },
+          store: true
+        }
+      },
+      orderItems: {
+        include: {
+          storeService: { include: { service: true } },
+          storeBundle: { include: { bundle: true } },
+          orderAddons: { include: { addon: true } }
+        }
+      },
+      payment: true,
+      chatRooms: true
+    },
+    orderBy: { createdAt: 'desc' }
+  });
+
+  return orders.map(enrichOrderData);
 };
 
 const getById = async (id: string) => {
@@ -449,16 +578,64 @@ const getById = async (id: string) => {
       pickupAddress: true,
 
       operatorOrders: {
-        include: { store: true, operator: { include: { user: true } } }
+        include: { store: true, operator: { include: { user: { select: { name: true, avatar: true, phone: true } } } } }
       },
       payment: true,
       user: { select: { name: true, email: true, phone: true } },
+      chatRooms: true,
     }
   });
   if (!result) {
     throw new ApiError(404, 'Order not found');
   }
-  return result;
+  return enrichOrderData(result);
+};
+
+const repayOrder = async (userId: string, orderId: string) => {
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { payment: true }
+  });
+
+  if (!order) throw new ApiError(404, 'Order not found');
+  if (order.userId !== userId) throw new ApiError(403, 'Forbidden');
+  if (order.paymentStatus !== 'UNPAID') throw new ApiError(400, 'Order is already paid or cannot be paid.');
+
+  // Create new session
+  const session = await StripeHelpers.createMultiVendorOrderPaymentSession(
+    order.id,
+    Number(order.totalAmount),
+    userId,
+    order.stripeTransferGroup || `TG-${order.orderNumber}`
+  );
+
+  // Update records
+  await prisma.$transaction([
+    prisma.payment.upsert({
+      where: { orderId: order.id },
+      update: {
+        stripePaymentIntentId: session.payment_intent as string || session.id,
+        paymentUrl: session.url,
+      },
+      create: {
+        orderId: order.id,
+        stripePaymentIntentId: session.payment_intent as string || session.id,
+        stripeTransferGroup: order.stripeTransferGroup || `TG-${order.orderNumber}`,
+        amount: order.totalAmount,
+        status: 'UNPAID',
+        paymentUrl: session.url,
+      }
+    }),
+    prisma.order.update({
+      where: { id: order.id },
+      data: {
+        stripePaymentIntentId: session.payment_intent as string || session.id,
+        paymentUrl: session.url,
+      },
+    }),
+  ]);
+
+  return { paymentUrl: session.url };
 };
 
 const update = async (id: string, payload: any) => {
@@ -573,7 +750,9 @@ export const OrderService = {
   checkout,
   getAll,
   getMyOrders,
+  getActiveOrders,
   getById,
+  repayOrder,
   update,
   updateOrderStatus,
   deleteById,

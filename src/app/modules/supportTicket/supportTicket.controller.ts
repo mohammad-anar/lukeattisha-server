@@ -17,7 +17,7 @@ const create = catchAsync(async (req: Request, res: Response) => {
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
   const filters = pick(req.query, ['searchTerm', 'status', 'type']); // Customize filters as needed
-  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  const options = { ...pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']), user: (req as any).user };
   const result = await SupportTicketService.getAll(filters, options);
   sendResponse(res, {
     success: true,

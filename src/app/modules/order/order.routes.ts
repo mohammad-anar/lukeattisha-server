@@ -10,6 +10,8 @@ const router = express.Router();
 router.post('/checkout', auth(UserRole.USER), validateRequest(OrderValidation.checkoutSchema), OrderController.checkout);
 router.get('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN), OrderController.getAll);
 router.get('/my-orders', auth(UserRole.USER, UserRole.OPERATOR), OrderController.getMyOrders);
+router.get('/my-active-orders', auth(UserRole.USER), OrderController.getActiveOrders);
+router.post('/repay/:id', auth(UserRole.USER), OrderController.repayOrder);
 router.get('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), OrderController.getById);
 router.patch('/update-status/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATOR), validateRequest(OrderValidation.updateSchema), OrderController.updateOrderStatus);
 router.patch('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATOR), validateRequest(OrderValidation.updateSchema), OrderController.update);

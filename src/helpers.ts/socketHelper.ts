@@ -2,6 +2,7 @@ import colors from "colors";
 import { config } from "config/index.js";
 import { Server, Socket } from "socket.io";
 import { ChatService } from "../app/modules/chat/chat.service.js";
+import { LiveSupportService } from "../app/modules/liveSupport/liveSupport.service.js";
 
 let io: Server | null = null;
 
@@ -44,6 +45,18 @@ export const initSocket = (server: any) => {
         }
       } catch (err) {
         console.error("Error sending socket message", err);
+      }
+    });
+
+    socket.on("send-live-support-message", async (data: { roomId: string, senderId: string, content: string, images?: string[] }) => {
+      try {
+        if (data.roomId && data.senderId && data.content) {
+          const message = await LiveSupportService.sendMessage(data);
+          io?.to(`room:${data.roomId}`).emit("new-message", message);
+          console.log(colors.magenta(`Support message sent in room: ${data.roomId} by ${data.senderId}`));
+        }
+      } catch (err) {
+        console.error("Error sending socket support message", err);
       }
     });
 

@@ -42,6 +42,11 @@ const getAll = async (filters: any, options: any) => {
 
   const andConditions = [];
 
+  // If user is not admin, they can only see their own tickets
+  if (options.user && options.user.role !== 'ADMIN' && options.user.role !== 'SUPER_ADMIN') {
+    andConditions.push({ userId: options.user.id });
+  }
+
   if (searchTerm) {
     andConditions.push({
       OR: ["ticketNumber", "subject", "description"].map((field) => ({

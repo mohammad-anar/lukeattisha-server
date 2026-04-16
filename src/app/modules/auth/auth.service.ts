@@ -28,7 +28,7 @@ const register = async (payload: Prisma.UserCreateInput & { address: string, cit
 
   const user = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
-      data: { ...userData, password: hashedPassword, userId: customUserId, stripeCustomerId: customer.id, notificationPref: { create: {} } },
+      data: { ...userData, password: hashedPassword, userId: customUserId, stripeCustomerId: customer.id, notificationPref: { create: {} }, liveSupportRoom: { create: {} } },
       select: {
         id: true,
         name: true,
@@ -86,7 +86,7 @@ const registerOperator = async (payload: Prisma.UserCreateInput & { address: str
 
   const user = await prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
-      data: { name, email, password: hashedPassword, phone, role: "OPERATOR", userId: customUserId, stripeCustomerId: customer.id, notificationPref: { create: {} } },
+      data: { name, email, password: hashedPassword, phone, role: "OPERATOR", userId: customUserId, stripeCustomerId: customer.id, notificationPref: { create: {} }, liveSupportRoom: { create: {} } },
       select: {
         id: true,
         name: true,
