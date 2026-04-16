@@ -30,7 +30,8 @@ async function resolveOperatorId(req: Request): Promise<string> {
 // GET /api/v1/operator-analytics/stats
 const getStats = catchAsync(async (req: Request, res: Response) => {
   const operatorId = await resolveOperatorId(req);
-  const result = await OperatorAnalyticsStatsService.getStats(operatorId);
+  const storeId = req.query.storeId as string | undefined;
+  const result = await OperatorAnalyticsStatsService.getStats(operatorId, storeId);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -45,7 +46,8 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
 const getPayoutHistory = catchAsync(async (req: Request, res: Response) => {
   const operatorId = await resolveOperatorId(req);
   const options = pick(req.query, ['limit', 'page']);
-  const result = await OperatorAnalyticsPayoutService.getPayoutHistory(operatorId, options);
+  const storeId = req.query.storeId as string | undefined;
+  const result = await OperatorAnalyticsPayoutService.getPayoutHistory(operatorId, { ...options, storeId });
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -61,6 +63,7 @@ const getPayoutHistory = catchAsync(async (req: Request, res: Response) => {
 const getMonthlyRevenue = catchAsync(async (req: Request, res: Response) => {
   const operatorId = await resolveOperatorId(req);
   const filter = (req.query.filter as string) || '12';
+  const storeId = req.query.storeId as string | undefined;
 
   if (!['3', '6', '12'].includes(filter)) {
     return sendResponse(res, {
@@ -74,6 +77,7 @@ const getMonthlyRevenue = catchAsync(async (req: Request, res: Response) => {
   const result = await OperatorAnalyticsRevenueService.getMonthlyRevenue(
     operatorId,
     filter as '3' | '6' | '12',
+    storeId,
   );
   sendResponse(res, {
     success: true,
@@ -89,8 +93,9 @@ const getMonthlyRevenue = catchAsync(async (req: Request, res: Response) => {
 const getTopServices = catchAsync(async (req: Request, res: Response) => {
   const operatorId = await resolveOperatorId(req);
   const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+  const storeId = req.query.storeId as string | undefined;
 
-  const result = await OperatorAnalyticsServicesService.getTopServices(operatorId, limit);
+  const result = await OperatorAnalyticsServicesService.getTopServices(operatorId, limit, storeId);
   sendResponse(res, {
     success: true,
     statusCode: 200,

@@ -48,6 +48,7 @@ const getPayoutHistory = async (
   options: Record<string, any>,
 ) => {
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
+  const { storeId } = options;
 
   const wallet = await prisma.operatorWallet.findUnique({
     where: { operatorId },
@@ -60,12 +61,27 @@ const getPayoutHistory = async (
     };
   }
 
+  // Filtering Logic:
+  // 1. If storeId is provided → show earnings (ORDER_REVENUE) filtered by that store.
+  // 2. If no storeId         → show withdrawals (WITHDRAWAL) across all stores.
+  const whereConditions: any = {
+    walletId: wallet.id,
+  };
+
+  if (storeId) {
+    whereConditions.type = { in: ['ORDER_REVENUE', 'REFUND'] };
+    whereConditions.order = {
+      operatorOrders: {
+        some: { storeId, operatorId },
+      },
+    };
+  } else {
+    whereConditions.type = 'WITHDRAWAL';
+  }
+
   const [transactions, total] = await Promise.all([
     prisma.operatorWalletTransaction.findMany({
-      where: {
-        walletId: wallet.id,
-        type: 'WITHDRAWAL',
-      },
+      where: whereConditions,
       skip,
       take: limit,
       orderBy: { createdAt: 'desc' },
@@ -79,10 +95,15 @@ const getPayoutHistory = async (
             createdAt: true,
           },
         },
+        order: {
+          select: {
+            orderNumber: true,
+          },
+        },
       },
     }),
     prisma.operatorWalletTransaction.count({
-      where: { walletId: wallet.id, type: 'WITHDRAWAL' },
+      where: whereConditions,
     }),
   ]);
 
@@ -96,8 +117,10 @@ const getPayoutHistory = async (
     data: transactions.map((tx) => ({
       transactionId: tx.id,
       amount: Number(tx.amount),
+      type: tx.type,
       note: tx.note,
-      payoutStatus: tx.withdrawal?.status ?? 'UNKNOWN',
+      orderNumber: tx.order?.orderNumber ?? null,
+      payoutStatus: tx.withdrawal?.status ?? (tx.type === 'ORDER_REVENUE' ? 'COMPLETED' : 'UNKNOWN'),
       stripeTransferId: tx.withdrawal?.stripeTransferId ?? null,
       createdAt: tx.createdAt,
       withdrawalId: tx.withdrawalId,

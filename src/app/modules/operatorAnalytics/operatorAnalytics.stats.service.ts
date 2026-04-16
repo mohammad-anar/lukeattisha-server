@@ -29,7 +29,7 @@ function calcNextPayoutDate(schedule: string): Date {
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
 
-const getStats = async (operatorId: string) => {
+const getStats = async (operatorId: string, storeId?: string) => {
   const now = new Date();
   const monthStart = startOfMonth(now);
 
@@ -42,7 +42,13 @@ const getStats = async (operatorId: string) => {
     where: { operatorId },
   });
 
-  // ── Operator orders (this month) ────────────────────────────────────────────
+  // ── Operator orders ─────────────────────────────────────────────────────────
+  // When storeId is given → all-time stats for that store (no month gate).
+  // When no storeId     → current-month stats across all stores.
+  // storeId lives on OperatorOrder — filter directly.
+  const storeFilter = storeId ? { storeId } : {}; 
+  const dateFilter  = storeId ? {} : { createdAt: { gte: monthStart } };
+
   const [
     totalOrders,
     processingOrders,
@@ -50,37 +56,48 @@ const getStats = async (operatorId: string) => {
     completedOrders,
     allOperatorOrders,
   ] = await Promise.all([
-    // Total orders this month
+    // Total orders
     prisma.operatorOrder.count({
-      where: { operatorId, createdAt: { gte: monthStart } },
+      where: {
+        operatorId,
+        ...dateFilter,
+        ...storeFilter,
+      },
     }),
     // Processing = PICKED_UP or PROCESSING
     prisma.operatorOrder.count({
       where: {
         operatorId,
+        ...dateFilter,
+        ...storeFilter,
         order: { status: { in: [OrderStatus.PROCESSING, OrderStatus.PICKED_UP] } },
-        createdAt: { gte: monthStart },
       },
     }),
     // Out for delivery = READY_FOR_DELIVERY
     prisma.operatorOrder.count({
       where: {
         operatorId,
+        ...dateFilter,
+        ...storeFilter,
         order: { status: OrderStatus.READY_FOR_DELIVERY },
-        createdAt: { gte: monthStart },
       },
     }),
-    // Completed this month
+    // Completed
     prisma.operatorOrder.count({
       where: {
         operatorId,
+        ...dateFilter,
+        ...storeFilter,
         order: { status: OrderStatus.DELIVERED },
-        createdAt: { gte: monthStart },
       },
     }),
-    // All operator orders this month with subtotal + transferAmount
+    // All orders with subtotal + transferAmount (for revenue sums)
     prisma.operatorOrder.findMany({
-      where: { operatorId, createdAt: { gte: monthStart } },
+      where: {
+        operatorId,
+        ...dateFilter,
+        ...storeFilter,
+      },
       select: { subtotal: true, transferAmount: true },
     }),
   ]);

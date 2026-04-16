@@ -5,11 +5,11 @@ import { OrderStatus } from '@prisma/client';
 // For a given operator, group their OrderItems by serviceId,
 // count total orders and completed orders, compute completion rate %.
 
-const getTopServices = async (operatorId: string, limit = 10) => {
+const getTopServices = async (operatorId: string, limit = 10, storeId?: string) => {
   // Fetch all order items for this operator with order status
   const orderItems = await prisma.orderItem.findMany({
     where: {
-      operatorOrder: { operatorId },
+      operatorOrder: { operatorId, ...(storeId ? { storeId } : {}) },
       storeServiceId: { not: null },
     },
     select: {

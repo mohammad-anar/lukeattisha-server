@@ -13,6 +13,7 @@ const MONTH_SHORT = [
 const getMonthlyRevenue = async (
   operatorId: string,
   filter: '3' | '6' | '12',
+  storeId?: string,
 ) => {
   const months = parseInt(filter) as 3 | 6 | 12;
   const now = new Date();
@@ -24,10 +25,12 @@ const getMonthlyRevenue = async (
     const end   = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
 
     // Sum transferAmount (net payout) for operator's orders in this month
+    // storeId lives on Order (new relation) — filter via order: { storeId }
     const agg = await prisma.operatorOrder.aggregate({
       where: {
         operatorId,
         createdAt: { gte: start, lte: end },
+        ...(storeId ? { storeId } : {}),
       },
       _sum: { transferAmount: true },
     });
