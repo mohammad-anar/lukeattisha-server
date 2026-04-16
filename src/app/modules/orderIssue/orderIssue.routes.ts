@@ -17,6 +17,7 @@ router.post(
 );
 
 router.get('/', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.OPERATOR, UserRole.USER), OrderIssueController.getAll);
+
 router.get('/:id', auth(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.USER, UserRole.OPERATOR), OrderIssueController.getById);
 
 // Operator response route

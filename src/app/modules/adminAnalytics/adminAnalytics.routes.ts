@@ -42,4 +42,46 @@ router.get(
   AdminAnalyticsController.getStorePerformance,
 );
 
+router.get(
+  '/user-stats',
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  AdminAnalyticsController.getUserStats,
+);
+
+router.get(
+  '/user-roles-chart',
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  AdminAnalyticsController.getUsersByRoleChart,
+);
+
+router.get(
+  '/user-growth-chart',
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  AdminAnalyticsController.getUserGrowthChart,
+);
+
+router.get(
+  '/revenue-analytics',
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  AdminAnalyticsController.getRevenueAnalytics,
+);
+
+router.get(
+  '/order-volume-chart',
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  AdminAnalyticsController.getOrderVolumeChart,
+);
+
+router.get(
+  '/payment-success-chart',
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  AdminAnalyticsController.getPaymentSuccessRateChart,
+);
+
+router.get(
+  '/operator-activity',
+  auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
+  AdminAnalyticsController.getOperatorActivityOverview,
+);
+
 export const AdminAnalyticsRouter = router;

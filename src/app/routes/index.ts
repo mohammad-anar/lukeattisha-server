@@ -46,6 +46,8 @@ import { FAQRouter } from '../modules/faq/faq.routes.js';
 import { EmailSupportRouter } from '../modules/emailSupport/emailSupport.routes.js';
 import { SupportPhoneRouter } from '../modules/supportPhone/supportPhone.routes.js';
 import { LiveSupportRouter } from '../modules/liveSupport/liveSupport.routes.js';
+import { AdminReviewRoutes } from '../modules/adminReview/adminReview.routes.js';
+import { OperatorOrdersRouter } from '../modules/operatorOrders/operatorOrders.routes.js';
 
 const router = express.Router();
 
@@ -97,6 +99,8 @@ const moduleRoutes = [
   { path: '/email-support', route: EmailSupportRouter },
   { path: '/support-phone', route: SupportPhoneRouter },
   { path: '/live-support', route: LiveSupportRouter },
+  { path: '/operator-orders', route: OperatorOrdersRouter },
+  { path: '/admin-review', route: AdminReviewRoutes },
 ];
 
 moduleRoutes.forEach((route) => router.use(route.path, route.route));

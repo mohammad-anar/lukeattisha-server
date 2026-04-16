@@ -20,7 +20,7 @@ const updateOrderIssueValidation = z.object({
   refundAmount: z.number().optional(),
 
   // For operator/admin responses
-  action: z.enum(['REFUND', 'ESCALATE', 'PARTIAL_REFUND', 'SOLVE']).optional(),
+  action: z.enum(['REFUND', 'ESCALATE', 'PARTIAL_REFUND', 'SOLVE', 'DEDUCT_PAYOUT', 'DISMISS']).optional(),
   amount: z.number().optional(),
   note: z.string().optional(),
 });

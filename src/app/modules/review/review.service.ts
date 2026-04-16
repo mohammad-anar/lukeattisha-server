@@ -202,10 +202,64 @@ const deleteById = async (id: string) => {
   return result;
 };
 
+const getReviewStats = async (filters: any) => {
+  const { operatorId, storeId } = filters;
+
+  const andConditions = [];
+  if (operatorId) {
+    andConditions.push({
+      OR: [
+        { service: { store: { operatorId } } },
+        { bundle: { store: { operatorId } } },
+      ],
+    });
+  }
+  if (storeId) {
+    andConditions.push({
+      OR: [{ service: { storeId } }, { bundle: { storeId } }],
+    });
+  }
+
+  const whereConditions: Prisma.ReviewWhereInput =
+    andConditions.length > 0 ? { AND: andConditions } : {};
+
+  const [totalReviews, ratings] = await Promise.all([
+    prisma.review.count({ where: whereConditions }),
+    prisma.review.groupBy({
+      by: ['rating'],
+      where: whereConditions,
+      _count: { rating: true },
+    }),
+  ]);
+
+  let sum = 0;
+  const distribution: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
+
+  ratings.forEach((r) => {
+    sum += r.rating * r._count.rating;
+    distribution[r.rating] = r._count.rating;
+  });
+
+  const averageRating = totalReviews > 0 ? parseFloat((sum / totalReviews).toFixed(1)) : 0;
+
+  return {
+    averageRating,
+    totalReviews,
+    distribution: [
+      { rating: 5, count: distribution[5] },
+      { rating: 4, count: distribution[4] },
+      { rating: 3, count: distribution[3] },
+      { rating: 2, count: distribution[2] },
+      { rating: 1, count: distribution[1] },
+    ],
+  };
+};
+
 export const ReviewService = {
   create,
   getAll,
   getById,
+  getReviewStats,
   getByOperatorId,
   getByUserId,
   getByStoreId,

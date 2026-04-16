@@ -21,7 +21,6 @@ model Store {
   bundleServices BundleServices[]
   cartItems      CartItem[]
   operatorOrders OperatorOrder[]
-  orders         Order[]
 }
 
 model StoreService {

@@ -1,5 +1,5 @@
 import { prisma } from '../../../helpers.ts/prisma.js';
-import { OrderStatus, SubscriptionStatus, AdStatus, UserRole } from '@prisma/client';
+import { OrderStatus, SubscriptionStatus, AdStatus, UserRole, UserStatus } from '@prisma/client';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -429,6 +429,302 @@ const getStorePerformance = async (month: number, year: number) => {
   });
 };
 
+// ─── 7. User Stats ─────────────────────────────────────────────────────────────
+
+const getUserStats = async () => {
+  const now = new Date();
+  const thisMonthStart = startOfMonth(now);
+  const prevMonthStart = startOfPrevMonth(now);
+  const prevMonthEnd = endOfPrevMonth(now);
+
+  const [
+    totalUsers,
+    totalUsersPrevMonth,
+    activeUsers,
+    newThisMonth,
+    newPrevMonth,
+    suspendedUsers,
+    suspendedUsersPrevMonth,
+  ] = await Promise.all([
+    prisma.user.count({ where: { isDeleted: false } }),
+    prisma.user.count({ where: { isDeleted: false, createdAt: { lte: prevMonthEnd } } }),
+    prisma.user.count({ where: { isDeleted: false, status: UserStatus.ACTIVE } }),
+    prisma.user.count({ where: { isDeleted: false, createdAt: { gte: thisMonthStart } } }),
+    prisma.user.count({ where: { isDeleted: false, createdAt: { gte: prevMonthStart, lte: prevMonthEnd } } }),
+    prisma.user.count({ where: { isDeleted: false, status: UserStatus.SUSPENDED } }),
+    prisma.user.count({ where: { isDeleted: false, status: UserStatus.SUSPENDED, updatedAt: { lte: prevMonthEnd } } }), // Approximation
+  ]);
+
+  const totalUsersChange = pctChange(totalUsers, totalUsersPrevMonth);
+  const activationRate = totalUsers > 0 ? parseFloat(((activeUsers / totalUsers) * 100).toFixed(2)) : 0;
+  const newThisMonthChange = pctChange(newThisMonth, newPrevMonth);
+  const suspendedUsersChange = pctChange(suspendedUsers, suspendedUsersPrevMonth);
+
+  return {
+    totalUsers: {
+      value: totalUsers,
+      change: totalUsersChange,
+      direction: totalUsersChange >= 0 ? 'up' : 'down',
+    },
+    activeUsers: {
+      value: activeUsers,
+      activationRate: activationRate,
+    },
+    newThisMonth: {
+      value: newThisMonth,
+      change: newThisMonthChange,
+      direction: newThisMonthChange >= 0 ? 'up' : 'down',
+    },
+    suspendedUsers: {
+      value: suspendedUsers,
+      change: suspendedUsersChange,
+      direction: suspendedUsersChange >= 0 ? 'up' : 'down',
+    },
+  };
+};
+
+// ─── 8. Users By Role Chart ───────────────────────────────────────────────────
+
+const getUsersByRoleChart = async () => {
+  const roles = [UserRole.USER, UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN];
+  
+  const results = await Promise.all(
+    roles.map(async (role) => {
+      const count = await prisma.user.count({ where: { role, isDeleted: false } });
+      let label = 'Users';
+      if (role === UserRole.USER) label = 'Customers';
+      if (role === UserRole.OPERATOR) label = 'Operators';
+      if (role === UserRole.ADMIN || role === UserRole.SUPER_ADMIN) label = 'Admins';
+      
+      return { role, label, count };
+    })
+  );
+
+  // Group Admins and Super Admins together for the chart if needed, 
+  // or just return as is. The image shows Customers, Operators, Admins.
+  const summarized = [
+    { label: 'Customers', count: results.find(r => r.role === UserRole.USER)?.count || 0 },
+    { label: 'Operators', count: results.find(r => r.role === UserRole.OPERATOR)?.count || 0 },
+    { label: 'Admins', count: (results.find(r => r.role === UserRole.ADMIN)?.count || 0) + (results.find(r => r.role === UserRole.SUPER_ADMIN)?.count || 0) },
+  ];
+
+  return summarized;
+};
+
+// ─── 9. User Growth Trend ──────────────────────────────────────────────────────
+
+const getUserGrowthChart = async () => {
+  const now = new Date();
+  const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const results: { label: string; count: number }[] = [];
+
+  // Last 10 months as shown in image (Jan to Oct example)
+  // Let's do last 12 months for better data
+  for (let i = 9; i >= 0; i--) {
+    const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const end = new Date(date.getFullYear(), date.getMonth() + 1, 0, 23, 59, 59, 999);
+    
+    // Total users accumulated up to this month
+    const count = await prisma.user.count({
+      where: {
+        isDeleted: false,
+        createdAt: { lte: end }
+      }
+    });
+
+    results.push({
+      label: MONTH_SHORT[date.getMonth()],
+      count
+    });
+  }
+
+  return results;
+};
+
+// ─── 10. Revenue Analytics ────────────────────────────────────────────────────
+
+const getRevenueAnalytics = async (operatorId?: string) => {
+  const now = new Date();
+  const thisMonthStart = startOfMonth(now);
+  const prevMonthStart = startOfPrevMonth(now);
+  const prevMonthEnd = endOfPrevMonth(now);
+
+  // Filter for OperatorOrder
+  const where: any = {};
+  if (operatorId) {
+    where.operatorId = operatorId;
+  }
+
+  // 1. Success Rate (Delivered Orders / Total Orders)
+  const [totalOrders, completedOrders, prevTotalOrders, prevCompletedOrders] = await Promise.all([
+    prisma.operatorOrder.count({ where: { ...where, createdAt: { gte: thisMonthStart } } }),
+    prisma.operatorOrder.count({ 
+      where: { 
+        ...where, 
+        createdAt: { gte: thisMonthStart },
+        order: { status: OrderStatus.DELIVERED }
+      } 
+    }),
+    prisma.operatorOrder.count({ 
+      where: { 
+        ...where, 
+        createdAt: { gte: prevMonthStart, lte: prevMonthEnd } 
+      } 
+    }),
+    prisma.operatorOrder.count({ 
+      where: { 
+        ...where, 
+        createdAt: { gte: prevMonthStart, lte: prevMonthEnd },
+        order: { status: OrderStatus.DELIVERED }
+      } 
+    }),
+  ]);
+
+  const successRate = totalOrders > 0 ? parseFloat(((completedOrders / totalOrders) * 100).toFixed(1)) : 0;
+  const prevSuccessRate = prevTotalOrders > 0 ? parseFloat(((prevCompletedOrders / prevTotalOrders) * 100).toFixed(1)) : 0;
+  const successRateChange = pctChange(successRate, prevSuccessRate);
+
+  // 2. Average Order Value
+  const [thisMonthAOVRaw, prevMonthAOVRaw] = await Promise.all([
+    prisma.operatorOrder.aggregate({
+      where: { ...where, createdAt: { gte: thisMonthStart } },
+      _avg: { subtotal: true },
+    }),
+    prisma.operatorOrder.aggregate({
+      where: { ...where, createdAt: { gte: prevMonthStart, lte: prevMonthEnd } },
+      _avg: { subtotal: true },
+    }),
+  ]);
+
+  const avgOrderValue = Number(thisMonthAOVRaw._avg.subtotal ?? 0);
+  const prevAvgOrderValue = Number(prevMonthAOVRaw._avg.subtotal ?? 0);
+  const aovChange = pctChange(avgOrderValue, prevAvgOrderValue);
+
+  return {
+    successRate: {
+      value: successRate,
+      change: successRateChange,
+      direction: successRateChange >= 0 ? 'up' : 'down',
+    },
+    avgOrderValue: {
+      value: parseFloat(avgOrderValue.toFixed(2)),
+      change: aovChange,
+      direction: aovChange >= 0 ? 'up' : 'down',
+    },
+  };
+};
+
+// ─── 11. Order Volume Chart ───────────────────────────────────────────────────
+
+const getOrderVolumeChart = async (operatorId?: string, month?: number, year?: number) => {
+  const now = new Date();
+  const targetMonth = month !== undefined ? month - 1 : now.getMonth();
+  const targetYear = year !== undefined ? year : now.getFullYear();
+  
+  const start = new Date(targetYear, targetMonth, 1);
+  const end = new Date(targetYear, targetMonth + 1, 0, 23, 59, 59, 999);
+  const daysInMonth = end.getDate();
+
+  const MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const monthLabel = MONTH_SHORT[targetMonth];
+
+  const results: { label: string; count: number }[] = [];
+  
+  const where: any = {
+    createdAt: { gte: start, lte: end }
+  };
+  if (operatorId) where.operatorId = operatorId;
+
+  for (let day = 1; day <= daysInMonth; day++) {
+    const dayStart = new Date(targetYear, targetMonth, day, 0, 0, 0);
+    const dayEnd = new Date(targetYear, targetMonth, day, 23, 59, 59, 999);
+    
+    const count = await prisma.operatorOrder.count({
+      where: {
+        ...where,
+        createdAt: { gte: dayStart, lte: dayEnd }
+      }
+    });
+
+    results.push({
+      label: `${monthLabel} ${day}`,
+      count
+    });
+  }
+
+  return results;
+};
+
+// ─── 12. Payment Success Rate Chart ──────────────────────────────────────────
+
+const getPaymentSuccessRateChart = async (operatorId?: string) => {
+  const where: any = {};
+  if (operatorId) where.operatorId = operatorId;
+
+  const [paid, unpaid, cancelled] = await Promise.all([
+    prisma.operatorOrder.count({ 
+      where: { 
+        ...where, 
+        order: { paymentStatus: 'PAID' } 
+      } 
+    }),
+    prisma.operatorOrder.count({ 
+      where: { 
+        ...where, 
+        order: { paymentStatus: 'UNPAID' } 
+      } 
+    }),
+    prisma.operatorOrder.count({ 
+      where: { 
+        ...where, 
+        order: { status: OrderStatus.CANCELLED } 
+      } 
+    }),
+  ]);
+
+  const total = paid + unpaid + cancelled;
+  
+  return [
+    { label: 'Successful', count: paid, percentage: total > 0 ? parseFloat(((paid / total) * 100).toFixed(1)) : 0, color: '#10B981' },
+    { label: 'Pending', count: unpaid, percentage: total > 0 ? parseFloat(((unpaid / total) * 100).toFixed(1)) : 0, color: '#F59E0B' },
+    { label: 'Failed', count: cancelled, percentage: total > 0 ? parseFloat(((cancelled / total) * 100).toFixed(1)) : 0, color: '#EF4444' },
+  ];
+};
+
+// ─── 13. Operator Activity Overview ──────────────────────────────────────────
+
+const getOperatorActivityOverview = async () => {
+  const now = new Date();
+  const prevMonthEnd = endOfPrevMonth(now);
+
+  const [totalOperators, totalPrevMonth, activeOperators, inactiveOperators] = await Promise.all([
+    prisma.operator.count(),
+    prisma.operator.count({ where: { createdAt: { lte: prevMonthEnd } } }),
+    prisma.operator.count({ where: { status: UserStatus.ACTIVE } }),
+    prisma.operator.count({ where: { status: { not: UserStatus.ACTIVE } } }),
+  ]);
+
+  const totalChange = pctChange(totalOperators, totalPrevMonth);
+  const activePercentage = totalOperators > 0 ? parseFloat(((activeOperators / totalOperators) * 100).toFixed(1)) : 0;
+  const inactivePercentage = totalOperators > 0 ? parseFloat(((inactiveOperators / totalOperators) * 100).toFixed(1)) : 0;
+
+  return {
+    totalOperators: {
+      value: totalOperators,
+      change: totalChange,
+      direction: totalChange >= 0 ? 'up' : 'down',
+    },
+    activeOperators: {
+      value: activeOperators,
+      percentage: activePercentage,
+    },
+    inactiveOperators: {
+      value: inactiveOperators,
+      percentage: inactivePercentage,
+    },
+  };
+};
+
 export const AdminAnalyticsService = {
   getStatsSummary,
   getMonthlyRevenueChart,
@@ -436,4 +732,11 @@ export const AdminAnalyticsService = {
   getOrderStatusChart,
   getTopOperators,
   getStorePerformance,
+  getUserStats,
+  getUsersByRoleChart,
+  getUserGrowthChart,
+  getRevenueAnalytics,
+  getOrderVolumeChart,
+  getPaymentSuccessRateChart,
+  getOperatorActivityOverview,
 };

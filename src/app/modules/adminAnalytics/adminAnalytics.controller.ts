@@ -102,6 +102,89 @@ const getStorePerformance = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// GET /api/v1/admin-analytics/user-stats
+const getUserStats = catchAsync(async (_req: Request, res: Response) => {
+  const result = await AdminAnalyticsService.getUserStats();
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User stats fetched successfully',
+    data: result,
+  });
+});
+
+// GET /api/v1/admin-analytics/user-roles-chart
+const getUsersByRoleChart = catchAsync(async (_req: Request, res: Response) => {
+  const result = await AdminAnalyticsService.getUsersByRoleChart();
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Users by role chart data fetched successfully',
+    data: result,
+  });
+});
+
+// GET /api/v1/admin-analytics/user-growth-chart
+const getUserGrowthChart = catchAsync(async (_req: Request, res: Response) => {
+  const result = await AdminAnalyticsService.getUserGrowthChart();
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'User growth chart data fetched successfully',
+    data: result,
+  });
+});
+
+// GET /api/v1/admin-analytics/revenue-analytics?operatorId=xxx
+const getRevenueAnalytics = catchAsync(async (req: Request, res: Response) => {
+  const operatorId = req.query.operatorId as string | undefined;
+  const result = await AdminAnalyticsService.getRevenueAnalytics(operatorId);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Revenue analytics data fetched successfully',
+    data: result,
+  });
+});
+
+// GET /api/v1/admin-analytics/order-volume-chart?operatorId=xxx&month=4
+const getOrderVolumeChart = catchAsync(async (req: Request, res: Response) => {
+  const operatorId = req.query.operatorId as string | undefined;
+  const month = req.query.month ? parseInt(req.query.month as string) : undefined;
+  const year = req.query.year ? parseInt(req.query.year as string) : undefined;
+
+  const result = await AdminAnalyticsService.getOrderVolumeChart(operatorId, month, year);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Order volume chart data fetched successfully',
+    data: result,
+  });
+});
+
+// GET /api/v1/admin-analytics/payment-success-chart?operatorId=xxx
+const getPaymentSuccessRateChart = catchAsync(async (req: Request, res: Response) => {
+  const operatorId = req.query.operatorId as string | undefined;
+  const result = await AdminAnalyticsService.getPaymentSuccessRateChart(operatorId);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Payment success rate chart data fetched successfully',
+    data: result,
+  });
+});
+
+// GET /api/v1/admin-analytics/operator-activity
+const getOperatorActivityOverview = catchAsync(async (_req: Request, res: Response) => {
+  const result = await AdminAnalyticsService.getOperatorActivityOverview();
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Operator activity overview fetched successfully',
+    data: result,
+  });
+});
+
 export const AdminAnalyticsController = {
   getStatsSummary,
   getMonthlyRevenueChart,
@@ -109,4 +192,11 @@ export const AdminAnalyticsController = {
   getOrderStatusChart,
   getTopOperators,
   getStorePerformance,
+  getUserStats,
+  getUsersByRoleChart,
+  getUserGrowthChart,
+  getRevenueAnalytics,
+  getOrderVolumeChart,
+  getPaymentSuccessRateChart,
+  getOperatorActivityOverview,
 };

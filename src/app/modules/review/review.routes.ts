@@ -8,6 +8,7 @@ import { UserRole } from '@prisma/client';
 const router = express.Router();
 
 router.post('/', auth(UserRole.USER), validateRequest(ReviewValidation.createSchema), ReviewController.create);
+router.get('/stats', ReviewController.getReviewStats);
 router.get('/', ReviewController.getAll);
 router.get('/operator/:operatorId', ReviewController.getByOperatorId);
 router.get('/user/:userId', ReviewController.getByUserId);

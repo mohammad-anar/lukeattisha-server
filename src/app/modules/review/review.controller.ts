@@ -118,10 +118,22 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getReviewStats = catchAsync(async (req: Request, res: Response) => {
+  const filters = pick(req.query, ['operatorId', 'storeId']);
+  const result = await ReviewService.getReviewStats(filters);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Review stats fetched successfully',
+    data: result,
+  });
+});
+
 export const ReviewController = {
   create,
   getAll,
   getById,
+  getReviewStats,
   getByOperatorId,
   getByUserId,
   getByStoreId,
