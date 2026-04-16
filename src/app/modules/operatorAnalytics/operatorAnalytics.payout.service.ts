@@ -48,7 +48,7 @@ const getPayoutHistory = async (
   options: Record<string, any>,
 ) => {
   const { limit, page, skip } = paginationHelper.calculatePagination(options);
-  const { storeId } = options;
+  const { storeId, month, year, status } = options;
 
   const wallet = await prisma.operatorWallet.findUnique({
     where: { operatorId },
@@ -77,6 +77,25 @@ const getPayoutHistory = async (
     };
   } else {
     whereConditions.type = 'WITHDRAWAL';
+  }
+
+  // Status Filter (Only applies to WITHDRAWAL types)
+  if (status) {
+    whereConditions.withdrawal = { status };
+  }
+
+  // Month/Year Filter
+  if (month && year) {
+    const m = parseInt(month as string);
+    const y = parseInt(year as string);
+    const startDate = new Date(y, m - 1, 1);
+    const endDate = new Date(y, m, 0, 23, 59, 59, 999);
+    whereConditions.createdAt = { gte: startDate, lte: endDate };
+  } else if (year) {
+    const y = parseInt(year as string);
+    const startDate = new Date(y, 0, 1);
+    const endDate = new Date(y, 11, 31, 23, 59, 59, 999);
+    whereConditions.createdAt = { gte: startDate, lte: endDate };
   }
 
   const [transactions, total] = await Promise.all([

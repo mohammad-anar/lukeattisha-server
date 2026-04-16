@@ -48,6 +48,7 @@ import { SupportPhoneRouter } from '../modules/supportPhone/supportPhone.routes.
 import { LiveSupportRouter } from '../modules/liveSupport/liveSupport.routes.js';
 import { AdminReviewRoutes } from '../modules/adminReview/adminReview.routes.js';
 import { OperatorOrdersRouter } from '../modules/operatorOrders/operatorOrders.routes.js';
+import { OperatorReportingRouter } from '../modules/operatorReporting/operatorReporting.routes.js';
 
 const router = express.Router();
 
@@ -100,6 +101,7 @@ const moduleRoutes = [
   { path: '/support-phone', route: SupportPhoneRouter },
   { path: '/live-support', route: LiveSupportRouter },
   { path: '/operator-orders', route: OperatorOrdersRouter },
+  { path: '/operator-reporting', route: OperatorReportingRouter },
   { path: '/admin-review', route: AdminReviewRoutes },
 ];
 

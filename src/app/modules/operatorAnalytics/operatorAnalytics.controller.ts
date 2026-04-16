@@ -6,6 +6,7 @@ import { OperatorAnalyticsStatsService } from './operatorAnalytics.stats.service
 import { OperatorAnalyticsPayoutService } from './operatorAnalytics.payout.service.js';
 import { OperatorAnalyticsRevenueService } from './operatorAnalytics.revenue.service.js';
 import { OperatorAnalyticsServicesService } from './operatorAnalytics.services.service.js';
+import { OperatorAnalyticsPerformanceService } from './operatorAnalytics.performance.service.js';
 
 import ApiError from '../../../errors/ApiError.js';
 import { prisma } from '../../../helpers.ts/prisma.js';
@@ -45,9 +46,8 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
 // GET /api/v1/operator-analytics/payout-history
 const getPayoutHistory = catchAsync(async (req: Request, res: Response) => {
   const operatorId = await resolveOperatorId(req);
-  const options = pick(req.query, ['limit', 'page']);
-  const storeId = req.query.storeId as string | undefined;
-  const result = await OperatorAnalyticsPayoutService.getPayoutHistory(operatorId, { ...options, storeId });
+  const options = pick(req.query, ['limit', 'page', 'month', 'year', 'status', 'storeId']);
+  const result = await OperatorAnalyticsPayoutService.getPayoutHistory(operatorId, options);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -104,9 +104,25 @@ const getTopServices = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+// ─── Performance Metrics ───────────────────────────────────────────────────────
+// GET /api/v1/operator-analytics/performance-metrics
+const getPerformanceMetrics = catchAsync(async (req: Request, res: Response) => {
+  const operatorId = await resolveOperatorId(req);
+  const storeId = req.query.storeId as string | undefined;
+
+  const result = await OperatorAnalyticsPerformanceService.getPerformanceMetrics(operatorId, storeId);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Operator performance metrics fetched successfully',
+    data: result,
+  });
+});
+
 export const OperatorAnalyticsController = {
   getStats,
   getPayoutHistory,
   getMonthlyRevenue,
   getTopServices,
+  getPerformanceMetrics,
 };

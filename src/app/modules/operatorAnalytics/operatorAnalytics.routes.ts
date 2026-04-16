@@ -35,4 +35,11 @@ router.get(
   OperatorAnalyticsController.getTopServices,
 );
 
+// GET /api/v1/operator-analytics/performance-metrics?storeId=<optional>
+router.get(
+  '/performance-metrics',
+  auth(UserRole.OPERATOR),
+  OperatorAnalyticsController.getPerformanceMetrics,
+);
+
 export const OperatorAnalyticsRouter = router;
