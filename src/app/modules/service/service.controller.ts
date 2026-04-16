@@ -48,12 +48,38 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
-  const result = await ServiceService.getByOperatorId(req.params.id as string);
+  const filters = pick(req.query, ['searchTerm']);
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+  const result = await ServiceService.getByOperatorId(req.params.id as string, filters, options);
+  
   sendResponse(res, {
     success: true,
     statusCode: 200,
     message: 'Service fetched successfully',
-    data: result,
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const getMyService = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id;
+  const operator = await prisma.operator.findUnique({
+    where: { userId },
+  });
+  if (!operator) {
+    throw new ApiError(404, 'Operator not found');
+  }
+
+  const filters = pick(req.query, ['searchTerm']);
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+
+  const result = await ServiceService.getByOperatorId(operator.id, filters, options);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'My services fetched successfully',
+    meta: result.meta,
+    data: result.data,
   });
 });
 
@@ -109,6 +135,7 @@ export const ServiceController = {
   getAll,
   getById,
   getByOperatorId,
+  getMyService,
   update,
   assignAddons,
   deleteById,

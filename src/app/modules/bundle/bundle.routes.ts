@@ -9,6 +9,7 @@ import fileUploadHandler from '../../middlewares/fileUploadHandler.js';
 const router = express.Router();
 
 router.get('/', BundleController.getAll);
+router.get('/my-bundle', auth('OPERATOR'), BundleController.getMyBundle);
 router.get('/:id', BundleController.getById);
 
 // Restricted operator actions

@@ -16,9 +16,9 @@ const calculateDistanceInMiles = (
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * (Math.PI / 180)) *
-      Math.cos(lat2 * (Math.PI / 180)) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos(lat2 * (Math.PI / 180)) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
@@ -175,6 +175,34 @@ const getById = async (id: string, userLat?: string, userLng?: string) => {
   const result = await prisma.store.findUnique({
     where: { id },
     include: {
+      storeServices: {
+        include: {
+          service: {
+            select: {
+              id: true,
+              name: true,
+              basePrice: true,
+              isActive: true,
+              image: true,
+              description: true,
+            }
+          }
+        }
+      },
+      storeBundles: {
+        include: {
+          bundle: {
+            select: {
+              id: true,
+              name: true,
+              bundlePrice: true,
+              isActive: true,
+              image: true,
+              description: true,
+            }
+          }
+        }
+      },
       operator: { select: { user: { select: { name: true, email: true, phone: true, avatar: true } } } },
       _count: true,
     }
@@ -192,7 +220,7 @@ const getById = async (id: string, userLat?: string, userLng?: string) => {
         result.lat,
         result.lng
       ),
-      
+
     };
   }
 

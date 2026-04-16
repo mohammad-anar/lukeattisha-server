@@ -114,7 +114,6 @@ const getById = async (id: string) => {
     include: {
       operator: true,
       category: true,
-      ads: true,
       storeServices: true,
       serviceAddons: {
         include: {
@@ -129,13 +128,29 @@ const getById = async (id: string) => {
   return result;
 };
 
-const getByOperatorId = async (id: string) => {
+const getByOperatorId = async (id: string, filters: any, options: any) => {
+  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+  const { searchTerm } = filters;
+
+  const andConditions: any[] = [{ operatorId: id }];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ['name', 'description'].map(field => ({
+        [field]: { contains: searchTerm, mode: 'insensitive' },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.ServiceWhereInput = { AND: andConditions };
+
   const result = await prisma.service.findMany({
-    where: { operatorId: id },
+    where: whereConditions,
+    skip,
+    take: limit,
     include: {
       operator: true,
       category: true,
-      ads: true,
       storeServices: true,
       serviceAddons: {
         include: {
@@ -143,11 +158,15 @@ const getByOperatorId = async (id: string) => {
         },
       },
     },
+    orderBy: sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
   });
-  if (!result) {
-    throw new ApiError(404, 'Service not found');
-  }
-  return result;
+
+  const total = await prisma.service.count({ where: whereConditions });
+
+  return {
+    meta: { total, page, limit },
+    data: result,
+  };
 };
 
 // assign addons to service

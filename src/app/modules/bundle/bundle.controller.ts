@@ -5,6 +5,8 @@ import { BundleService } from './bundle.service.js';
 import pick from '../../../helpers.ts/pick.js';
 import { getSingleFilePath } from '../../shared/getFilePath.js';
 import { config } from '../../../config/index.js';
+import { prisma } from '../../../helpers.ts/prisma.js';
+import ApiError from '../../../errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
@@ -30,6 +32,28 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
     success: true,
     statusCode: 200,
     message: 'Bundle fetched successfully',
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const getMyBundle = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user?.id;
+  const operator = await prisma.operator.findUnique({
+    where: { userId },
+  });
+  if (!operator) {
+    throw new ApiError(404, 'Operator not found');
+  }
+
+  const filters = pick(req.query, ['searchTerm']);
+  const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
+
+  const result = await BundleService.getByOperatorId(operator.id, filters, options);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'My bundles fetched successfully',
     meta: result.meta,
     data: result.data,
   });
@@ -74,6 +98,7 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
 export const BundleController = {
   create,
   getAll,
+  getMyBundle,
   getById,
   update,
   deleteById,

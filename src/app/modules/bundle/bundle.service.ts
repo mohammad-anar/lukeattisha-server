@@ -129,6 +129,62 @@ const getAll = async (filters: any, options: any) => {
   };
 };
 
+const getByOperatorId = async (id: string, filters: any, options: any) => {
+  const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
+  const { searchTerm } = filters;
+
+  const andConditions: any[] = [{ operatorId: id }];
+
+  if (searchTerm) {
+    andConditions.push({
+      OR: ['name', 'description'].map(field => ({
+        [field]: { contains: searchTerm, mode: 'insensitive' },
+      })),
+    });
+  }
+
+  const whereConditions: Prisma.BundleWhereInput = { AND: andConditions };
+
+  const result = await prisma.bundle.findMany({
+    where: whereConditions,
+    skip,
+    take: limit,
+    include: {
+      bundleServices: {
+        select: {
+          serviceId: true,
+          service: {
+            select: {
+              id: true,
+              name: true,
+              basePrice: true,
+              image: true,
+              description: true,
+              category: true,
+              operator: true,
+              storeServices: true,
+            }
+          },
+          store: true
+        }
+      }
+    },
+    orderBy: sortBy && sortOrder ? { [sortBy]: sortOrder } : { createdAt: 'desc' },
+  });
+
+  const total = await prisma.bundle.count({ where: whereConditions });
+
+  return {
+    meta: {
+      total,
+      totalPage: Math.ceil(total / limit),
+      page,
+      limit,
+    },
+    data: result,
+  };
+};
+
 const getById = async (id: string) => {
   const result = await prisma.bundle.findUnique({
     where: { id },
@@ -172,6 +228,7 @@ const deleteById = async (id: string) => {
 export const BundleService = {
   create,
   getAll,
+  getByOperatorId,
   getById,
   update,
   deleteById,

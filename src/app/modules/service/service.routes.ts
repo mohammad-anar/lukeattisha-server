@@ -9,11 +9,10 @@ import { assignAddonsSchema, createServiceSchema, updateServiceSchema } from './
 const router = express.Router();
 
 router.get('/', ServiceController.getAll);
+router.get('/my-service', auth('OPERATOR'), ServiceController.getMyService);
 router.get('/:id', ServiceController.getById);
-// get service by operator id
 router.get('/operator/:id', auth('OPERATOR', 'ADMIN', 'SUPER_ADMIN'), ServiceController.getByOperatorId);
 
-// Restricted operator actions
 router.post('/', auth('OPERATOR'),
     requireOperatorOnboarding,
     fileUploadHandler(), validateRequest(createServiceSchema), ServiceController.create);

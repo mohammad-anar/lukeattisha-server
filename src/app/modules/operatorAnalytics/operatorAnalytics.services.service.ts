@@ -10,10 +10,10 @@ const getTopServices = async (operatorId: string, limit = 10) => {
   const orderItems = await prisma.orderItem.findMany({
     where: {
       operatorOrder: { operatorId },
-      serviceId: { not: null },
+      storeServiceId: { not: null },
     },
     select: {
-      serviceId: true,
+      storeServiceId: true,
       serviceName: true,
       operatorOrder: {
         select: {
@@ -23,14 +23,14 @@ const getTopServices = async (operatorId: string, limit = 10) => {
     },
   });
 
-  // Group by serviceId
+  // Group by storeServiceId
   const serviceMap = new Map<
     string,
     { serviceId: string; serviceName: string; total: number; completed: number }
   >();
 
   for (const item of orderItems) {
-    const sid = item.serviceId!;
+    const sid = item.storeServiceId!;
     const orderStatus = item.operatorOrder.order.status;
 
     if (!serviceMap.has(sid)) {

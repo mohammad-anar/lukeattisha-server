@@ -120,6 +120,15 @@ const verifyOnboardingStatus = async (id: string) => {
     },
   });
 
+  let customerId = operator.user.stripeCustomerId;
+  if (!customerId) {
+    const customer = await StripeHelpers.createStripeCustomer(operator.user.email, operator.user.name, operator.user.userId as string);
+    await prisma.user.update({
+      where: { id: operator.userId },
+      data: { stripeCustomerId: customer.id }
+    });
+  }
+
   return { operator: result, stripeStatus: status };
 };
 

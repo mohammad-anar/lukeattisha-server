@@ -354,15 +354,22 @@ const getMyOrders = async (user: any, filters: any, options: any) => {
   const andConditions: any[] = [];
 
   if (user.role === 'USER') {
-    andConditions.push({ userId: user.userId });
+    andConditions.push({ userId: user.id });
   } else if (user.role === 'OPERATOR') {
-    andConditions.push({
-      operatorOrders: {
-        some: {
-          operatorId: user.userId
-        }
-      }
+    const operator = await prisma.operator.findUnique({
+      where: { userId: user.id }
     });
+    if (operator) {
+      andConditions.push({
+        operatorOrders: {
+          some: {
+            operatorId: operator.id
+          }
+        }
+      });
+    } else {
+      andConditions.push({ id: "invalid-operator" }); // force no results
+    }
   }
 
   if (searchTerm) {

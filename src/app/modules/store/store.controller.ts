@@ -81,7 +81,14 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await StoreService.update(req.params.id as string, req.body);
+  const payload = req.body;
+  const image = getSingleFilePath(req.files as any, "image");
+  const banner = getSingleFilePath(req.files as any, "banner");
+
+  if (image) payload.logo = `http://${config.ip_address}:${config.port}${image}`;
+  if (banner) payload.banner = `http://${config.ip_address}:${config.port}${banner}`;
+
+  const result = await StoreService.update(req.params.id as string, payload);
   sendResponse(res, {
     success: true,
     statusCode: 200,
