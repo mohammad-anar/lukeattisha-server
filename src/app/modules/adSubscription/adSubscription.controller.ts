@@ -60,8 +60,7 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const createCheckoutSession = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.user;
-  console.log(id, req.user);
+  const { id } = req.user as any;
   const operator = await prisma.operator.findUnique({ where: { userId: id } });
   if (!operator) throw new ApiError(404, 'Operator not found');
   const result = await AdSubscriptionService.createCheckoutSession(operator.id, req.body);

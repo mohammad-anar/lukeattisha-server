@@ -92,7 +92,6 @@ const deleteById = async (id: string) => {
 
 const createCheckoutSession = async (operatorId: string, payload: { planId: string }) => {
   const { planId } = payload;
-  
   const plan = await prisma.adSubscriptionPlan.findUnique({
     where: { id: planId },
   });

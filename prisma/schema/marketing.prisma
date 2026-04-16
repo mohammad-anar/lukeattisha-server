@@ -93,6 +93,7 @@ model Ad {
   subscription AdSubscription @relation(fields: [subscriptionId], references: [id])
   storeService StoreService?  @relation(fields: [storeServiceId], references: [id])
   storeBundle  StoreBundle?   @relation(fields: [storeBundleId], references: [id])
+  orders       Order[]
 }
 
 model UserSubscriptionPlan {

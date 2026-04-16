@@ -64,6 +64,9 @@ model Order {
   stripeTransferGroup   String?
   paymentUrl            String?
 
+  isFromAd Boolean @default(false)
+  adId     String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -79,6 +82,7 @@ model Order {
   invoice          Invoice?
   orderTrackings   OrderTracking[]
   orderIssues      OrderIssue[]
+  ad               Ad?                         @relation(fields: [adId], references: [id])
 }
 
 model OrderTracking {

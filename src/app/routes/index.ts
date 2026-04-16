@@ -49,6 +49,8 @@ import { LiveSupportRouter } from '../modules/liveSupport/liveSupport.routes.js'
 import { AdminReviewRoutes } from '../modules/adminReview/adminReview.routes.js';
 import { OperatorOrdersRouter } from '../modules/operatorOrders/operatorOrders.routes.js';
 import { OperatorReportingRouter } from '../modules/operatorReporting/operatorReporting.routes.js';
+import { OperatorReviewRouter } from '../modules/operatorReview/operatorReview.routes.js';
+import { OperatorMembershipRouter } from '../modules/operatorMembership/operatorMembership.routes.js';
 
 const router = express.Router();
 
@@ -102,6 +104,8 @@ const moduleRoutes = [
   { path: '/live-support', route: LiveSupportRouter },
   { path: '/operator-orders', route: OperatorOrdersRouter },
   { path: '/operator-reporting', route: OperatorReportingRouter },
+  { path: '/operator-review', route: OperatorReviewRouter },
+  { path: '/operator-membership', route: OperatorMembershipRouter },
   { path: '/admin-review', route: AdminReviewRoutes },
 ];
 
