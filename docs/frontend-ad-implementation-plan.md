@@ -7,15 +7,40 @@ This document outlines the frontend implementation plan for integrating with the
 | Module | Purpose | Main Actions |
 | :--- | :--- | :--- |
 | **Ad Subscription** | To manage subscription plans for ads. | Checkout session, Buy plan, View active plans. |
-| **Ad Management** | To promote specific services or bundles. | Create Ad (requires subscription), View Ads, Update Ad, Delete Ad. |
+| **Ad Management** | Promotes specific services or bundles. | Create Ad, View My Active Ad, Update Ad, Delete Ad. |
 
 ---
 
 ## 2. API Reference
 
+### Ad Subscription Plan Module
+
+#### `GET /adsubscriptionplan/`
+- **Description**: Lists all available ad subscription plans for operators to choose from.
+- **Auth Required**: No
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "meta": { "total": 3, "page": 1, "limit": 10 },
+      "data": [
+        {
+          "id": "string",
+          "name": "string",
+          "price": 29.99,
+          "durationMonth": 1
+        }
+      ]
+    }
+  }
+  ```
+
+---
+
 ### Ad Subscription Module
 
-#### `POST /ad-subscription/checkout-session`
+#### `POST /adsubscription/checkout-session`
 - **Description**: Initiates a Stripe checkout session for a specific plan.
 - **Request Body**:
   ```json
@@ -35,7 +60,22 @@ This document outlines the frontend implementation plan for integrating with the
   }
   ```
 
-#### `GET /ad-subscription/`
+#### `POST /adsubscription/cancel/:id`
+- **Description**: Cancels an active ad subscription.
+- **Effects**: 
+  - Sets subscription status to `CANCELLED`.
+  - Sets all linked active Ads to `EXPIRED`.
+  - Sets operator `isSubscribed` to `false`.
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "AdSubscription cancelled successfully",
+    "data": { "id": "string", "status": "CANCELLED", ... }
+  }
+  ```
+
+#### `GET /adsubscription/`
 - **Description**: Fetches all subscription records for the operator.
 - **Response (200 OK)**:
   ```json
@@ -101,6 +141,32 @@ This document outlines the frontend implementation plan for integrating with the
   }
   ```
 
+#### `GET /ad/my-active-ad`
+- **Description**: Fetches the operator's currently active ad.
+- **Auth Required**: Yes — `OPERATOR`
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "data": {
+      "id": "string",
+      "status": "ACTIVE",
+      "operatorId": "string",
+      "storeService": {
+        "id": "string",
+        "service": { "name": "string", "image": "string" }
+      },
+      "storeBundle": null,
+      "subscription": {
+        "id": "string",
+        "status": "ACTIVE",
+        "startDate": "...",
+        "endDate": "..."
+      }
+    }
+  }
+  ```
+
 #### `GET /ad/`
 - **Description**: Lists active ads. Supports distance-based sorting if user coordinates are provided.
 - **Query Params**: `userLat`, `userLng`, `searchTerm`, `page`, `limit`
@@ -155,19 +221,28 @@ This document outlines the frontend implementation plan for integrating with the
   ```json
   {
     "success": true,
-    "data": { "id": "string", ...updatedFields }
+    "data": { "id": "string", "storeServiceId": "...", "storeBundleId": "..." }
   }
   ```
 
-
+#### `DELETE /ad/:id`
+- **Description**: Deletes an ad. This allows an operator to delete an active ad and create a new one while their subscription is still active.
+- **Auth Required**: Yes — `OPERATOR`, `ADMIN`, `SUPER_ADMIN`
+- **Response (200 OK)**:
+  ```json
+  {
+    "success": true,
+    "message": "Ad deleted successfully"
+  }
+  ```
 
 ### Supporting Endpoints (For Selectors)
 
-#### `GET /store-services/operator/:operatorId`
+#### `GET /storeservice/operator/:operatorId`
 - **Description**: Fetches all services owned by a specific operator. Used in the "Promote a Service" dropdown.
 - **Response**: Array of StoreService objects with nested Service details.
 
-#### `GET /store-bundles/operator/:operatorId`
+#### `GET /storebundle/operator/:operatorId`
 - **Description**: Fetches all bundles owned by a specific operator. Used in the "Promote a Bundle" dropdown.
 - **Response**: Array of StoreBundle objects with nested Bundle details.
 
@@ -176,19 +251,27 @@ This document outlines the frontend implementation plan for integrating with the
 ## 3. Frontend Workflow (Operator Perspective)
 
 ### A. Subscribing to a Plan
-1. **List Plans**: Fetch available `AdSubscriptionPlan` options.
+1. **List Plans**: Call `GET /adsubscriptionplan/` to fetch available plan options.
 2. **Select & Pay**: When the user clicks "Buy Plan":
-   - Call `POST /ad-subscription/checkout-session` with the chosen `planId`.
+   - Call `POST /adsubscription/checkout-session` with the chosen `planId`.
    - Redirect the user to the `url` provided in the response.
 3. **Success/Cancel**: After payment, Stripe redirects to the configured return URLs. The frontend should handle these routes to show success/error toasts.
+4. **Subscription Management**:
+   - Call `POST /adsubscription/cancel/:id` to stop the subscription.
+   - UI should reflect that ads are now `EXPIRED` and the operator is no longer subscribed.
 
-### B. Creating an Ad
-1. **Pre-check**: Check if the user has an active subscription.
-2. **Setup**: Provide a form to select a **Store Service** or **Store Bundle**.
-3. **Submit**:
-   - If user has a subscription: Ad is created immediately.
-   - If no subscription: The API response will provide a `checkoutUrl`.
-   - **Frontend Action**: `if (res.type === 'PAYMENT_REQUIRED') window.location.href = res.checkoutUrl;`
+### B. Managing Ad
+1. **View Active Ad**: Call `GET /ad/my-active-ad`. This shows the currently running ad, utilizing the subscription's active timeframe (`startDate` to `endDate`).
+2. **Switching Ad**: Operators can delete an active ad by calling `DELETE /ad/:id`. They can then freely create a new ad (`POST /ad/`) utilizing the same remaining subscription time.
+
+### C. Creating an Ad
+1. **Pre-check**: Ensure the operator does not currently have an active ad (`GET /ad/my-active-ad` returns null).
+2. **Populate Selectors**:
+   - Call `GET /storeservice/operator/:operatorId` for the Service dropdown.
+   - Call `GET /storebundle/operator/:operatorId` for the Bundle dropdown.
+3. **Submit** `POST /ad/` with `storeServiceId` or `storeBundleId`:
+   - If `data.type === 'PAYMENT_REQUIRED'` → redirect to `data.checkoutUrl`.
+   - Otherwise → show success toast, the ad starts running using the current subscription's timeframe.
 
 ---
 
@@ -207,10 +290,10 @@ This document outlines the frontend implementation plan for integrating with the
 
 ## 5. UI Components Needed
 
-1. **AdPlanCard**: Displays plan name, price, and "Buy" button.
-2. **AdPromotionCard**: The card used in the discovery feed (User view).
-3. **AdManagementCard**: Card for operators to see their active ad, status, and "Delete" button.
-4. **PromotionForm**: Form for operators to select what they want to promote (Service or Bundle).
+1. **AdPlanCard**: Displays plan name, price, duration, and "Buy" button.
+2. **AdPromotionCard**: Discovery feed card (User view) with distance badge.
+3. **AdManagementCard**: Operator card showing active ad (`GET /ad/my-active-ad`) and actions (Edit, Delete, Cancel Subscription).
+4. **PromotionForm**: Form to select a Store Service or Store Bundle to promote.
 
 ---
 

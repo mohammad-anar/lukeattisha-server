@@ -193,21 +193,22 @@ const getAll = async (filters: any, options: any) => {
       include: {
         subscription: true,
         operator: {
-          include: { 
+          include: {
             user: { select: { name: true, avatar: true } },
             stores: { select: { lat: true, lng: true } }
           }
         },
         storeService: {
-          include: { 
+          include: {
             service: true,
-            reviews: { select: { rating: true } } 
+            reviews: { select: { rating: true } },
+            store: true
           }
         },
         storeBundle: {
-          include: { 
+          include: {
             bundle: true,
-            reviews: { select: { rating: true } } 
+            reviews: { select: { rating: true } }
           }
         }
       }
@@ -290,10 +291,42 @@ const deleteById = async (id: string) => {
   return result;
 };
 
+const getMyActiveAd = async (operatorId: string) => {
+  const result = await prisma.ad.findFirst({
+    where: {
+      operatorId,
+      status: 'ACTIVE',
+      subscription: {
+        status: 'ACTIVE',
+        endDate: { gt: new Date() }
+      }
+    },
+    include: {
+      subscription: true,
+      storeService: { include: { service: true } },
+      storeBundle: { include: { bundle: true } }
+    }
+  });
+  return result;
+};
+
+const deleteMyActiveAd = async (operatorId: string) => {
+  const activeAd = await getMyActiveAd(operatorId);
+  if (!activeAd) {
+    throw new ApiError(404, 'No active ad found');
+  }
+  const result = await prisma.ad.delete({
+    where: { id: activeAd.id },
+  });
+  return result;
+};
+
 export const AdService = {
   create,
   getAll,
   getById,
   update,
   deleteById,
+  getMyActiveAd,
+  deleteMyActiveAd,
 };

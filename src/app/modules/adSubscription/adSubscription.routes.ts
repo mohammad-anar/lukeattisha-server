@@ -12,7 +12,7 @@ router.get('/', AdSubscriptionController.getAll);
 router.get('/:id', AdSubscriptionController.getById);
 // create checkout session
 router.post('/checkout-session', auth(UserRole.OPERATOR), validateRequest(AdSubscriptionValidation.createCheckoutSessionSchema), AdSubscriptionController.createCheckoutSession);
+router.post('/cancel/:id', auth(UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN), AdSubscriptionController.cancelSubscription);
 router.patch('/:id', AdSubscriptionController.update);
-router.delete('/:id', AdSubscriptionController.deleteById);
 
 export const AdSubscriptionRouter = router;

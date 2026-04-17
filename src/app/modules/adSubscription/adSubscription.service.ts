@@ -110,6 +110,33 @@ const createCheckoutSession = async (operatorId: string, payload: { planId: stri
   return { url: sessionUrl };
 };
 
+const cancelSubscription = async (id: string) => {
+  const result = await prisma.$transaction(async (tx) => {
+    // 1. Update subscription status
+    const subscription = await tx.adSubscription.update({
+      where: { id },
+      data: { status: 'CANCELLED' },
+      include: { operator: true },
+    });
+
+    // 2. Expire all linked ads
+    await tx.ad.updateMany({
+      where: { subscriptionId: id, status: 'ACTIVE' },
+      data: { status: 'EXPIRED' },
+    });
+
+    // 3. Update operator user's isSubscribed status
+    await tx.user.update({
+      where: { id: subscription.operator.userId },
+      data: { isSubscribed: false },
+    });
+
+    return subscription;
+  });
+
+  return result;
+};
+
 export const AdSubscriptionService = {
   create,
   getAll,
@@ -117,4 +144,5 @@ export const AdSubscriptionService = {
   update,
   deleteById,
   createCheckoutSession,
+  cancelSubscription,
 };

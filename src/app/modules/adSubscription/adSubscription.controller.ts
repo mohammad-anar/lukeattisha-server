@@ -72,6 +72,16 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
   });
 });
 
+const cancelSubscription = catchAsync(async (req: Request, res: Response) => {
+  const result = await AdSubscriptionService.cancelSubscription(req.params.id as string);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'AdSubscription cancelled successfully',
+    data: result,
+  });
+});
+
 export const AdSubscriptionController = {
   create,
   getAll,
@@ -79,4 +89,5 @@ export const AdSubscriptionController = {
   update,
   deleteById,
   createCheckoutSession,
+  cancelSubscription,
 };

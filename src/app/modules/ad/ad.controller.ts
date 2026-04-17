@@ -62,10 +62,41 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getMyActiveAd = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const operator = await prisma.operator.findUnique({ where: { userId: user.id } });
+  if (!operator) throw new ApiError(404, 'Operator not found');
+  
+  const result = await AdService.getMyActiveAd(operator.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Active ad fetched successfully',
+    data: result,
+  });
+});
+
+const deleteMyActiveAd = catchAsync(async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  const operator = await prisma.operator.findUnique({ where: { userId: user.id } });
+  if (!operator) throw new ApiError(404, 'Operator not found');
+  
+  const result = await AdService.deleteMyActiveAd(operator.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Active ad deleted successfully',
+    data: result,
+  });
+});
+
 export const AdController = {
   create,
   getAll,
   getById,
   update,
   deleteById,
+  getMyActiveAd,
+  deleteMyActiveAd,
 };
+

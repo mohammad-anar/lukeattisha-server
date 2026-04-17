@@ -8,6 +8,8 @@ import { UserRole } from '@prisma/client';
 const router = express.Router();
 
 router.post('/', auth(UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN), validateRequest(AdValidation.createSchema), AdController.create);
+router.get('/my-active-ad', auth(UserRole.OPERATOR), AdController.getMyActiveAd);
+router.delete('/my-active-ad', auth(UserRole.OPERATOR), AdController.deleteMyActiveAd);
 router.get('/', AdController.getAll);
 router.get('/:id', AdController.getById);
 router.patch('/:id', auth(UserRole.OPERATOR, UserRole.ADMIN, UserRole.SUPER_ADMIN), validateRequest(AdValidation.updateSchema), AdController.update);
