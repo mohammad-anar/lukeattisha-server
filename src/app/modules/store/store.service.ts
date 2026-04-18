@@ -259,11 +259,62 @@ const deleteById = async (id: string) => {
   return result;
 };
 
+const getOperationalSettings = async (storeId: string, operatorId: string) => {
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+    select: {
+      id: true,
+      operatorId: true,
+      pauseNewOrders: true,
+      dailyCapacityLimit: true,
+      blackoutDates: true,
+      serviceRadius: true,
+    }
+  });
+
+  if (!store) {
+    throw new ApiError(404, 'Store not found');
+  }
+
+  if (store.operatorId !== operatorId) {
+    throw new ApiError(403, 'Forbidden: You do not own this store');
+  }
+
+  return store;
+};
+
+const updateOperationalSettings = async (storeId: string, operatorId: string, payload: any) => {
+  const store = await prisma.store.findUnique({
+    where: { id: storeId },
+  });
+
+  if (!store) {
+    throw new ApiError(404, 'Store not found');
+  }
+
+  if (store.operatorId !== operatorId) {
+    throw new ApiError(403, 'Forbidden: You do not own this store');
+  }
+
+  if (payload.blackoutDates) {
+    payload.blackoutDates = payload.blackoutDates.map((date: string) => new Date(date));
+  }
+
+  const result = await prisma.store.update({
+    where: { id: storeId },
+    data: payload,
+  });
+
+  return result;
+};
+
 export const StoreService = {
   create,
   getAll,
   getById,
   update,
   deleteById,
-  getByOperatorId
+  getByOperatorId,
+  getOperationalSettings,
+  updateOperationalSettings
 };

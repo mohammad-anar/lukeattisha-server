@@ -11,9 +11,13 @@ model Store {
   postalCode String?
   lat        Float?
   lng        Float?
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  isActive           Boolean          @default(true)
+  pauseNewOrders     Boolean          @default(false)
+  dailyCapacityLimit Int              @default(25)
+  blackoutDates      DateTime[]       @default([])
+  serviceRadius      Float            @default(5)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   operator       Operator         @relation(fields: [operatorId], references: [id])
   storeServices  StoreService[]

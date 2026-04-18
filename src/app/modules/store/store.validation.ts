@@ -23,7 +23,15 @@ const updateSchema = z.object({
   lng: z.number().optional(),
 }).partial();
 
+const updateOperationalSettingsSchema = z.object({
+  pauseNewOrders: z.boolean().optional(),
+  dailyCapacityLimit: z.number().optional(),
+  blackoutDates: z.array(z.string()).optional(),
+  serviceRadius: z.number().optional(),
+});
+
 export const StoreValidation = {
   createSchema,
   updateSchema,
+  updateOperationalSettingsSchema,
 };

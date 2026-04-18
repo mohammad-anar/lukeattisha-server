@@ -14,6 +14,8 @@ router.get('/', StoreController.getAll);
 router.get('/operator/:operatorId', auth("OPERATOR", "ADMIN", "SUPER_ADMIN"), StoreController.getByOperatorId);
 router.get('/:id', StoreController.getById);
 router.patch('/:id', auth("OPERATOR"), fileUploadHandler(), validateRequest(StoreValidation.updateSchema), StoreController.update);
+router.get('/:id/operational-settings', auth("OPERATOR"), StoreController.getOperationalSettings);
+router.patch('/:id/operational-settings', auth("OPERATOR"), validateRequest(StoreValidation.updateOperationalSettingsSchema), StoreController.updateOperationalSettings);
 router.delete('/:id', auth("OPERATOR"), StoreController.deleteById);
 
 export const StoreRouter = router;

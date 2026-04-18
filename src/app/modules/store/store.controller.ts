@@ -107,11 +107,49 @@ const deleteById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getOperationalSettings = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const operator = await prisma.operator.findUnique({
+    where: { userId },
+  });
+  if (!operator) {
+    throw new Error('Operator not found');
+  }
+
+  const result = await StoreService.getOperationalSettings(req.params.id as string, operator.id);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Operational settings fetched successfully',
+    data: result,
+  });
+});
+
+const updateOperationalSettings = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req as any).user.id;
+  const operator = await prisma.operator.findUnique({
+    where: { userId },
+  });
+  if (!operator) {
+    throw new Error('Operator not found');
+  }
+
+  const result = await StoreService.updateOperationalSettings(req.params.id as string, operator.id, req.body);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Operational settings updated successfully',
+    data: result,
+  });
+});
+
 export const StoreController = {
   create,
   getAll,
   getById,
   update,
   deleteById,
-  getByOperatorId
+  getByOperatorId,
+  getOperationalSettings,
+  updateOperationalSettings
 };
