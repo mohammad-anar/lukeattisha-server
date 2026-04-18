@@ -1,8 +1,8 @@
 import express from 'express';
 import { StoreController } from './store.controller.js';
-import auth from 'app/middlewares/auth.js';
-import fileUploadHandler from 'app/middlewares/fileUploadHandler.js';
-import validateRequest from 'app/middlewares/validateRequest.js';
+import auth from '../../middlewares/auth.js';
+import fileUploadHandler from '../../middlewares/fileUploadHandler.js';
+import validateRequest from '../../middlewares/validateRequest.js';
 import { StoreValidation } from './store.validation.js';
 // import validateRequest from '../../middlewares/validateRequest.js';
 // import { StoreValidation } from './store.validation.js';

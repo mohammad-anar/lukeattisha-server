@@ -1,9 +1,9 @@
 import express from 'express';
 import { OperatorCategoryController } from './operatorCategory.controller.js';
-import auth from 'app/middlewares/auth.js';
+import auth from '../../middlewares/auth.js';
 import { UserRole } from '@prisma/client';
 import { OperatorCategoryValidation } from './operatorCategory.validation.js';
-import validateRequest from 'app/middlewares/validateRequest.js';
+import validateRequest from '../../middlewares/validateRequest.js';
 // import validateRequest from '../../middlewares/validateRequest.js';
 // import { OperatorCategoryValidation } from './operatorCategory.validation.js';
 

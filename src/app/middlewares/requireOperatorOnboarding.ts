@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { prisma } from "../../helpers.ts/prisma.js";
 import ApiError from "../../errors/ApiError.js";
 import { StatusCodes } from "http-status-codes";
-import { StripeHelpers } from "helpers.ts/stripeHelpers.js";
+import { StripeHelpers } from "../../helpers.ts/stripeHelpers.js";
 
 /**
  * Middleware to ensure that an Operator has completed their Stripe onboarding

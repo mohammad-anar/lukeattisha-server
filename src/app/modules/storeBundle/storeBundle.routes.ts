@@ -2,7 +2,7 @@ import express from 'express';
 import { StoreBundleController } from './storeBundle.controller.js';
 import validateRequest from '../../middlewares/validateRequest.js';
 import { StoreBundleValidation } from './storeBundle.validation.js';
-import auth from 'app/middlewares/auth.js';
+import auth from '../../middlewares/auth.js';
 import { UserRole } from '@prisma/client';
 
 const router = express.Router();

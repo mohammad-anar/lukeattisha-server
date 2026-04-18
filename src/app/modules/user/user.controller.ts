@@ -4,7 +4,7 @@ import sendResponse from '../../shared/sendResponse.js';
 import { UserService } from './user.service.js';
 import pick from '../../../helpers.ts/pick.js';
 import { getSingleFilePath } from '../../shared/getFilePath.js';
-import { config } from 'config/index.js';
+import { config } from '../../../config/index.js';
 const create = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;
   const image = getSingleFilePath(req.files as any, "image") as string;

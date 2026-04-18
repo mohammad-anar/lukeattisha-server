@@ -3,8 +3,8 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { AdSubscriptionService } from './adSubscription.service.js';
 import pick from '../../../helpers.ts/pick.js';
-import { prisma } from 'helpers.ts/prisma.js';
-import ApiError from 'errors/ApiError.js';
+import { prisma } from '../../../helpers.ts/prisma.js';
+import ApiError from '../../../errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const result = await AdSubscriptionService.create(req.body);
@@ -17,9 +17,9 @@ const create = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getAll = catchAsync(async (req: Request, res: Response) => {
-  const filters = pick(req.query, ['searchTerm', 'isActive', 'role', 'status']); // Customize filters as needed
+  const filters = pick(req.query, ['searchTerm', 'isActive', 'status']);
   const options = pick(req.query, ['limit', 'page', 'sortBy', 'sortOrder']);
-  const result = await AdSubscriptionService.getAll(filters, options);
+  const result = await AdSubscriptionService.getAll(filters, options, req.user as any);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -30,7 +30,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdSubscriptionService.getById(req.params.id as string);
+  const result = await AdSubscriptionService.getById(req.params.id as string, req.user as any);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -40,7 +40,7 @@ const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 const update = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdSubscriptionService.update(req.params.id as string, req.body);
+  const result = await AdSubscriptionService.update(req.params.id as string, req.body, req.user as any);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -50,7 +50,7 @@ const update = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteById = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdSubscriptionService.deleteById(req.params.id as string);
+  const result = await AdSubscriptionService.deleteById(req.params.id as string, req.user as any);
   sendResponse(res, {
     success: true,
     statusCode: 200,
@@ -73,7 +73,7 @@ const createCheckoutSession = catchAsync(async (req: Request, res: Response) => 
 });
 
 const cancelSubscription = catchAsync(async (req: Request, res: Response) => {
-  const result = await AdSubscriptionService.cancelSubscription(req.params.id as string);
+  const result = await AdSubscriptionService.cancelSubscription(req.params.id as string, req.user as any);
   sendResponse(res, {
     success: true,
     statusCode: 200,

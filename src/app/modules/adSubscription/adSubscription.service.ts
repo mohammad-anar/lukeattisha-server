@@ -12,21 +12,29 @@ const create = async (payload: any) => {
   return result;
 };
 
-const getAll = async (filters: any, options: any) => {
+const getAll = async (filters: any, options: any, user: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
   const { searchTerm, ...filterData } = filters;
 
-  const andConditions = [];
+  const andConditions: any[] = [];
+
+  // Role-based filtering
+  if (user.role === 'OPERATOR') {
+    const operator = await prisma.operator.findUnique({
+      where: { userId: user.id }
+    });
+    if (!operator) throw new ApiError(404, 'Operator profile not found');
+
+    andConditions.push({ operatorId: operator.id });
+    
+    // Only active and cancelled for operators as requested
+    andConditions.push({
+      status: { in: ['ACTIVE', 'CANCELLED'] }
+    });
+  }
 
   if (searchTerm) {
-    andConditions.push({
-      OR: [].map((field) => ({
-        [field]: {
-          contains: searchTerm,
-          mode: 'insensitive',
-        },
-      })),
-    });
+    // Add searchable fields if any
   }
 
   if (Object.keys(filterData).length > 0) {
@@ -63,18 +71,25 @@ const getAll = async (filters: any, options: any) => {
   };
 };
 
-const getById = async (id: string) => {
+const getById = async (id: string, user: any) => {
   const result = await prisma.adSubscription.findUnique({
     where: { id },
+    include: { operator: true }
   });
   if (!result) {
     throw new ApiError(404, 'AdSubscription not found');
   }
+
+  // Ownership validation
+  if (user.role === 'OPERATOR' && result.operator.userId !== user.id) {
+    throw new ApiError(403, 'Forbidden: You can only view your own subscriptions');
+  }
+
   return result;
 };
 
-const update = async (id: string, payload: any) => {
-  await getById(id);
+const update = async (id: string, payload: any, user: any) => {
+  await getById(id, user);
   const result = await prisma.adSubscription.update({
     where: { id },
     data: payload,
@@ -82,8 +97,8 @@ const update = async (id: string, payload: any) => {
   return result;
 };
 
-const deleteById = async (id: string) => {
-  await getById(id);
+const deleteById = async (id: string, user: any) => {
+  await getById(id, user);
   const result = await prisma.adSubscription.delete({
     where: { id },
   });
@@ -110,7 +125,23 @@ const createCheckoutSession = async (operatorId: string, payload: { planId: stri
   return { url: sessionUrl };
 };
 
-const cancelSubscription = async (id: string) => {
+const cancelSubscription = async (id: string, user: any) => {
+  const subContent = await prisma.adSubscription.findUnique({
+    where: { id },
+    include: { operator: true }
+  });
+
+  if (!subContent) throw new ApiError(404, 'Subscription not found');
+
+  // Only Operators can cancel, and only their own subscriptions
+  if (user.role !== 'OPERATOR') {
+    throw new ApiError(403, 'Forbidden: Only Operators can cancel their own subscriptions');
+  }
+
+  if (subContent.operator.userId !== user.id) {
+    throw new ApiError(403, 'Forbidden: You can only cancel your own subscriptions');
+  }
+
   const result = await prisma.$transaction(async (tx) => {
     // 1. Update subscription status
     const subscription = await tx.adSubscription.update({

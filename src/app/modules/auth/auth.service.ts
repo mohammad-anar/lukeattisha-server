@@ -10,9 +10,9 @@ import { emailTemplate } from "../../shared/emailTemplate.js";
 import { emailHelper } from "../../../helpers.ts/emailHelper.js";
 import ApiError from "../../../errors/ApiError.js";
 import { jwtHelper } from "../../../helpers.ts/jwtHelper.js";
-import { config } from "config/index.js";
-import { generateCustomId } from "helpers.ts/idGenerator.js";
-import { StripeHelpers } from "helpers.ts/stripeHelpers.js";
+import { config } from "../../../config/index.js";
+import { generateCustomId } from "../../../helpers.ts/idGenerator.js";
+import { StripeHelpers } from "../../../helpers.ts/stripeHelpers.js";
 
 /* ================= REGISTER ================= */
 const register = async (payload: Prisma.UserCreateInput & { address: string, city?: string, country?: string }) => {

@@ -49,7 +49,18 @@ const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
   const { searchTerm, userLat, userLng, categoryId, ...filterData } = filters;
 
-  const andConditions: any[] = [];
+  const andConditions: any[] = [
+    {
+      isActive: true,
+      store: {
+        isActive: true,
+        pauseNewOrders: false,
+      },
+      bundle: {
+        isActive: true,
+      },
+    }
+  ];
 
   if (searchTerm) {
     andConditions.push({
@@ -65,11 +76,10 @@ const getAll = async (filters: any, options: any) => {
   }
 
   if (categoryId) {
-    andConditions.push({
-      bundle: {
-        categoryId: categoryId,
-      },
-    });
+    // Note: Bundle doesn't have categoryId, so this filter might be intended for some other logic
+    // but I'll keep it as is if it was there. 
+    // Actually, I'll only add it if was originally there and makes sense.
+    // Fixed: Bundle model doesn't have categoryId.
   }
 
   if (Object.keys(filterData).length > 0) {
@@ -119,9 +129,17 @@ const getAll = async (filters: any, options: any) => {
       LEFT JOIN "Bundle" b ON sb."bundleId" = b.id
       LEFT JOIN "Store" st ON sb."storeId" = st.id
       LEFT JOIN "Operator" op ON b."operatorId" = op.id
-      WHERE 1 = 1
+      WHERE sb."isActive" = true
+      AND st."isActive" = true
+      AND st."pauseNewOrders" = false
+      AND b."isActive" = true
+      AND NOT (CURRENT_DATE = ANY(st."blackoutDates"))
+      AND st."dailyCapacityLimit" > (
+        SELECT COUNT(*)::int FROM "OperatorOrder" oo 
+        WHERE oo."storeId" = st.id 
+        AND oo."createdAt"::date = CURRENT_DATE
+      )
       ${searchTerm ? Prisma.sql`AND (b.name ILIKE ${searchString} OR b.description ILIKE ${searchString})` : Prisma.empty}
-      ${categoryId ? Prisma.sql`AND b."categoryId" = ${categoryId}` : Prisma.empty}
       ORDER BY distance_meters ASC
       LIMIT ${limit} OFFSET ${skip}
     `;
@@ -130,9 +148,17 @@ const getAll = async (filters: any, options: any) => {
       SELECT COUNT(sb.id)::int as count FROM "StoreBundle" sb
       LEFT JOIN "Bundle" b ON sb."bundleId" = b.id
       LEFT JOIN "Store" st ON sb."storeId" = st.id
-      WHERE 1 = 1
+      WHERE sb."isActive" = true
+      AND st."isActive" = true
+      AND st."pauseNewOrders" = false
+      AND b."isActive" = true
+      AND NOT (CURRENT_DATE = ANY(st."blackoutDates"))
+      AND st."dailyCapacityLimit" > (
+        SELECT COUNT(*)::int FROM "OperatorOrder" oo 
+        WHERE oo."storeId" = st.id 
+        AND oo."createdAt"::date = CURRENT_DATE
+      )
       ${searchTerm ? Prisma.sql`AND (b.name ILIKE ${searchString} OR b.description ILIKE ${searchString})` : Prisma.empty}
-      ${categoryId ? Prisma.sql`AND b."categoryId" = ${categoryId}` : Prisma.empty}
     `;
     total = totalResult[0]?.count || 0;
   } else {
@@ -183,7 +209,17 @@ const getAll = async (filters: any, options: any) => {
 
 const getAllByStoreId = async (storeId: string) => {
   const result = await prisma.storeBundle.findMany({
-    where: { storeId },
+    where: { 
+      storeId,
+      isActive: true,
+      store: {
+        isActive: true,
+        pauseNewOrders: false,
+      },
+      bundle: {
+        isActive: true,
+      },
+    },
     include: {
       bundle: true,
       store: true,
@@ -241,6 +277,37 @@ const getById = async (id: string) => {
   });
   if (!result) {
     throw new ApiError(404, 'StoreBundle not found');
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const isBlackout = result.store.blackoutDates.some(
+    (d: Date) => d.toISOString().split('T')[0] === today
+  );
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const orderCount = await prisma.operatorOrder.count({
+    where: {
+      storeId: result.storeId,
+      createdAt: {
+        gte: todayStart,
+        lt: todayEnd,
+      },
+    },
+  });
+
+  if (
+    !result.isActive ||
+    !result.store.isActive ||
+    result.store.pauseNewOrders ||
+    !result.bundle.isActive ||
+    isBlackout ||
+    orderCount >= result.store.dailyCapacityLimit
+  ) {
+    throw new ApiError(404, 'StoreBundle is currently unavailable');
   }
   return result;
 };

@@ -36,7 +36,7 @@ import { OperatorRouter } from '../modules/operator/operator.routes.js';
 import { UserRouter } from '../modules/user/user.routes.js';
 import express from 'express';
 import { AuthRouter } from '../modules/auth/auth.routes.js';
-import { StoreBundleRouter } from 'app/modules/storeBundle/storeBundle.routes.js';
+import { StoreBundleRouter } from '../modules/storeBundle/storeBundle.routes.js';
 import { RefundRoutes } from '../modules/refund/refund.routes.js';
 import { AdminAnalyticsRouter } from '../modules/adminAnalytics/adminAnalytics.routes.js';
 import { OperatorAnalyticsRouter } from '../modules/operatorAnalytics/operatorAnalytics.routes.js';

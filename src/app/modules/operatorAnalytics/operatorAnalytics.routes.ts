@@ -1,6 +1,6 @@
 import express from 'express';
 import { OperatorAnalyticsController } from './operatorAnalytics.controller.js';
-import auth from 'app/middlewares/auth.js';
+import auth from '../../middlewares/auth.js';
 import { UserRole } from '@prisma/client';
 
 const router = express.Router();

@@ -1,11 +1,17 @@
 import { z } from 'zod';
 
 const createSchema = z.object({
-  // Add validation fields here
+  name: z.string(),
+  price: z.number(),
+  duration: z.number(),
+  description: z.string(),
 });
 
 const updateSchema = z.object({
-  // Add validation fields here
+  name: z.string(),
+  price: z.number(),
+  duration: z.number(),
+  description: z.string(),
 }).partial();
 
 export const UserSubscriptionPlanValidation = {

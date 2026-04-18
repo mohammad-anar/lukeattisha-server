@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../helpers.ts/prisma.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
-import { IPaginationOptions } from 'types/pagination.js';
+import { IPaginationOptions } from '../../../types/pagination.js';
 
 
 const getReviews = async (

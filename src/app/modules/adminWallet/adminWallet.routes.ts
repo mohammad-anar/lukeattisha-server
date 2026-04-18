@@ -1,6 +1,6 @@
 import express from 'express';
 import { AdminWalletController } from './adminWallet.controller.js';
-import auth from 'app/middlewares/auth.js';
+import auth from '../../middlewares/auth.js';
 import { UserRole } from '@prisma/client';
 // import validateRequest from '../../middlewares/validateRequest.js';
 // import { AdminWalletValidation } from './adminWallet.validation.js';

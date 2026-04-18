@@ -5,8 +5,8 @@ import { ServiceService } from './service.service.js';
 import pick from '../../../helpers.ts/pick.js';
 import { getSingleFilePath } from '../../shared/getFilePath.js';
 import { config } from '../../../config/index.js';
-import ApiError from 'errors/ApiError.js';
-import { prisma } from 'helpers.ts/prisma.js';
+import ApiError from '../../../errors/ApiError.js';
+import { prisma } from '../../../helpers.ts/prisma.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const payload = req.body;

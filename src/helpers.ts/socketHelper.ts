@@ -1,8 +1,9 @@
 import colors from "colors";
-import { config } from "config/index.js";
+import { config } from "../config/index.js";
 import { Server, Socket } from "socket.io";
 import { ChatService } from "../app/modules/chat/chat.service.js";
 import { LiveSupportService } from "../app/modules/liveSupport/liveSupport.service.js";
+import { NotificationService } from "../app/modules/notification/notification.service.js";
 
 let io: Server | null = null;
 
@@ -63,6 +64,30 @@ export const initSocket = (server: any) => {
     socket.on("leave-room", (roomId: string) => {
       socket.leave(`room:${roomId}`);
       console.log(colors.yellow(`Socket ${socket.id} left room: room:${roomId}`));
+    });
+
+    socket.on("mark-notification-as-read", async (data: { notificationId: string, userId: string }) => {
+      try {
+        if (data.notificationId && data.userId) {
+          await NotificationService.markAsRead(data.notificationId, data.userId);
+          socket.emit("notification-marked-as-read", { notificationId: data.notificationId });
+          console.log(colors.blue(`Notification ${data.notificationId} marked as read for user ${data.userId}`));
+        }
+      } catch (err) {
+        console.error("Error marking notification as read via socket", err);
+      }
+    });
+
+    socket.on("mark-all-notifications-as-read", async (data: { userId: string }) => {
+      try {
+        if (data.userId) {
+          await NotificationService.markAllAsRead(data.userId);
+          socket.emit("all-notifications-marked-as-read", { userId: data.userId });
+          console.log(colors.blue(`All notifications marked as read for user ${data.userId}`));
+        }
+      } catch (err) {
+        console.error("Error marking all notifications as read via socket", err);
+      }
     });
 
     socket.on("disconnect", () => {

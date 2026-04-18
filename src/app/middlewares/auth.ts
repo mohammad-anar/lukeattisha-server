@@ -4,7 +4,7 @@ import { Secret } from "jsonwebtoken";
 import ApiError from "../../errors/ApiError.js";
 import { jwtHelper } from "../../helpers.ts/jwtHelper.js";
 import { prisma } from "../../helpers.ts/prisma.js";
-import { config } from "config/index.js";
+import { config } from "../../config/index.js";
 
 const auth =
   (...roles: string[]) =>

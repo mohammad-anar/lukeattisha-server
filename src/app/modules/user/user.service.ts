@@ -3,9 +3,9 @@ import ApiError from '../../../errors/ApiError.js';
 import { paginationHelper } from '../../../helpers.ts/paginationHelper.js';
 import { Prisma } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import { config } from 'config/index.js';
-import { generateCustomId } from 'helpers.ts/idGenerator.js';
-import { StripeHelpers } from 'helpers.ts/stripeHelpers.js';
+import { config } from '../../../config/index.js';
+import { generateCustomId } from '../../../helpers.ts/idGenerator.js';
+import { StripeHelpers } from '../../../helpers.ts/stripeHelpers.js';
 
 const create = async (payload: any) => {
   const result = await prisma.user.create({

@@ -50,7 +50,21 @@ const getAll = async (filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
   const { searchTerm, userLat, userLng, categoryId, ...filterData } = filters;
 
-  const andConditions = [];
+  const andConditions: any[] = [
+    {
+      isActive: true,
+      store: {
+        isActive: true,
+        pauseNewOrders: false,
+      },
+      service: {
+        isActive: true,
+        category: {
+          isActive: true,
+        },
+      },
+    }
+  ];
 
   if (searchTerm) {
     andConditions.push({
@@ -111,7 +125,17 @@ const getAll = async (filters: any, options: any) => {
         FROM "Review"
         GROUP BY "storeServiceId"
       ) r ON r."storeServiceId" = ss.id
-      WHERE 1 = 1
+      WHERE ss."isActive" = true
+      AND st."isActive" = true
+      AND st."pauseNewOrders" = false
+      AND s."isActive" = true
+      AND EXISTS (SELECT 1 FROM "Category" c WHERE c.id = s."categoryId" AND c."isActive" = true)
+      AND NOT (CURRENT_DATE = ANY(st."blackoutDates"))
+      AND st."dailyCapacityLimit" > (
+        SELECT COUNT(*)::int FROM "OperatorOrder" oo 
+        WHERE oo."storeId" = st.id 
+        AND oo."createdAt"::date = CURRENT_DATE
+      )
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
       ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
       ORDER BY distance_meters ASC
@@ -129,7 +153,17 @@ const getAll = async (filters: any, options: any) => {
       FROM "StoreService" ss
       LEFT JOIN "Service" s ON ss."serviceId" = s.id
       LEFT JOIN "Store" st ON ss."storeId" = st.id
-      WHERE 1 = 1
+      WHERE ss."isActive" = true
+      AND st."isActive" = true
+      AND st."pauseNewOrders" = false
+      AND s."isActive" = true
+      AND EXISTS (SELECT 1 FROM "Category" c WHERE c.id = s."categoryId" AND c."isActive" = true)
+      AND NOT (CURRENT_DATE = ANY(st."blackoutDates"))
+      AND st."dailyCapacityLimit" > (
+        SELECT COUNT(*)::int FROM "OperatorOrder" oo 
+        WHERE oo."storeId" = st.id 
+        AND oo."createdAt"::date = CURRENT_DATE
+      )
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
       ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
     `;
@@ -199,7 +233,22 @@ const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
   const { limit, page, skip, sortBy, sortOrder } = paginationHelper.calculatePagination(options);
   const { searchTerm, userLat, userLng, categoryId, mostOrdered, extra, ...filterData } = filters;
 
-  const andConditions: any[] = [{ storeId }];
+  const andConditions: any[] = [
+    { storeId },
+    {
+      isActive: true,
+      store: {
+        isActive: true,
+        pauseNewOrders: false,
+      },
+      service: {
+        isActive: true,
+        category: {
+          isActive: true,
+        },
+      },
+    }
+  ];
 
   if (searchTerm) {
     andConditions.push({
@@ -277,6 +326,17 @@ const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
         GROUP BY "serviceId"
       ) o ON o."serviceId" = ss."serviceId"
       WHERE ss."storeId" = ${storeId}
+      AND ss."isActive" = true
+      AND st."isActive" = true
+      AND st."pauseNewOrders" = false
+      AND s."isActive" = true
+      AND EXISTS (SELECT 1 FROM "Category" c WHERE c.id = s."categoryId" AND c."isActive" = true)
+      AND NOT (CURRENT_DATE = ANY(st."blackoutDates"))
+      AND st."dailyCapacityLimit" > (
+        SELECT COUNT(*)::int FROM "OperatorOrder" oo 
+        WHERE oo."storeId" = st.id 
+        AND oo."createdAt"::date = CURRENT_DATE
+      )
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
       ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
       ${(extra === true || extra === 'true') ? Prisma.sql`AND EXISTS (SELECT 1 FROM "ServiceAddon" sa WHERE sa."serviceId" = s.id)` : Prisma.empty}
@@ -299,6 +359,17 @@ const getAllByStoreId = async (storeId: string, filters: any, options: any) => {
       LEFT JOIN "Service" s ON ss."serviceId" = s.id
       LEFT JOIN "Store" st ON ss."storeId" = st.id
       WHERE ss."storeId" = ${storeId}
+      AND ss."isActive" = true
+      AND st."isActive" = true
+      AND st."pauseNewOrders" = false
+      AND s."isActive" = true
+      AND EXISTS (SELECT 1 FROM "Category" c WHERE c.id = s."categoryId" AND c."isActive" = true)
+      AND NOT (CURRENT_DATE = ANY(st."blackoutDates"))
+      AND st."dailyCapacityLimit" > (
+        SELECT COUNT(*)::int FROM "OperatorOrder" oo 
+        WHERE oo."storeId" = st.id 
+        AND oo."createdAt"::date = CURRENT_DATE
+      )
       ${searchTerm ? Prisma.sql`AND (s.name ILIKE ${searchString} OR s.description ILIKE ${searchString})` : Prisma.empty}
       ${categoryId ? Prisma.sql`AND s."categoryId" = ${categoryId}` : Prisma.empty}
       ${(extra === true || extra === 'true') ? Prisma.sql`AND EXISTS (SELECT 1 FROM "ServiceAddon" sa WHERE sa."serviceId" = s.id)` : Prisma.empty}
@@ -414,6 +485,38 @@ const getById = async (id: string) => {
   });
   if (!result) {
     throw new ApiError(404, 'StoreService not found');
+  }
+
+  const today = new Date().toISOString().split('T')[0];
+  const isBlackout = result.store.blackoutDates.some(
+    (d: Date) => d.toISOString().split('T')[0] === today
+  );
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const orderCount = await prisma.operatorOrder.count({
+    where: {
+      storeId: result.storeId,
+      createdAt: {
+        gte: todayStart,
+        lt: todayEnd,
+      },
+    },
+  });
+
+  if (
+    !result.isActive ||
+    !result.store.isActive ||
+    result.store.pauseNewOrders ||
+    !result.service.isActive ||
+    !result.service.category.isActive ||
+    isBlackout ||
+    orderCount >= result.store.dailyCapacityLimit
+  ) {
+    throw new ApiError(404, 'StoreService is currently unavailable');
   }
 
   const totalRating = result.reviews.reduce(

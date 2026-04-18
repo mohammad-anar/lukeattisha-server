@@ -5,8 +5,8 @@ import { OrderIssueService } from './orderIssue.service.js';
 import { getMultipleFilesPath } from '../../shared/getFilePath.js';
 import { config } from '../../../config/index.js';
 import pick from '../../../helpers.ts/pick.js';
-import { prisma } from 'helpers.ts/prisma.js';
-import ApiError from 'errors/ApiError.js';
+import { prisma } from '../../../helpers.ts/prisma.js';
+import ApiError from '../../../errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user.id;

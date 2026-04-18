@@ -3,8 +3,8 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { AdService } from './ad.service.js';
 import pick from '../../../helpers.ts/pick.js';
-import { prisma } from 'helpers.ts/prisma.js';
-import ApiError from 'errors/ApiError.js';
+import { prisma } from '../../../helpers.ts/prisma.js';
+import ApiError from '../../../errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const user = (req as any).user;

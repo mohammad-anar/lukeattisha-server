@@ -101,6 +101,7 @@ model UserSubscriptionPlan {
   name          String
   durationMonth Int
   price         Decimal  @db.Decimal(10, 2)
+  features      String[]
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

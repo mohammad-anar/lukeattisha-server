@@ -1,8 +1,9 @@
-import { config } from "config/index.js";
+import { config } from "./config/index.js";
 import app from "./app.js";
 import { initSocket } from "./helpers.ts/socketHelper.js";
 import { seedSuperAdmin } from "./db/seedSuperAdmin.js";
 import { seedCategories } from "./db/seedCategories.js";
+import { seedAdminSettings } from "./db/seedAdminSettings.js";
 import { initCronJobs } from "./helpers.ts/cronHelper.js";
 
 let server: any;
@@ -19,6 +20,8 @@ async function bootstrap() {
     await seedSuperAdmin();
     // seed categories
     await seedCategories();
+    // seed admin settings
+    await seedAdminSettings();
     //
     server = app.listen(config.port, () => {
       console.log(`🚀 Server running on http://localhost:${config.port}`);

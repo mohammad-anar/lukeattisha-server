@@ -1,6 +1,6 @@
 import express from 'express';
 import { OperatorWalletController } from './operatorWallet.controller.js';
-import auth from 'app/middlewares/auth.js';
+import auth from '../../middlewares/auth.js';
 import { UserRole } from '@prisma/client';
 // import validateRequest from '../../middlewares/validateRequest.js';
 // import { OperatorWalletValidation } from './operatorWallet.validation.js';

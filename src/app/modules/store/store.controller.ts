@@ -3,9 +3,9 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { StoreService } from './store.service.js';
 import pick from '../../../helpers.ts/pick.js';
-import { getSingleFilePath } from 'app/shared/getFilePath.js';
-import { config } from 'config/index.js';
-import { prisma } from 'helpers.ts/prisma.js';
+import { getSingleFilePath } from '../../shared/getFilePath.js';
+import { config } from '../../../config/index.js';
+import { prisma } from '../../../helpers.ts/prisma.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   const userId = (req as any).user.id;

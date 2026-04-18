@@ -1,5 +1,5 @@
 import express from 'express';
-import auth from 'app/middlewares/auth.js';
+import auth from '../../middlewares/auth.js';
 import { UserRole } from '@prisma/client';
 import { OperatorReportingController } from './operatorReporting.controller.js';
 

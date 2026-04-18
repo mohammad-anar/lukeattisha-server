@@ -3,12 +3,12 @@ import catchAsync from '../../shared/catchAsync.js';
 import sendResponse from '../../shared/sendResponse.js';
 import { AddonService } from './addon.service.js';
 import pick from '../../../helpers.ts/pick.js';
-import { prisma } from 'helpers.ts/prisma.js';
-import ApiError from 'errors/ApiError.js';
+import { prisma } from '../../../helpers.ts/prisma.js';
+import ApiError from '../../../errors/ApiError.js';
 
 const create = catchAsync(async (req: Request, res: Response) => {
   console.log(req.body)
-  const operatorIdUserId = req.user?.id;
+  const operatorIdUserId = (req as any).user.id;
   console.log(operatorIdUserId)
   const operator = await prisma.operator.findUnique({
     where: { userId: operatorIdUserId },
@@ -41,7 +41,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getByOperatorId = catchAsync(async (req: Request, res: Response) => {
-  const operatorIdUserId = req.user?.id;
+  const operatorIdUserId = (req as any).user.id;
   const operator = await prisma.operator.findUnique({
     where: { userId: operatorIdUserId },
     include: {
