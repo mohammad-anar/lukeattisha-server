@@ -12,7 +12,7 @@ export const requirePremium = async (
   const subscription = await prisma.userSubscription.findFirst({
     where: {
       userId,
-      isActive: true,
+      status: 'ACTIVE',
       endDate: { gte: new Date() },
     },
   });

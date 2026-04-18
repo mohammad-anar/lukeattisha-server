@@ -28,7 +28,7 @@ const getAll = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getByAdminId = catchAsync(async (req: Request, res: Response) => {
-  const adminId = req.user?.id;
+  const adminId = (req as any).user?.id;
   const result = await AdminWalletService.getByAdminId(adminId as string);
   sendResponse(res, {
     success: true,

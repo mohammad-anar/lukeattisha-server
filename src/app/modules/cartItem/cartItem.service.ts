@@ -68,8 +68,12 @@ const getById = async (id: string) => {
       selectedAddons: {
         include: { addon: true }
       },
-      service: true,
-      bundle: true
+      storeService: {
+        include: { service: true }
+      },
+      storeBundle: {
+        include: { bundle: true }
+      }
     }
   });
   if (!result) {
@@ -85,8 +89,12 @@ const getByCartId = async (cartId: string) => {
       selectedAddons: {
         include: { addon: true }
       },
-      service: true,
-      bundle: true
+      storeService: {
+        include: { service: true }
+      },
+      storeBundle: {
+        include: { bundle: true }
+      }
     }
   });
   return result;
