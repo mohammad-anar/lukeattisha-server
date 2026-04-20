@@ -156,8 +156,23 @@ const login = async (payload: ILogin) => {
       role: true,
       password: true,
       isVerified: true,
+      status: true,
     },
   });
+
+  if (user.status === 'BANNED' || user.status === 'SUSPENDED') {
+    throw new ApiError(403, `Your account has been ${user.status.toLowerCase()}. Please contact support.`);
+  }
+
+  if (user.role === 'OPERATOR') {
+    const operator = await prisma.operator.findUnique({
+      where: { userId: user.id },
+      select: { status: true }
+    });
+    if (operator && (operator.status === 'BANNED' || operator.status === 'SUSPENDED')) {
+      throw new ApiError(403, `Your operator account has been ${operator.status.toLowerCase()}. Please contact support.`);
+    }
+  }
 
   const isMatch = await bcrypt.compare(payload.password, user.password);
   if (!isMatch) throw new ApiError(400, "Invalid credentials");
@@ -336,10 +351,24 @@ const changePassword = async (email: string, oldPassword: string, newPassword: s
 const refreshToken = async (email: string) => {
   const user = await prisma.user.findUnique({
     where: { email },
-    select: { id: true, name: true, email: true, phone: true, role: true, isVerified: true },
+    select: { id: true, name: true, email: true, phone: true, role: true, isVerified: true, status: true },
   });
   if (!user) throw new ApiError(404, "User not found");
   if (!user.isVerified) throw new ApiError(403, "User is not verified");
+
+  if (user.status === 'BANNED' || user.status === 'SUSPENDED') {
+    throw new ApiError(403, `Your account has been ${user.status.toLowerCase()}.`);
+  }
+
+  if (user.role === 'OPERATOR') {
+    const operator = await prisma.operator.findUnique({
+      where: { userId: user.id },
+      select: { status: true }
+    });
+    if (operator && (operator.status === 'BANNED' || operator.status === 'SUSPENDED')) {
+      throw new ApiError(403, `Your operator account has been ${operator.status.toLowerCase()}.`);
+    }
+  }
 
   const accessToken = jwtHelper.createToken(
     user as JwtPayload,

@@ -139,7 +139,11 @@ const getPayoutHistory = async (
       type: tx.type,
       note: tx.note,
       orderNumber: tx.order?.orderNumber ?? null,
-      payoutStatus: tx.withdrawal?.status ?? (tx.type === 'ORDER_REVENUE' ? 'COMPLETED' : 'UNKNOWN'),
+      payoutStatus: tx.withdrawal?.status ?? (
+        tx.type === 'ORDER_REVENUE' ? 'COMPLETED' : 
+        tx.type === 'REFUND' ? 'REFUNDED' : 
+        'UNKNOWN'
+      ),
       stripeTransferId: tx.withdrawal?.stripeTransferId ?? null,
       createdAt: tx.createdAt,
       withdrawalId: tx.withdrawalId,
