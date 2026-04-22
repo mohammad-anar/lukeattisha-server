@@ -109,35 +109,94 @@ const deleteById = async (id: string) => {
 };
 
 const getAdminUnreadMessages = async (userId: string, queryRoomId?: string) => {
-  const whereCondition: any = { userId };
+  const whereCondition: Prisma.ChatRoomWhereInput = {};
   if (queryRoomId) {
-    whereCondition.roomId = queryRoomId;
+    whereCondition.id = queryRoomId;
   }
 
-  const participants = await prisma.chatParticipant.findMany({
+  const rooms = await prisma.chatRoom.findMany({
     where: whereCondition,
-    select: { roomId: true, lastRead: true, joinedAt: true },
+    select: {
+      id: true,
+      participants: {
+        where: { userId },
+        select: { lastRead: true, joinedAt: true }
+      }
+    }
   });
 
   const unreadCounts = await Promise.all(
-    participants.map(async (p) => {
+    rooms.map(async (room) => {
+      const adminParticipant = room.participants[0];
+      const lastRead = adminParticipant?.lastRead || adminParticipant?.joinedAt || new Date(0);
+
       const count = await prisma.chatMessage.count({
         where: {
-          roomId: p.roomId,
+          roomId: room.id,
           senderUserId: { not: userId },
           createdAt: {
-            gt: p.lastRead || p.joinedAt || new Date(0),
+            gt: lastRead,
           },
         },
       });
+
       return {
-        roomId: p.roomId,
+        roomId: room.id,
         unreadMessageCount: count,
       };
     })
   );
 
-  return queryRoomId ? unreadCounts : unreadCounts.filter((item) => item.unreadMessageCount > 0);
+  const filteredData = queryRoomId 
+    ? unreadCounts[0] || { roomId: queryRoomId, unreadMessageCount: 0 } 
+    : unreadCounts.filter((item) => item.unreadMessageCount > 0);
+
+  const totalUnreadMessages = unreadCounts.reduce((sum, item) => sum + item.unreadMessageCount, 0);
+
+  return {
+    meta: {
+      total:totalUnreadMessages,
+    },
+    data: filteredData,
+  };
+};
+
+const markRoomMessagesAsRead = async (user: any, roomId: string) => {
+  const { id: userId, role } = user;
+  
+  let participantWhere: Prisma.ChatParticipantWhereInput;
+  if (role === 'OPERATOR') {
+    participantWhere = { roomId, operator: { userId } };
+  } else {
+    participantWhere = { roomId, userId };
+  }
+  
+  const participant = await prisma.chatParticipant.findFirst({
+    where: participantWhere
+  });
+
+  if (participant) {
+    await prisma.chatParticipant.update({
+      where: { id: participant.id },
+      data: { lastRead: new Date() }
+    });
+  } else {
+    // If admin and participant doesn't exist, create one to track read status
+    if (role === 'ADMIN' || role === 'SUPER_ADMIN') {
+      await prisma.chatParticipant.create({
+        data: {
+          roomId,
+          userId,
+          lastRead: new Date(),
+          joinedAt: new Date()
+        }
+      });
+    } else {
+      throw new ApiError(403, 'You are not a participant in this room');
+    }
+  }
+
+  return { message: 'Messages marked as read' };
 };
 
 export const ChatMessageService = {
@@ -146,6 +205,7 @@ export const ChatMessageService = {
   getById,
   getByRoomId,
   getAdminUnreadMessages,
+  markRoomMessagesAsRead,
   update,
   deleteById,
 };

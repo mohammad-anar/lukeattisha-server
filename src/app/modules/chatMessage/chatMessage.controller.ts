@@ -77,6 +77,19 @@ const getAdminUnreadMessages = catchAsync(async (req: Request, res: Response) =>
     success: true,
     statusCode: 200,
     message: 'Unread messages fetched successfully',
+    meta: result.meta as any,
+    data: result.data,
+  });
+});
+
+const markRoomMessagesAsRead = catchAsync(async (req: Request, res: Response) => {
+  const user = req.user;
+  const roomId = req.params.roomId as string;
+  const result = await ChatMessageService.markRoomMessagesAsRead(user, roomId);
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: 'Messages marked as read successfully',
     data: result,
   });
 });
@@ -87,6 +100,7 @@ export const ChatMessageController = {
   getById,
   getByRoomId,
   getAdminUnreadMessages,
+  markRoomMessagesAsRead,
   update,
   deleteById,
 };

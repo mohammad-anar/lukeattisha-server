@@ -16,6 +16,8 @@ router.get('/admin/unread-messages', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN),
 router.get('/:id', ChatMessageController.getById);
 router.get('/:roomId/messages', ChatMessageController.getByRoomId);
 
+router.patch('/:roomId/mark-read', auth(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.USER, UserRole.OPERATOR), ChatMessageController.markRoomMessagesAsRead);
+
 router.patch('/:id', ChatMessageController.update);
 router.delete('/:id', ChatMessageController.deleteById);
 
