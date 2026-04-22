@@ -108,11 +108,44 @@ const deleteById = async (id: string) => {
   return result;
 };
 
+const getAdminUnreadMessages = async (userId: string, queryRoomId?: string) => {
+  const whereCondition: any = { userId };
+  if (queryRoomId) {
+    whereCondition.roomId = queryRoomId;
+  }
+
+  const participants = await prisma.chatParticipant.findMany({
+    where: whereCondition,
+    select: { roomId: true, lastRead: true, joinedAt: true },
+  });
+
+  const unreadCounts = await Promise.all(
+    participants.map(async (p) => {
+      const count = await prisma.chatMessage.count({
+        where: {
+          roomId: p.roomId,
+          senderUserId: { not: userId },
+          createdAt: {
+            gt: p.lastRead || p.joinedAt || new Date(0),
+          },
+        },
+      });
+      return {
+        roomId: p.roomId,
+        unreadMessageCount: count,
+      };
+    })
+  );
+
+  return queryRoomId ? unreadCounts : unreadCounts.filter((item) => item.unreadMessageCount > 0);
+};
+
 export const ChatMessageService = {
   create,
   getAll,
   getById,
   getByRoomId,
+  getAdminUnreadMessages,
   update,
   deleteById,
 };
