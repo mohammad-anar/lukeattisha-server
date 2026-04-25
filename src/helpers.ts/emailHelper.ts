@@ -8,10 +8,15 @@ export type ISendEmail = {
   html: string;
 };
 
+console.log("Email Config Diagnostics:");
+console.log("- Host:", config.email.host);
+console.log("- Port:", config.email.port);
+console.log("- User:", config.email.user);
+console.log("- Pass length:", config.email.pass?.length);
+console.log("- Node Env:", config.node_env);
+
 const transporter = nodemailer.createTransport({
-  host: config.email.host,
-  port: Number(config.email.port),
-  secure: false, // For port 587, set fixed TLS rejection in dev
+  service: 'gmail',
   auth: {
     user: config.email.user,
     pass: config.email.pass,
